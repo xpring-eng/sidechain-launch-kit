@@ -1,31 +1,31 @@
-from typing import List, Optional, Tuple
+from typing import Optional
 
 
 class Section:
-    def section_header(l: str) -> Optional[str]:
-        '''
+    def section_header(line: str) -> Optional[str]:
+        """
         If the line is a section header, return the section name
         otherwise return None
-        '''
-        if l.startswith('[') and l.endswith(']'):
-            return l[1:-1]
+        """
+        if line.startswith("[") and line.endswith("]"):
+            return line[1:-1]
         return None
 
     def __init__(self, name: str):
-        super().__setattr__('_name', name)
+        super().__setattr__("_name", name)
         # lines contains all non key-value pairs
-        super().__setattr__('_lines', [])
-        super().__setattr__('_kv_pairs', {})
+        super().__setattr__("_lines", [])
+        super().__setattr__("_kv_pairs", {})
 
     def get_name(self):
         return self._name
 
-    def add_line(self, l):
-        s = l.split('=')
+    def add_line(self, line):
+        s = line.split("=")
         if len(s) == 2:
             self._kv_pairs[s[0].strip()] = s[1].strip()
         else:
-            self._lines.append(l)
+            self._lines.append(line)
 
     def get_lines(self):
         return self._lines
@@ -34,7 +34,7 @@ class Section:
         if len(self._lines) > 0:
             return self._lines[0]
         return None
-    
+
     def __getstate__(self):
         return vars(self)
 
@@ -64,20 +64,21 @@ class ConfigFile:
 
         cur_section = None
         with open(file_name) as f:
-            for n, l in enumerate(f):
-                l = l.strip()
-                if l.startswith('#') or not l:
+            for n, line in enumerate(f):
+                line = line.strip()
+                if line.startswith("#") or not line:
                     continue
-                if section_name := Section.section_header(l):
+                if section_name := Section.section_header(line):
                     if cur_section:
                         self.add_section(cur_section)
                     cur_section = Section(section_name)
                     continue
                 if not cur_section:
                     raise ValueError(
-                        f'Error parsing config file: {file_name} line_num: {n} line: {l}'
+                        f"Error parsing config file: {file_name} "
+                        f"line_num: {n} line: {line}"
                     )
-                cur_section.add_line(l)
+                cur_section.add_line(line)
 
         if cur_section:
             self.add_section(cur_section)
@@ -87,7 +88,7 @@ class ConfigFile:
 
     def get_file_name(self):
         return self._file_name
-    
+
     def __getstate__(self):
         return vars(self)
 
