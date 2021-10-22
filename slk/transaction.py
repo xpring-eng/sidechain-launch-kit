@@ -3,7 +3,8 @@ import json
 from typing import Dict, List, Optional, Union
 
 from slk.command import Command
-from slk.common import Account, Asset, Path, PathList
+from slk.common import Account, Asset
+from xrpl.models import Path
 
 
 class Transaction(Command):
@@ -69,7 +70,7 @@ class Payment(Transaction):
                  dst: Account,
                  amt: Asset,
                  send_max: Optional[Asset] = None,
-                 paths: Optional[PathList] = None,
+                 paths: Optional[Union[Path, List[Path]]] = None,
                  dst_tag: Optional[int] = None,
                  deliver_min: Optional[Asset] = None,
                  **rest):
@@ -79,7 +80,7 @@ class Payment(Transaction):
         self.send_max = send_max
         if paths is not None and isinstance(paths, Path):
             # allow paths = Path([...]) special case
-            self.paths = PathList([paths])
+            self.paths = [paths]
         else:
             self.paths = paths
         self.dst_tag = dst_tag
@@ -99,7 +100,7 @@ class Payment(Transaction):
             'Amount': self.amt.to_cmd_obj(),
         }
         if self.paths is not None:
-            txn['Paths'] = self.paths.to_cmd_obj()
+            txn['Paths'] = self.paths.to_xrpl()
         if self.send_max is not None:
             txn['SendMax'] = self.send_max.to_cmd_obj()
         if self.dst_tag is not None:
