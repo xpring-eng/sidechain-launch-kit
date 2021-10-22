@@ -24,12 +24,6 @@ def eprint(*args, **kwargs):
     print(*args, file=sys.stderr, flush=True, **kwargs)
 
 
-def to_rippled_epoch(d: datetime.datetime) -> int:
-    '''Convert from a datetime to the number of seconds since Jan 1, 2000 (rippled epoch)'''
-    start = datetime.datetime(2000, 1, 1, tzinfo=pytz.utc)
-    return int((d - start).total_seconds())
-
-
 class Account:  # pylint: disable=too-few-public-methods
     '''
     Account in the ripple ledger
