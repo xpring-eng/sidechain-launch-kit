@@ -20,6 +20,9 @@ documentation = "README.md"
 include = [
   "LICENSE",
 ]
+packages = [
+  { include = "slk" },
+]
 
 [tool.poetry.dependencies]
 python = ">= 3.8, < 3.9"
