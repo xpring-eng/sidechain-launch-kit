@@ -1,7 +1,7 @@
 import json
 from typing import List, Optional, Union
 
-from slk.common import Account, Asset
+from slk.common import Account
 
 
 class Command:

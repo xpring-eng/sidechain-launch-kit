@@ -8,11 +8,12 @@ import time
 from typing import Callable, Dict, List, Optional, Set, Union
 
 from slk.ripple_client import RippleClient
-from slk.common import Account, Asset, XRP
+from slk.common import Account
 from slk.command import AccountInfo, AccountLines, BookOffers, Command, FederatorInfo, LedgerAccept, Sign, Submit, SubscriptionCommand, WalletPropose
 from slk.config_file import ConfigFile
 import slk.testnet as testnet
 from slk.transaction import Payment, Transaction
+from xrpl.models import XRP, IssuedCurrencyAmount, Amount, XRP
 
 
 class KeyManager:
@@ -71,25 +72,25 @@ class KeyManager:
         df = pd.DataFrame(data={'name': names, 'id': account_ids})
         return f'{df.to_string(index=False)}'
 
-
+# TODO: use IssuedCurrency instead of IssuedCurrencyAmount here
 class AssetAliases:
     def __init__(self):
-        self._aliases = {}  # alias -> asset
+        self._aliases = {}  # alias -> IssuedCurrencyAmount
 
-    def add(self, asset: Asset, name: str):
+    def add(self, asset: IssuedCurrencyAmount, name: str):
         self._aliases[name] = asset
 
     def is_alias(self, name: str):
         return name in self._aliases
 
-    def asset_from_alias(self, name: str) -> Asset:
+    def asset_from_alias(self, name: str) -> IssuedCurrencyAmount:
         assert name in self._aliases
         return self._aliases[name]
 
     def known_aliases(self) -> List[str]:
         return list(self._aliases.keys())
 
-    def known_assets(self) -> List[Asset]:
+    def known_assets(self) -> List[IssuedCurrencyAmount]:
         return list(self._aliases.values())
 
     def to_string(self, nickname: Optional[str] = None):
@@ -277,7 +278,7 @@ class App:
     def create_accounts(self,
                         names: List[str],
                         funding_account: Union[Account, str] = 'root',
-                        amt: Union[int, Asset] = 1000000000) -> List[Account]:
+                        amt: Union[int, IssuedCurrencyAmount] = 1000000000) -> List[Account]:
         '''Fund the accounts with nicknames 'names' by using the funding account and amt'''
         accounts = [self.create_account(n) for n in names]
         if not isinstance(funding_account, Account):
@@ -289,7 +290,7 @@ class App:
                 f'Could not find funding account {org_funding_account}')
         if not isinstance(amt, Asset):
             assert isinstance(amt, int)
-            amt = Asset(value=amt)
+            amt = XRP(value=amt)
         for a in accounts:
             p = Payment(account=funding_account, dst=a, amt=amt)
             self.send_signed(p)
@@ -309,7 +310,7 @@ class App:
     def get_balances(
         self,
         account: Union[Account, List[Account], None] = None,
-        asset: Union[Asset, List[Asset]] = Asset()
+        asset: Union[IssuedCurrencyAmount, List[IssuedCurrencyAmount]] = XRP(value=0)
     ) -> pd.DataFrame:
         '''Return a pandas dataframe of account balances. If account is None, treat as a wildcard (use address book)'''
         if account is None:
@@ -320,7 +321,7 @@ class App:
         if isinstance(asset, list):
             result = [self.get_balances(account, ass) for ass in asset]
             return pd.concat(result, ignore_index=True)
-        if asset.is_xrp():
+        if is_xrp(asset):
             try:
                 df = self.get_account_info(account)
             except:
@@ -341,7 +342,7 @@ class App:
             try:
                 df = self.get_trust_lines(account)
                 if df.empty: return df
-                df = df[(df['peer'] == asset.issuer.account_id)
+                df = df[(df['peer'] == asset.issuer)
                         & (df['currency'] == asset.currency)]
             except:
                 # Most likely the account does not exist on the ledger. Return an empty data frame
@@ -355,7 +356,7 @@ class App:
             return df.loc[:,
                           ['account', 'balance', 'currency', 'peer', 'limit']]
 
-    def get_balance(self, account: Account, asset: Asset) -> Asset:
+    def get_balance(self, account: Account, asset: Amount) -> Asset:
         '''Get a balance from a single account in a single asset'''
         try:
             df = self.get_balances(account, asset)
@@ -416,7 +417,7 @@ class App:
             d['account'] = account
         return pd.DataFrame(lines)
 
-    def get_offers(self, taker_pays: Asset, taker_gets: Asset) -> pd.DataFrame:
+    def get_offers(self, taker_pays: IssuedCurrencyAmount, taker_gets: IssuedCurrencyAmount) -> pd.DataFrame:
         '''Return a pandas dataframe of offers'''
         result = self.send_command(BookOffers(taker_pays, taker_gets))
         if 'offers' not in result:
@@ -443,8 +444,9 @@ class App:
                   inplace=True)
         return df
 
-    def account_balance(self, account: Account, asset: Asset) -> Asset:
+    def account_balance(self, account: Account, asset: IssuedCurrencyAmount) -> IssuedCurrencyAmount:
         '''get the account's balance of the asset'''
+        # TODO: implement?
         pass
 
     def substitute_nicknames(
@@ -474,7 +476,7 @@ class App:
     def known_asset_aliases(self) -> List[str]:
         return self.asset_aliases.known_aliases()
 
-    def known_iou_assets(self) -> List[Asset]:
+    def known_iou_assets(self) -> List[IssuedCurrencyAmount]:
         return self.asset_aliases.known_assets()
 
     def is_asset_alias(self, name: str) -> bool:
@@ -498,7 +500,7 @@ class App:
 def balances_dataframe(chains: List[App],
                        chain_names: List[str],
                        account_ids: Optional[List[Account]] = None,
-                       assets: List[Asset] = None,
+                       assets: List[IssuedCurrencyAmount] = None,
                        in_drops: bool = False):
     def _removesuffix(self: str, suffix: str) -> str:
         if suffix and self.endswith(suffix):
@@ -507,7 +509,7 @@ def balances_dataframe(chains: List[App],
             return self[:]
 
     def _balance_df(chain: App, acc: Optional[Account],
-                    asset: Union[Asset, List[Asset]], in_drops: bool):
+                    asset: Union[IssuedCurrencyAmount, List[IssuedCurrencyAmount]], in_drops: bool):
         b = chain.get_balances(acc, asset)
         if not in_drops:
             b.loc[b['currency'] == 'XRP', 'balance'] /= 1_000_000
@@ -520,7 +522,7 @@ def balances_dataframe(chains: List[App],
 
     if assets is None:
         # XRP and all assets in the assets alias list
-        assets = [[XRP(0)] + c.known_iou_assets() for c in chains]
+        assets = [[XRP("0")] + c.known_iou_assets() for c in chains]
 
     dfs = []
     keys = []

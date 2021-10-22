@@ -26,7 +26,7 @@ from typing import Dict, List, Optional, Tuple, Union
 
 from slk.config_file import ConfigFile
 from slk.command import ValidationCreate, WalletPropose
-from slk.common import Account, Asset, eprint, XRP
+from slk.common import Account, Asset, eprint
 from slk.app import App, single_client_app
 
 mainnet_validators = """
@@ -135,7 +135,7 @@ def generate_asset_stanzas(
         # default to xrp only at a 1:1 value
         assets = {}
         assets['xrp_xrp_sidechain_asset'] = XChainAsset(
-            XRP(0), XRP(0), 1, 1, 400, 400)
+            XRP("0"), XRP("0"), 1, 1, 400, 400)
 
     index_stanza = """
 [sidechain_assets]"""
@@ -620,7 +620,7 @@ if __name__ == '__main__':
     if params.usd:
         xchain_assets = {}
         xchain_assets['xrp_xrp_sidechain_asset'] = XChainAsset(
-            XRP(0), XRP(0), 1, 1, 200, 200)
+            XRP("0"), XRP("0"), 1, 1, 200, 200)
         root_account = Account(account_id="rHb9CJAWyB4rj91VRWn96DkukG4bwdtyTh")
         main_iou_asset = Asset(value=0, currency='USD', issuer=root_account)
         side_iou_asset = Asset(value=0, currency='USD', issuer=root_account)
