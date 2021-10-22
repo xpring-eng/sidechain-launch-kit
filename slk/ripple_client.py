@@ -9,9 +9,9 @@ from typing import Callable, List, Optional, Union
 import time
 import websockets
 
-from command import Command, ServerInfo, SubscriptionCommand
-from common import eprint
-from config_file import ConfigFile
+from slk.command import Command, ServerInfo, SubscriptionCommand
+from slk.common import eprint
+from slk.config_file import ConfigFile
 
 
 class RippleClient:

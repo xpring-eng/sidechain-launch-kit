@@ -9,9 +9,9 @@ import subprocess
 import time
 from typing import Callable, List, Optional, Set, Union
 
-from command import ServerInfo
-from config_file import ConfigFile
-from ripple_client import RippleClient
+from slk.command import ServerInfo
+from slk.config_file import ConfigFile
+from slk.ripple_client import RippleClient
 
 
 class Network:

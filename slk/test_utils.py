@@ -7,9 +7,9 @@ import pprint
 import time
 from typing import Callable, Dict, List, Optional
 
-from app import App, balances_dataframe
-from common import Account, Asset, XRP, eprint
-from command import Subscribe
+from slk.app import App, balances_dataframe
+from slk.common import Account, Asset, XRP, eprint
+from slk.command import Subscribe
 
 MC_SUBSCRIBE_QUEUE = []
 SC_SUBSCRIBE_QUEUE = []

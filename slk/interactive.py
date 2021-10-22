@@ -8,10 +8,10 @@ import pprint
 import time
 from typing import Callable, Dict, List, Optional, Union
 
-from app import App, balances_dataframe
-from command import AccountTx, Subscribe
-from common import Account, Asset, XRP
-from transaction import SetHook, Payment, Trust
+from slk.app import App, balances_dataframe
+from slk.command import AccountTx, Subscribe
+from slk.common import Account, Asset, XRP
+from slk.transaction import SetHook, Payment, Trust
 
 
 def clear_screen():

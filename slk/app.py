@@ -7,12 +7,12 @@ import subprocess
 import time
 from typing import Callable, Dict, List, Optional, Set, Union
 
-from ripple_client import RippleClient
-from common import Account, Asset, XRP
-from command import AccountInfo, AccountLines, BookOffers, Command, FederatorInfo, LedgerAccept, Sign, Submit, SubscriptionCommand, WalletPropose
-from config_file import ConfigFile
-import testnet
-from transaction import Payment, Transaction
+from slk.ripple_client import RippleClient
+from slk.common import Account, Asset, XRP
+from slk.command import AccountInfo, AccountLines, BookOffers, Command, FederatorInfo, LedgerAccept, Sign, Submit, SubscriptionCommand, WalletPropose
+from slk.config_file import ConfigFile
+import slk.testnet as testnet
+from slk.transaction import Payment, Transaction
 
 
 class KeyManager:

@@ -4,7 +4,7 @@ import argparse
 import json
 import re
 
-from common import eprint
+from slk.common import eprint
 
 
 class LogLine:

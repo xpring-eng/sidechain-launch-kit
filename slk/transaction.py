@@ -2,8 +2,8 @@ import datetime
 import json
 from typing import Dict, List, Optional, Union
 
-from command import Command
-from common import Account, Asset, Path, PathList, to_rippled_epoch
+from slk.command import Command
+from slk.common import Account, Asset, Path, PathList, to_rippled_epoch
 
 
 class Transaction(Command):

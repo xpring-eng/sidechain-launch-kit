@@ -4,15 +4,15 @@ import pytest
 from multiprocessing import Process, Value
 from typing import Dict
 import sys
-
-from app import App
-from common import Asset, eprint, disable_eprint, XRP
-import interactive
-from sidechain import Params
-import sidechain
-import test_utils
 import time
-from transaction import Payment, Trust
+
+from slk.app import App
+from slk.common import Asset, eprint, disable_eprint, XRP
+import slk.interactive as interactive
+from slk.sidechain import Params
+import slk.sidechain as sidechain
+import slk.test_utils as test_utils
+from slk.transaction import Payment, Trust
 
 
 def simple_xrp_test(mc_app: App, sc_app: App, params: Params):

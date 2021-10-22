@@ -24,10 +24,10 @@ from pathlib import Path
 import sys
 from typing import Dict, List, Optional, Tuple, Union
 
-from config_file import ConfigFile
-from command import ValidationCreate, WalletPropose
-from common import Account, Asset, eprint, XRP
-from app import App, single_client_app
+from slk.config_file import ConfigFile
+from slk.command import ValidationCreate, WalletPropose
+from slk.common import Account, Asset, eprint, XRP
+from slk.app import App, single_client_app
 
 mainnet_validators = """
 [validator_list_sites]
