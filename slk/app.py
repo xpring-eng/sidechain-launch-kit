@@ -7,14 +7,14 @@ import subprocess
 import time
 from typing import Callable, Dict, List, Optional, Set, Union
 
-from slk.ripple_client import RippleClient
+from xrpl.clients import WebsocketClient
 from slk.common import Account
-from slk.command import AccountInfo, AccountLines, BookOffers, Command, FederatorInfo, LedgerAccept, Sign, Submit, SubscriptionCommand, WalletPropose
+# from slk.command import SubscriptionCommand, WalletPropose
 from slk.config_file import ConfigFile
 import slk.testnet as testnet
-from slk.transaction import Payment, Transaction
-from xrpl.models import XRP, IssuedCurrencyAmount, Amount, XRP
-
+# from slk.transaction import Transaction
+from xrpl.models import XRP, IssuedCurrency, IssuedCurrencyAmount, Amount, XRP, Payment, AccountInfo, AccountLines, BookOffers, Request, Sign, Submit, Subscribe
+from xrpl.models.transactions.transaction import Transaction
 
 class KeyManager:
     def __init__(self):
@@ -26,8 +26,11 @@ class KeyManager:
             self._aliases[account.nickname] = account
         self._accounts[account.account_id] = account
 
-    def is_alias(self, name: str):
+    def is_alias(self, name: str) -> bool:
         return name in self._aliases
+    
+    def is_account(self, account: str) -> bool:
+        return account in self._accounts
 
     def account_from_alias(self, name: str) -> Account:
         assert name in self._aliases
@@ -35,6 +38,9 @@ class KeyManager:
 
     def known_accounts(self) -> List[Account]:
         return list(self._accounts.values())
+    
+    def get_account(self, account: str) -> Account:
+        return self._accounts[account]
 
     def account_id_dict(self) -> Dict[str, Account]:
         return self._accounts
@@ -75,22 +81,22 @@ class KeyManager:
 # TODO: use IssuedCurrency instead of IssuedCurrencyAmount here
 class AssetAliases:
     def __init__(self):
-        self._aliases = {}  # alias -> IssuedCurrencyAmount
+        self._aliases = {}  # alias -> IssuedCurrency
 
-    def add(self, asset: IssuedCurrencyAmount, name: str):
+    def add(self, asset: IssuedCurrency, name: str):
         self._aliases[name] = asset
 
     def is_alias(self, name: str):
         return name in self._aliases
 
-    def asset_from_alias(self, name: str) -> IssuedCurrencyAmount:
+    def asset_from_alias(self, name: str) -> IssuedCurrency:
         assert name in self._aliases
         return self._aliases[name]
 
     def known_aliases(self) -> List[str]:
         return list(self._aliases.keys())
 
-    def known_assets(self) -> List[IssuedCurrencyAmount]:
+    def known_assets(self) -> List[IssuedCurrency]:
         return list(self._aliases.values())
 
     def to_string(self, nickname: Optional[str] = None):
@@ -127,7 +133,7 @@ class App:
                  *,
                  standalone: bool,
                  network: Optional[testnet.Network] = None,
-                 client: Optional[RippleClient] = None):
+                 client: Optional[WebsocketClient] = None):
         if network and client:
             raise ValueError('Cannot specify both a testnet and client in App')
         if not network and not client:
@@ -154,29 +160,32 @@ class App:
         else:
             self.client.shutdown()
 
-    def send_signed(self, txn: Transaction) -> dict:
+    def send_signed(self, txn: Transaction, autofill: bool = True) -> dict:
         '''Sign then send the given transaction'''
-        if not txn.account.secret_key:
+        if not self.key_manager.is_account(txn.account):
             raise ValueError('Cannot sign transaction without secret key')
-        r = self(Sign(txn.account.secret_key, txn.to_cmd_obj()))
-        raw_signed = r['tx_blob']
-        return self(Submit(raw_signed))
+        account_obj = self.key_manager.get_account(txn.account)
+        return safe_sign_and_submit_transaction(txn, account_obj.wallet, self.client, autofill=autofill)
 
-    def send_command(self, cmd: Command) -> dict:
+    def send_command(self, req: Request) -> dict:
         '''Send the command to the rippled server'''
-        return self.client.send_command(cmd)
+        return self.client.request(req)
 
     # Need async version to close ledgers from async functions
-    async def async_send_command(self, cmd: Command) -> dict:
+    async def async_send_command(self, req: Request) -> dict:
         '''Send the command to the rippled server'''
-        return await self.client.async_send_command(cmd)
+        return await self.client.request_impl(req)
 
     def send_subscribe_command(
             self,
-            cmd: SubscriptionCommand,
+            req: Subscribe,
             callback: Optional[Callable[[dict], None]] = None) -> dict:
         '''Send the subscription command to the rippled server. If already subscribed, it will unsubscribe'''
-        return self.client.send_subscribe_command(cmd, callback)
+        r = self.client.send(req)
+        for message in self.client:
+            if callback:
+                callback(message)
+        return r
 
     def get_pids(self) -> List[int]:
         if self.network:
@@ -242,19 +251,17 @@ class App:
         return result_dict
 
     def __call__(self,
-                 to_send: Union[Transaction, Command, SubscriptionCommand],
+                 to_send: Union[Transaction, Request],
                  callback: Optional[Callable[[dict], None]] = None,
                  *,
                  insert_seq_and_fee=False) -> dict:
         '''Call `send_signed` for transactions or `send_command` for commands'''
-        if isinstance(to_send, SubscriptionCommand):
+        if isinstance(to_send, Subscribe):
             return self.send_subscribe_command(to_send, callback)
         assert callback is None
         if isinstance(to_send, Transaction):
-            if insert_seq_and_fee:
-                self.insert_seq_and_fee(to_send)
-            return self.send_signed(to_send)
-        if isinstance(to_send, Command):
+            return self.send_signed(to_send, autofill=insert_seq_and_fee)
+        if isinstance(to_send, Request):
             return self.send_command(to_send)
         raise ValueError(
             'Expected `to_send` to be either a Transaction, Command, or SubscriptionCommand'
@@ -271,14 +278,14 @@ class App:
             return
         assert not self.key_manager.is_alias(name)
 
-        account = Account(nickname=name, result_dict=self(WalletPropose()))
+        account = Account.create(name)
         self.key_manager.add(account)
         return account
 
     def create_accounts(self,
                         names: List[str],
                         funding_account: Union[Account, str] = 'root',
-                        amt: Union[int, IssuedCurrencyAmount] = 1000000000) -> List[Account]:
+                        amt: Union[str, IssuedCurrencyAmount] = "1_000_000_000") -> List[Account]:
         '''Fund the accounts with nicknames 'names' by using the funding account and amt'''
         accounts = [self.create_account(n) for n in names]
         if not isinstance(funding_account, Account):
@@ -292,7 +299,7 @@ class App:
             assert isinstance(amt, int)
             amt = XRP(value=amt)
         for a in accounts:
-            p = Payment(account=funding_account, dst=a, amt=amt)
+            p = Payment(account=funding_account.account_id, destination=account_id, amount=amt)
             self.send_signed(p)
         return accounts
 
@@ -310,7 +317,7 @@ class App:
     def get_balances(
         self,
         account: Union[Account, List[Account], None] = None,
-        asset: Union[IssuedCurrencyAmount, List[IssuedCurrencyAmount]] = XRP(value=0)
+        asset: Union[Amount, List[Amount]] = "0"
     ) -> pd.DataFrame:
         '''Return a pandas dataframe of account balances. If account is None, treat as a wildcard (use address book)'''
         if account is None:
@@ -356,7 +363,7 @@ class App:
             return df.loc[:,
                           ['account', 'balance', 'currency', 'peer', 'limit']]
 
-    def get_balance(self, account: Account, asset: Amount) -> Asset:
+    def get_balance(self, account: Account, asset: IssuedCurrency) -> IssuedCurrency:
         '''Get a balance from a single account in a single asset'''
         try:
             df = self.get_balances(account, asset)
@@ -482,10 +489,10 @@ class App:
     def is_asset_alias(self, name: str) -> bool:
         return self.asset_aliases.is_alias(name)
 
-    def add_asset_alias(self, asset: Asset, name: str):
+    def add_asset_alias(self, asset: IssuedCurrency, name: str):
         self.asset_aliases.add(asset, name)
 
-    def asset_from_alias(self, name: str) -> Asset:
+    def asset_from_alias(self, name: str) -> IssuedCurrency:
         return self.asset_aliases.asset_from_alias(name)
 
     def insert_seq_and_fee(self, txn: Transaction):
@@ -493,7 +500,7 @@ class App:
         # TODO: set better fee (Hard code a fee of 15 for now)
         txn.set_seq_and_fee(acc_info['account_data']['Sequence'], 15)
 
-    def get_client(self) -> RippleClient:
+    def get_client(self) -> WebsocketClient:
         return self.client
 
 
@@ -550,7 +557,8 @@ def single_client_app(*,
             extra_args = []
         to_run = None
         app = None
-        client = RippleClient(config=config, command_log=command_log, exe=exe)
+        print(config, command_log, exe)
+        client = WebsocketClient(config=config)
         if run_server:
             to_run = [client.exe, '--conf', client.config_file_name]
             if standalone:

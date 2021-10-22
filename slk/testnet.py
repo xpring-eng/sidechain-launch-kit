@@ -9,9 +9,9 @@ import subprocess
 import time
 from typing import Callable, List, Optional, Set, Union
 
-from slk.command import ServerInfo
+from xrpl.models import ServerInfo
 from slk.config_file import ConfigFile
-from slk.ripple_client import RippleClient
+from xrpl.clients import WebsocketClient
 
 
 class Network:
@@ -61,7 +61,11 @@ class Network:
                     os.unlink(f)
 
         for config, log in zip(self.configs, self.command_logs):
-            client = RippleClient(config=config, command_log=log, exe=exe)
+            print(config, log)
+            section = config.port_ws_admin_local
+            websocket_uri = f'{section.protocol}://{section.ip}:{section.port}'
+            # TODO: figure out where in the config the URL is stored
+            client = WebsocketClient(url=websocket_uri)
             self.clients.append(client)
 
         self.servers_start(extra_args=extra_args)
@@ -75,7 +79,7 @@ class Network:
     def num_clients(self) -> int:
         return len(self.clients)
 
-    def get_client(self, i: int) -> RippleClient:
+    def get_client(self, i: int) -> WebsocketClient:
         return self.clients[i]
 
     def get_configs(self) -> List[ConfigFile]:
@@ -88,7 +92,14 @@ class Network:
     def get_brief_server_info(self) -> dict:
         ret = {'server_state': [], 'ledger_seq': [], 'complete_ledgers': []}
         for c in self.clients:
-            r = c.get_brief_server_info()
+            r = c.request(ServerInfo())
+            if 'info' in r:
+                r = r['info']
+                for f in ['server_state', 'complete_ledgers']:
+                    if f in r:
+                        ret[f] = r[f]
+                if 'validated_ledger' in r:
+                    ret['ledger_seq'] = r['validated_ledger']['seq']
             for (k, v) in r.items():
                 ret[k].append(v)
         return ret
@@ -117,7 +128,7 @@ class Network:
 
         client = self.clients[server_index]
         for i in range(600):
-            r = client.send_command(ServerInfo())
+            r = client.request(ServerInfo())
             state = None
             if 'info' in r:
                 state = r['info']['server_state']
@@ -130,7 +141,7 @@ class Network:
             time.sleep(1)
 
         for i in range(600):
-            r = client.send_command(ServerInfo())
+            r = client.request(ServerInfo())
             state = None
             if 'info' in r:
                 complete_ledgers = r['info']['complete_ledgers']
