@@ -5,7 +5,7 @@ import os
 from os.path import expanduser
 import subprocess
 import sys
-from typing import Callable, List, Optional, Union
+from typing import Any, Callable, List, Optional, Union
 import time
 import websockets
 
@@ -112,7 +112,7 @@ class RippleClient:
     async def _send_websock_command(
             self,
             cmd: Command,
-            conn: Optional[websockets.client.Connect] = None) -> dict:
+            conn: Optional[Any] = None) -> dict:
         assert self.websocket_uri
         if conn is None:
             async with websockets.connect(self.websocket_uri) as ws:
@@ -172,7 +172,7 @@ class RippleClient:
             # setup a task to read the websocket
             cmd.websocket = ws  # must be set after the _send_websock_command or will unsubscribe
 
-            async def subscribe_callback(ws: websockets.client.Connect,
+            async def subscribe_callback(ws: Any,
                                          cb: Callable[[dict], None]):
                 while True:
                     r = await ws.recv()
