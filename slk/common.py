@@ -1,9 +1,11 @@
 import binascii
 import datetime
-from typing import List, Optional, Union
+from typing import Any, List, Optional, Union
 import pandas as pd
 import pytz
 import sys
+
+from xrpl.wallet import Wallet
 
 EPRINT_ENABLED = True
 
@@ -38,15 +40,19 @@ class Account:  # pylint: disable=too-few-public-methods
                  result_dict: Optional[dict] = None):
         self.account_id = account_id
         self.nickname = nickname
-        self.public_key = public_key
-        self.public_key_hex = public_key_hex
         self.secret_key = secret_key
+        
+        self.wallet = Wallet(secret_key, 0)
 
-        if result_dict is not None:
-            self.account_id = result_dict['account_id']
-            self.public_key = result_dict['public_key']
-            self.public_key_hex = result_dict['public_key_hex']
-            self.secret_key = result_dict['master_key']
+    # TODO: fix type here
+    def create(cls: Any, name: str):
+        wallet = Wallet.create()
+        return Account(
+            account_id=wallet.classic_address,
+            nickname=name,
+            public_key=wallet.public_key,
+            secret_key=wallet.private_key
+        )
 
     # Accounts are equal if they represent the same account on the ledger
     # I.e. only check the account_id field for equality.
