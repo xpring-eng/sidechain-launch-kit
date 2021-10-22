@@ -20,14 +20,14 @@ import sys
 import time
 from typing import Callable, Dict, List, Optional
 
-from app import App, single_client_app, testnet_app, configs_for_testnet
-from command import AccountInfo, AccountTx, LedgerAccept, LogLevel, Subscribe
-from common import Account, Asset, eprint, disable_eprint, XRP
-from config_file import ConfigFile
-import interactive
-from log_analyzer import convert_log
-from test_utils import mc_wait_for_payment_detect, sc_wait_for_payment_detect, mc_connect_subscription, sc_connect_subscription
-from transaction import AccountSet, Payment, SignerListSet, SetRegularKey, Ticket, Trust
+from slk.app import App, single_client_app, testnet_app, configs_for_testnet
+from slk.command import AccountInfo, AccountTx, LedgerAccept, LogLevel, Subscribe
+from slk.common import Account, Asset, eprint, disable_eprint, XRP
+from slk.config_file import ConfigFile
+import slk.interactive as interactive
+from slk.log_analyzer import convert_log
+from slk.test_utils import mc_wait_for_payment_detect, sc_wait_for_payment_detect, mc_connect_subscription, sc_connect_subscription
+from slk.transaction import AccountSet, Payment, SignerListSet, SetRegularKey, Ticket, Trust
 
 
 def parse_args_helper(parser: argparse.ArgumentParser):

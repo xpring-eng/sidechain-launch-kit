@@ -2,9 +2,9 @@
 import os, sys
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-from common import Account, Asset, XRP
-import create_config_files
-import sidechain
+from slk.common import Account, Asset, XRP
+import slk.create_config_files as create_config_files
+import slk.sidechain as sidechain
 
 import pytest
 '''
