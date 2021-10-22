@@ -170,12 +170,3 @@ A python module representing a rippled server.
 ### testnet.py
 
 A python module representing a rippled testnet running on the local machine.
-
-## Other
-### requirements.txt
-
-These are the python dependencies needed by the scripts. Use `pip3 install -r
-requirements.txt` to install them. A python virtual environment is recommended.
-See the instructions [here](docs/sidechain/GettingStarted.md) for how to install
-the dependencies.
-
