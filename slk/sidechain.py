@@ -197,7 +197,7 @@ class Params:
 
         self.genesis_account = Account(
             account_id='rHb9CJAWyB4rj91VRWn96DkukG4bwdtyTh',
-            secret_key='masterpassphrase',
+            secret_key='snoPBrXtMeMyMHUVTgbuqAfg1SUTb',
             nickname='genesis')
         self.mc_door_account = Account(
             account_id=self.sidechain_config.sidechain.mainchain_account,
@@ -211,7 +211,7 @@ class Params:
 
         self.sc_door_account = Account(
             account_id='rHb9CJAWyB4rj91VRWn96DkukG4bwdtyTh',
-            secret_key='masterpassphrase',
+            secret_key='snoPBrXtMeMyMHUVTgbuqAfg1SUTb',
             nickname='door')
         self.federators = [
             l.split()[1].strip() for l in

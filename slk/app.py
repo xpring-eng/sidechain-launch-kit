@@ -15,6 +15,8 @@ import slk.testnet as testnet
 # from slk.transaction import Transaction
 from xrpl.models import XRP, IssuedCurrency, IssuedCurrencyAmount, Amount, XRP, Payment, AccountInfo, AccountLines, BookOffers, Request, Sign, Submit, Subscribe
 from xrpl.models.transactions.transaction import Transaction
+from slk.library import FederatorInfo
+from pprint import pprint
 
 class KeyManager:
     def __init__(self):
@@ -557,10 +559,12 @@ def single_client_app(*,
             extra_args = []
         to_run = None
         app = None
-        print(config, command_log, exe)
-        client = WebsocketClient(config=config)
+        section = config.port_ws_admin_local
+        websocket_uri = f'{section.protocol}://{section.ip}:{section.port}'
+        print(websocket_uri)
+        client = WebsocketClient(url=websocket_uri)
         if run_server:
-            to_run = [client.exe, '--conf', client.config_file_name]
+            to_run = [exe, '--conf', config._file_name]
             if standalone:
                 to_run.append('-a')
             fout = open(server_out, 'w')
@@ -569,9 +573,10 @@ def single_client_app(*,
                                  stderr=subprocess.STDOUT)
             client.set_pid(p.pid)
             print(
-                f'started rippled: config: {client.config_file_name} PID: {p.pid}',
+                f'started rippled: config: {config._file_name} PID: {p.pid}',
                 flush=True)
             time.sleep(1.5)  # give process time to startup
+
         app = App(client=client, standalone=standalone)
         yield app
     finally:

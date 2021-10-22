@@ -34,7 +34,7 @@ class TicketCreate(Transaction):
 
 @require_kwargs_on_init
 @dataclass(frozen=True)
-class ServerInfo(Request):
+class FederatorInfo(Request):
     """
     The federator_info command asks the server for a
     human-readable version of various information
