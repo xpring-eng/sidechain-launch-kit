@@ -21,13 +21,14 @@ import time
 from typing import Callable, Dict, List, Optional
 
 from slk.app import App, single_client_app, testnet_app, configs_for_testnet
-from slk.command import AccountInfo, AccountTx, LedgerAccept, LogLevel, Subscribe
-from slk.common import Account, Asset, eprint, disable_eprint, XRP
+from xrpl.models import AccountInfo, AccountTx, Subscribe
+from slk.common import Account, eprint, disable_eprint
 from slk.config_file import ConfigFile
 import slk.interactive as interactive
 from slk.log_analyzer import convert_log
 from slk.test_utils import mc_wait_for_payment_detect, sc_wait_for_payment_detect, mc_connect_subscription, sc_connect_subscription
-from slk.transaction import AccountSet, Payment, SignerListSet, SetRegularKey, Ticket, Trust
+from xrpl.models import AccountSet, Payment, SignerListSet, SetRegularKey, TrustSet, Amount
+from slk.library import TicketCreate
 
 
 def parse_args_helper(parser: argparse.ArgumentParser):
@@ -244,7 +245,7 @@ def setup_mainchain(mc_app: App,
     if setup_user_accounts:
         mc_app.add_to_keymanager(params.user_account)
 
-    mc_app(LogLevel('fatal'))
+    # mc_app(LogLevel('fatal'))
 
     # Allow rippling through the genesis account
     mc_app(AccountSet(account=params.genesis_account).set_default_ripple(True))
@@ -252,17 +253,17 @@ def setup_mainchain(mc_app: App,
 
     # Create and fund the mc door account
     mc_app(
-        Payment(account=params.genesis_account,
-                dst=params.mc_door_account,
-                amt=XRP(10_000)))
+        Payment(account=params.genesis_account.account_id,
+                destination=params.mc_door_account.account_id,
+                amt=str(10_000)))
     mc_app.maybe_ledger_accept()
 
     # Create a trust line so USD/root account ious can be sent cross chain
     mc_app(
-        Trust(account=params.mc_door_account,
-              limit_amt=Asset(value=1_000_000,
+        TrustSet(account=params.mc_door_account,
+              limit_amount=IssuedCurrency(value=str(1_000_000),
                               currency='USD',
-                              issuer=params.genesis_account)))
+                              issuer=params.genesis_account.account_id)))
 
     # set the chain's signer list and disable the master key
     divide = 4 * len(params.federators)
@@ -273,11 +274,11 @@ def setup_mainchain(mc_app: App,
                       quorum=quorum,
                       keys=params.federators))
     mc_app.maybe_ledger_accept()
-    r = mc_app(Ticket(account=params.mc_door_account, src_tag=mainDoorKeeper))
+    r = mc_app(TicketCreate(account=params.mc_door_account, src_tag=mainDoorKeeper))
     mc_app.maybe_ledger_accept()
-    mc_app(Ticket(account=params.mc_door_account, src_tag=sideDoorKeeper))
+    mc_app(TicketCreate(account=params.mc_door_account, src_tag=sideDoorKeeper))
     mc_app.maybe_ledger_accept()
-    mc_app(Ticket(account=params.mc_door_account, src_tag=updateSignerList))
+    mc_app(TicketCreate(account=params.mc_door_account, src_tag=updateSignerList))
     mc_app.maybe_ledger_accept()
     mc_app(AccountSet(account=params.mc_door_account).set_disable_master())
     mc_app.maybe_ledger_accept()
@@ -321,7 +322,7 @@ def setup_sidechain(sc_app: App,
 
 
 def _xchain_transfer(from_chain: App, to_chain: App, src: Account,
-                     dst: Account, amt: Asset, from_chain_door: Account,
+                     dst: Account, amt: Amount, from_chain_door: Account,
                      to_chain_door: Account):
     memos = [{'Memo': {'MemoData': dst.account_id_str_as_hex()}}]
     from_chain(Payment(account=src, dst=from_chain_door, amt=amt, memos=memos))
@@ -333,13 +334,13 @@ def _xchain_transfer(from_chain: App, to_chain: App, src: Account,
 
 
 def main_to_side_transfer(mc_app: App, sc_app: App, src: Account, dst: Account,
-                          amt: Asset, params: Params):
+                          amt: Amount, params: Params):
     _xchain_transfer(mc_app, sc_app, src, dst, amt, params.mc_door_account,
                      params.sc_door_account)
 
 
 def side_to_main_transfer(mc_app: App, sc_app: App, src: Account, dst: Account,
-                          amt: Asset, params: Params):
+                          amt: Amount, params: Params):
     _xchain_transfer(sc_app, mc_app, src, dst, amt, params.sc_door_account,
                      params.mc_door_account)
 

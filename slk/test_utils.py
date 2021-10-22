@@ -8,8 +8,8 @@ import time
 from typing import Callable, Dict, List, Optional
 
 from slk.app import App, balances_dataframe
-from slk.common import Account, Asset, XRP, eprint
-from slk.command import Subscribe
+from slk.common import Account, eprint
+from xrpl.models import Subscribe, IssuedCurrencyAmount, Amount
 
 MC_SUBSCRIBE_QUEUE = []
 SC_SUBSCRIBE_QUEUE = []
@@ -37,7 +37,7 @@ def sc_connect_subscription(app: App, door_account: Account):
 # It mofifies the queue in place.
 async def async_wait_for_payment_detect(app: App, subscribe_queue: List[dict],
                                         src: Account, dst: Account,
-                                        amt_asset: Asset):
+                                        amt_asset: IssuedCurrencyAmount):
     logging.info(
         f'Wait for payment {src.account_id = } {dst.account_id = } {amt_asset = }'
     )
@@ -93,7 +93,7 @@ async def async_wait_for_payment_detect(app: App, subscribe_queue: List[dict],
 
 
 def mc_wait_for_payment_detect(app: App, src: Account, dst: Account,
-                               amt_asset: Asset):
+                               amt_asset: Amount):
     logging.info(f'mainchain waiting for payment detect')
     return asyncio.get_event_loop().run_until_complete(
         async_wait_for_payment_detect(app, MC_SUBSCRIBE_QUEUE, src, dst,
@@ -101,7 +101,7 @@ def mc_wait_for_payment_detect(app: App, src: Account, dst: Account,
 
 
 def sc_wait_for_payment_detect(app: App, src: Account, dst: Account,
-                               amt_asset: Asset):
+                               amt_asset: Amount):
     logging.info(f'sidechain waiting for payment detect')
     return asyncio.get_event_loop().run_until_complete(
         async_wait_for_payment_detect(app, SC_SUBSCRIBE_QUEUE, src, dst,
@@ -110,8 +110,8 @@ def sc_wait_for_payment_detect(app: App, src: Account, dst: Account,
 
 def wait_for_balance_change(app: App,
                             acc: Account,
-                            pre_balance: Asset,
-                            final_diff: Optional[Asset] = None):
+                            pre_balance: Amount,
+                            final_diff: Optional[Amount] = None):
     logging.info(
         f'waiting for balance change {acc.account_id = } {pre_balance = } {final_diff = }'
     )

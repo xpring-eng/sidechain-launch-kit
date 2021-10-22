@@ -2,7 +2,7 @@ from typing import List, Optional, Tuple
 
 
 class Section:
-    def section_header(cls, l: str) -> Optional[str]:
+    def section_header(l: str) -> Optional[str]:
         '''
         If the line is a section header, return the section name
         otherwise return None
