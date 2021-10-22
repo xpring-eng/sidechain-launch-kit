@@ -4,182 +4,220 @@
 
 This directory contains python scripts to tests and explore side chains. 
 
-See the instructions [here](docs/sidechain/GettingStarted.md) for how to install
-the necessary dependencies and run an interactive shell that will spin up a set
-of federators on your local machine and allow you to transfer assets between the
-main chain and a side chain.
+This document walks through the steps to setup a side chain running on your local
+machine and make your first cross chain transfers.
 
-For all these scripts, make sure the `RIPPLED_MAINCHAIN_EXE`,
-`RIPPLED_SIDECHAIN_EXE`, and `RIPPLED_SIDECHAIN_CFG_DIR` environment variables
-are correctly set, and the side chain configuration files exist. Also make sure the python
-dependencies are installed and the virtual environment is activated.
+## Get Ready
 
-Note: the unit tests do not use the configuration files, so the `RIPPLED_SIDECHAIN_CFG_DIR` is
-not needed for that script.
+This section describes how to install the python dependencies, create the
+environment variables, and create the configuration files that scripts need to
+run correctly.
 
-## Unit tests
+### Build rippled
 
-The "tests" directory contains a simple unit test. It take several minutes to
-run, and will create the necessary configuration files, start a test main chain
-in standalone mode, and a test side chain with 5 federators, and do some simple
-cross chain transactions. Side chains do not yet have extensive tests. Testing
-is being actively worked on.
+Checkout the `sidechain` branch from the rippled repository, and follow the
+usual process to build rippled.
 
-To run the tests, change directories to the `bin/sidechain/python/tests` directory and type:
+### Set up Python environment
+
+To make it easy to manage your Python environment with `xrpl-py`, including switching between versions, install `pyenv` and follow these steps:
+
+* Install [`pyenv`](https://github.com/pyenv/pyenv):
+
+        brew install pyenv
+
+    For other installation options, see the [`pyenv` README](https://github.com/pyenv/pyenv#installation).
+
+* Use `pyenv` to install the optimized version for `xrpl-py` (currently 3.9.1):
+
+        pyenv install 3.9.1
+
+* Set the [global](https://github.com/pyenv/pyenv/blob/master/COMMANDS.md#pyenv-global) version of Python with `pyenv`:
+
+        pyenv global 3.9.1
+
+### Set up shell environment
+
+To enable autocompletion and other functionality from your shell, add `pyenv` to your environment.
+
+These steps assume that you're using a [Zsh](http://zsh.sourceforge.net/) shell. For other shells, see the [`pyenv` README](https://github.com/pyenv/pyenv#basic-github-checkout).
+
+
+* Add `pyenv init` to your Zsh shell:
+
+        echo -e 'if command -v pyenv 1>/dev/null 2>&1; then\n  eval "$(pyenv init -)"\nfi' >> ~/.zshrc
+
+* Source or restart your terminal:
+
+        . ~/.zshrc
+
+### Manage dependencies and virtual environments
+
+To simplify managing library dependencies and the virtual environment, `xrpl-py` uses [`poetry`](https://python-poetry.org/docs).
+
+* [Install `poetry`](https://python-poetry.org/docs/#osx-linux-bashonwindows-install-instructions):
+
+        curl -sSL https://raw.githubusercontent.com/python-poetry/poetry/master/get-poetry.py | python -
+        poetry install
+
+### Environment variables
+
+The python scripts need to know the locations of two files and one directory.
+These can be specified either through command line arguments or by setting
+environment variables. 
+
+1. The location of the rippled executable used for main chain servers. Either
+   set the environment variable `RIPPLED_MAINCHAIN_EXE` or use the command line
+   switch `--exe_mainchain`. Until a new RPC is integrated into the main branch
+   (this will happen very soon), use the code built from the sidechain branch as
+   the main chain exe.
+2. The location of the rippled executable used for side chain servers. Either
+   set the environment variable `RIPPLED_SIDECHAIN_EXE` or use the command line
+   switch `--exe_sidechain`. This should be the rippled executable built from
+   the sidechain branch.
+3. The location of the directory that has the rippled configuration files.
+   Either set the environment variable `RIPPLED_SIDECHAIN_CFG_DIR` or use the
+   command line switch `--cfgs_dir`. The configuration files do not exist yet.
+   There is a script to create these for you. For now, just choose a location
+   where the files should live and make sure that directory exists.
+   
+Setting environment variables can be very convient. For example, a small script
+can be sourced to set these environment variables when working with side chains.
+
+
+### Creating configuration files
+
+Assuming rippled is built, the three environment variables are set, and the
+python environment is activated, run the following script:
 ```
-pytest
-```
-
-To capture logging information and to set the log level (to help with debugging), type this instead:
-```
-pytest --log-file=log.txt --log-file-level=info
-```
-
-The response should be something like the following:
-```
-============================= test session starts ==============================
-platform linux -- Python 3.8.5, pytest-6.2.5, py-1.10.0, pluggy-1.0.0
-rootdir: /home/swd/projs/ripple/mine/bin/sidechain/python/tests
-collected 1 item
-
-simple_xchain_transfer_test.py .                                         [100%]
-
-======================== 1 passed in 215.20s (0:03:35) =========================
-
-```
-
-## Scripts
-### riplrepl.py
-
-This is an interactive shell for experimenting with side chains. It will spin up
-a test main chain running in standalone mode, and a test side chain with five
-federators - all running on the local machine. There are commands to make
-payments within a chain, make cross chain payments, check balances, check server
-info, and check federator info. There is a simple "help" system, but more
-documentation is needed for this tool (or more likely we need to replace this
-with some web front end).
-
-Note: a "repl" is another name for an interactive shell. It stands for
-"read-eval-print-loop". It is pronounced "rep-ul".
-
-### create_config_file.py
-
-This is a script used to create the config files needed to run a test side chain
-on your local machine. To run this, make sure the rippled is built,
-`RIPPLED_MAINCHAIN_EXE`, `RIPPLED_SIDECHAIN_EXE`, and
-`RIPPLED_SIDECHAIN_CFG_DIR` environment variables are correctly set, and the
-side chain configuration files exist. Also make sure the python dependencies are
-installed and the virtual environment is activated. Running this will create
-config files in the directory specified by the `RIPPLED_SIDECHAIN_CFG_DIR`
-environment variable.
-
-### log_analyzer.py
-
-This is a script used to take structured log files and convert them to json for easier debugging.
-
-## Python modules
-
-### sidechain.py
-
-A python module that can be used to write python scripts to interact with
-side chains. This is used to write unit tests and the interactive shell. To write
-a standalone script, look at how the tests are written in
-`test/simple_xchain_transfer_test.py`. The idea is to call
-`sidechain._multinode_with_callback`, which sets up the two chains, and place
-your code in the callback. For example:
-
-```
-def multinode_test(params: Params):
-    def callback(mc_app: App, sc_app: App):
-        my_function(mc_app, sc_app, params)
-
-    sidechain._multinode_with_callback(params,
-                                       callback,
-                                       setup_user_accounts=False)
+bin/sidechain/python/create_config_files.py --usd
 ```
 
-The functions `sidechain.main_to_side_transfer` and
-`sidechain.side_to_main_transfer` can be used as convenience functions to initiate
-cross chain transfers. Of course, these transactions can also be initiated with
-a payment to the door account with the memo data set to the destination account
-on the destination chain (which is what those convenience functions do under the
-hood).
+There should now be many configuration files in the directory specified by the
+`RIPPLED_SIDECHAIN_CFG_DIR` environment variable. The `--usd` creates a sample
+cross chain assert for USD -> USD transfers.
 
-Transactions execute asynchonously. Use the function
-`test_utils.wait_for_balance_change` to ensure a transaction has completed.
+## Running the interactive shell
 
-### transaction.py
+There is an interactive shell called `RiplRepl` that can be used to explore
+side chains. It will use the configuration files built above to spin up test
+rippled main chain running in standalone mode as well as 5 side chain federators
+running in regular consensus mode. 
 
-A python module for transactions. Currently there are transactions for:
-
-* Payment
-* Trust (trust set)
-* SetRegularKey
-* SignerLisetSet
-* AccountSet
-* Offer
-* Ticket
-* Hook (experimental - useful paying with the hook amendment from XRPL Labs).
-
-Typically, a transaction is submitted through the call operator on an `App` object. For example, to make a payment from the account `alice` to the account `bob` for 500 XRP:
+To start the shell, run the following script:
 ```
-    mc_app(Payment(account=alice, dst=bob, amt=XRP(500)))
+bin/sidechain/python/riplrepl.py
 ```
-(where mc_app is an App object representing the main chain).
 
-### command.py
+The shell will not start until the servers have synced. It may take a minute or
+two until they do sync. The script should give feedback while it is syncing.
 
-A python module for RPC commands. Currently there are commands for:
-* PathFind
-* Sign
-* LedgerAccept (for standalone mode)
-* Stop
-* LogLevel
-* WalletPropose
-* ValidationCreate
-* AccountInfo
-* AccountLines
-* AccountTx
-* BookOffers
-* BookSubscription
-* ServerInfo
-* FederatorInfo
-* Subscribe
+Once the shell has started, the following message should appear:
+```
+Welcome to the sidechain test shell.   Type help or ? to list commands.
 
-### common.py
+RiplRepl> 
+```
 
-Python module for common ledger objects, including:
-* Account
-* Asset
-* Path
-* Pathlist
+Type the command `server_info` to make sure the servers are running. An example output would be:
+```
+RiplRepl> server_info
+           pid                                  config  running server_state  ledger_seq complete_ledgers
+main 0  136206  main.no_shards.mainchain_0/rippled.cfg     True    proposing          75             2-75
+side 0  136230                 sidechain_0/rippled.cfg     True    proposing          92             1-92
+     1  136231                 sidechain_1/rippled.cfg     True    proposing          92             1-92
+     2  136232                 sidechain_2/rippled.cfg     True    proposing          92             1-92
+     3  136233                 sidechain_3/rippled.cfg     True    proposing          92             1-92
+     4  136234                 sidechain_4/rippled.cfg     True    proposing          92             1-92
+```
 
-### app.py
+Of course, you'll see slightly different output on your machine. The important
+thing to notice is there are two categories, one called `main` for the main chain
+and one called `side` for the side chain. There should be a single server for the
+main chain and five servers for the side chain.
 
-Python module for an application. An application is responsible for local
-network (or single server) and an address book that maps aliases to accounts.
+Next, type the `balance` command, to see the balances of the accounts in the address book:
+```
+RiplRepl> balance
+                           balance currency peer limit
+     account                                          
+main root    99,999,989,999.999985      XRP           
+     door             9,999.999940      XRP           
+side door    99,999,999,999.999954      XRP           
+```
 
-### config_file.py
+There are two accounts on the main chain: `root` and `door`; and one account on the side chain: `door`. These are not user accounts. Let's add two user accounts, one on the main chain called `alice` and one on the side chain called `bob`. The `new_account` command does this for us.
 
-Python module representing a config file that is read from disk.
+```
+RiplRepl> new_account mainchain alice
+RiplRepl> new_account sidechain bob
+```
 
-### interactive.py
+This just added the accounts to the address book, but they don't exist on the
+ledger yet. To do that, we need to fund the accounts with a payment. For now,
+let's just fund the `alice` account and check the balances. The `pay` command
+makes a payment on one of the chains:
 
-Python module with the implementation of the RiplRepl interactive shell.
+```
+RiplRepl> pay mainchain root alice 5000
+RiplRepl> balance
+                           balance currency peer limit
+     account                                          
+main root    99,999,984,999.999969      XRP           
+     door             9,999.999940      XRP           
+     alice            5,000.000000      XRP           
+side door    99,999,999,999.999954      XRP           
+     bob                  0.000000      XRP      
+```
 
-### ripple_client.py
+Finally, let's do something specific to side chains: make a cross chain payment.
+The `xchain` command makes a payment between chains:
 
-A python module representing a rippled server.
+```
+RiplRepl> xchain mainchain alice bob 4000
+RiplRepl> balance
+                           balance currency peer limit
+     account                                          
+main root    99,999,984,999.999969      XRP           
+     door            13,999.999940      XRP           
+     alice              999.999990      XRP           
+side door    99,999,995,999.999863      XRP           
+     bob              4,000.000000      XRP           
+```
 
-### testnet.py
+Note: the account reserve on the side chain is 100 XRP. The cross chain amount
+must be greater than 100 XRP or the payment will fail.
 
-A python module representing a rippled testnet running on the local machine.
+Making a cross chain transaction from the side chain to the main chain is similar:
+```
+RiplRepl> xchain sidechain bob alice 2000
+RiplRepl> balance
+                           balance currency peer limit
+     account                                          
+main root    99,999,984,999.999969      XRP           
+     door            11,999.999840      XRP           
+     alice            2,999.999990      XRP           
+side door    99,999,997,999.999863      XRP           
+     bob              1,999.999990      XRP    
+```
 
-## Other
-### requirements.txt
+If you typed `balance` very quickly, you may catch a cross chain payment in
+progress and the XRP may be deducted from bob's account before it is added to
+alice's. If this happens just wait a couple seconds and retry the command. Also
+note that accounts pay a ten drop fee when submitting transactions.
 
-These are the python dependencies needed by the scripts. Use `pip3 install -r
-requirements.txt` to install them. A python virtual environment is recommended.
-See the instructions [here](docs/sidechain/GettingStarted.md) for how to install
-the dependencies.
+Finally, exit the program with the `quit` command:
+```
+RiplRepl> quit
+Thank you for using RiplRepl. Goodbye.
 
+
+WARNING: Server 0 is being stopped. RPC commands cannot be sent until this is restarted.
+```
+
+Ignore the warning about the server being stopped.
+
+## Conclusion
+
+Those two cross chain payments are a "hello world" for side chains. It makes sure
+you're environment is set up correctly.
