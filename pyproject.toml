@@ -16,7 +16,7 @@ keywords = [
   "sidechain"
 ]
 license = "MIT"
-documentation = "https://xrpl-py.readthedocs.io"
+documentation = "README.md"
 include = [
   "LICENSE",
 ]
