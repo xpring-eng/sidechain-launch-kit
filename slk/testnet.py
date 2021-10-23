@@ -34,6 +34,7 @@ class Network:
 
         self.configs = configs
         self.clients = []
+        self.exe = exe
         self.running_server_indexes = set()
         self.processes = {}
 
@@ -72,7 +73,7 @@ class Network:
 
     def shutdown(self):
         for a in self.clients:
-            a.shutdown()
+            a.close()
 
         self.servers_stop()
 
@@ -83,7 +84,7 @@ class Network:
         return self.clients[i]
 
     def get_configs(self) -> List[ConfigFile]:
-        return [c.config for c in self.clients]
+        return [c.config for c in self.configs]
 
     def get_pids(self) -> List[int]:
         return [c.get_pid() for c in self.clients if c.get_pid() is not None]
@@ -127,11 +128,13 @@ class Network:
             return
 
         client = self.clients[server_index]
+        if not client.is_open():
+            client.open()
         for i in range(600):
             r = client.request(ServerInfo())
             state = None
-            if 'info' in r:
-                state = r['info']['server_state']
+            if 'info' in r.result:
+                state = r.result['info']['server_state']
                 if state == 'proposing':
                     print(f'Synced: {server_index} : {state}', flush=True)
                     break
@@ -143,8 +146,8 @@ class Network:
         for i in range(600):
             r = client.request(ServerInfo())
             state = None
-            if 'info' in r:
-                complete_ledgers = r['info']['complete_ledgers']
+            if 'info' in r.result:
+                complete_ledgers = r.result['info']['complete_ledgers']
                 if complete_ledgers and complete_ledgers != 'empty':
                     print(f'Have complete ledgers: {server_index} : {state}',
                           flush=True)
@@ -174,15 +177,15 @@ class Network:
                 continue
 
             client = self.clients[i]
-            to_run = [client.exe, '--conf', client.config_file_name]
-            print(f'Starting server {client.config_file_name}')
+            config = self.configs[i]
+            to_run = [self.exe, '--conf', config.get_file_name()]
+            print(f'Starting server {config.get_file_name()}')
             fout = open(os.devnull, 'w')
             p = subprocess.Popen(to_run + extra_args[i],
                                  stdout=fout,
                                  stderr=subprocess.STDOUT)
-            client.set_pid(p.pid)
             print(
-                f'started rippled: config: {client.config_file_name} PID: {p.pid}',
+                f'started rippled: config: {config.get_file_name()} PID: {p.pid}',
                 flush=True)
             self.running_server_indexes.add(i)
             self.processes[i] = p
@@ -204,7 +207,8 @@ class Network:
             if i not in self.running_server_indexes:
                 continue
             client = self.clients[i]
-            to_run = [client.exe, '--conf', client.config_file_name]
+            config = self.configs[i]
+            to_run = [self.exe, '--conf', config.get_file_name()]
             fout = open(os.devnull, 'w')
             subprocess.Popen(to_run + ['stop'],
                              stdout=fout,
@@ -214,4 +218,3 @@ class Network:
         for i in server_indexes:
             self.processes[i].wait()
             del self.processes[i]
-            self.get_client(i).set_pid(-1)

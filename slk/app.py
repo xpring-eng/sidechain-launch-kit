@@ -253,11 +253,14 @@ class App:
         return result_dict
 
     def __call__(self,
-                 to_send: Union[Transaction, Request],
+                 to_send: Union[Transaction, Request, str],
                  callback: Optional[Callable[[dict], None]] = None,
                  *,
                  insert_seq_and_fee=False) -> dict:
         '''Call `send_signed` for transactions or `send_command` for commands'''
+        if to_send == 'open':
+            self.client.open()
+            return
         if isinstance(to_send, Subscribe):
             return self.send_subscribe_command(to_send, callback)
         assert callback is None

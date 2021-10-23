@@ -204,7 +204,7 @@ class SidechainRepl(cmd.Cmd):
                     return
                 account_ids.append(c.account_from_alias(nickname))
 
-        assets = [[XRP(0)]] * len(chains)
+        assets = [["0"]] * len(chains)
         if args:
             asset_alias = args[0]
             args.pop()
@@ -219,7 +219,7 @@ class SidechainRepl(cmd.Cmd):
             assets = [[chains[0].asset_from_alias(asset_alias)]]
         else:
             # XRP and all assets in the assets alias list
-            assets = [[XRP(0)] + c.known_iou_assets() for c in chains]
+            assets = [["0"] + c.known_iou_assets() for c in chains]
 
         assert not args
 

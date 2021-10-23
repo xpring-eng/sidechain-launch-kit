@@ -27,7 +27,7 @@ from slk.config_file import ConfigFile
 import slk.interactive as interactive
 from slk.log_analyzer import convert_log
 from slk.test_utils import mc_wait_for_payment_detect, sc_wait_for_payment_detect, mc_connect_subscription, sc_connect_subscription
-from xrpl.models import AccountSet, Payment, SignerListSet, SetRegularKey, TrustSet, Amount, IssuedCurrencyAmount, SignerEntry
+from xrpl.models import AccountSet, Payment, SignerListSet, SetRegularKey, TrustSet, Amount, IssuedCurrencyAmount, SignerEntry, Memo
 from xrpl.models import TicketCreate
 from xrpl.utils import xrp_to_drops
 
@@ -247,6 +247,7 @@ def setup_mainchain(mc_app: App,
         mc_app.add_to_keymanager(params.user_account)
 
     # mc_app(LogLevel('fatal'))
+    mc_app("open")
 
     # Allow rippling through the genesis account
     mc_app(AccountSet(account=params.genesis_account.account_id, set_flag=8))
@@ -299,6 +300,8 @@ def setup_sidechain(sc_app: App,
     sc_app.add_to_keymanager(params.sc_door_account)
     if setup_user_accounts:
         sc_app.add_to_keymanager(params.user_account)
+    
+    sc_app("open")
 
     # sc_app(LogLevel('fatal'))
     # sc_app(LogLevel('trace', partition='SidechainFederator'))
@@ -308,25 +311,25 @@ def setup_sidechain(sc_app: App,
     by = 5
     quorum = (divide + by - 1) // by
     sc_app(
-        SignerListSet(account=params.genesis_account,
-                      quorum=quorum,
-                      keys=params.federators))
+        SignerListSet(account=params.genesis_account.account_id,
+                      signer_quorum=quorum,
+                      signer_entries=[SignerEntry(account=federator, signer_weight=1) for federator in params.federators]))
     sc_app.maybe_ledger_accept()
-    sc_app(Ticket(account=params.genesis_account, src_tag=mainDoorKeeper))
+    sc_app(TicketCreate(account=params.genesis_account.account_id, source_tag=mainDoorKeeper, ticket_count=1))
     sc_app.maybe_ledger_accept()
-    sc_app(Ticket(account=params.genesis_account, src_tag=sideDoorKeeper))
+    sc_app(TicketCreate(account=params.genesis_account.account_id, source_tag=sideDoorKeeper, ticket_count=1))
     sc_app.maybe_ledger_accept()
-    sc_app(Ticket(account=params.genesis_account, src_tag=updateSignerList))
+    sc_app(TicketCreate(account=params.genesis_account.account_id, source_tag=updateSignerList, ticket_count=1))
     sc_app.maybe_ledger_accept()
-    sc_app(AccountSet(account=params.genesis_account).set_disable_master())
+    sc_app(AccountSet(account=params.genesis_account.account_id, set_flag=4))
     sc_app.maybe_ledger_accept()
 
 
 def _xchain_transfer(from_chain: App, to_chain: App, src: Account,
                      dst: Account, amt: Amount, from_chain_door: Account,
                      to_chain_door: Account):
-    memos = [{'Memo': {'MemoData': dst.account_id_str_as_hex()}}]
-    from_chain(Payment(account=src, dst=from_chain_door, amt=amt, memos=memos))
+    memo = Memo(memo_data=dst.account_id_str_as_hex())
+    from_chain(Payment(account=src, dst=from_chain_door, amt=amt, memos=[memo]))
     from_chain.maybe_ledger_accept()
     if to_chain.standalone:
         # from_chain (side chain) sends a txn, but won't close the to_chain (main chain) ledger
@@ -450,7 +453,7 @@ def _multinode_with_callback(params: Params,
                            exe=params.mainchain_exe,
                            standalone=True,
                            run_server=not params.debug_mainchain) as mc_app:
-
+        mc_app('open')
         if params.with_pauses:
             input("Pausing after mainchain start (press enter to continue)")
 
@@ -501,13 +504,14 @@ def multinode_test(params: Params):
 
 
 # The mainchain runs in standalone mode. Most operations - like cross chain
-# paymens - will automatically close ledgers. However, some operations, like
-# refunds need an extra close. This loop automatically closes ledgers.
+# payments - will automatically close ledgers. However, some operations, like
+# refunds, need an extra close. This loop automatically closes ledgers.
 def close_mainchain_ledgers(stop_token: Value, params: Params, sleep_time=4):
     with single_client_app(config=params.mainchain_config,
                            exe=params.mainchain_exe,
                            standalone=True,
                            run_server=False) as mc_app:
+        mc_app('open')
         while stop_token.value != 0:
             mc_app.maybe_ledger_accept()
             time.sleep(sleep_time)
