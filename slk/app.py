@@ -13,10 +13,10 @@ from slk.common import Account
 from slk.config_file import ConfigFile
 import slk.testnet as testnet
 # from slk.transaction import Transaction
-from xrpl.models import XRP, IssuedCurrency, IssuedCurrencyAmount, Amount, XRP, Payment, AccountInfo, AccountLines, BookOffers, Request, Sign, Submit, Subscribe
+from xrpl.models import XRP, IssuedCurrency, IssuedCurrencyAmount, Amount, XRP, Payment, AccountInfo, AccountLines, BookOffers, Request, Sign, Submit, Subscribe, is_xrp
 from xrpl.models.transactions.transaction import Transaction
-from slk.library import FederatorInfo
-from pprint import pprint
+from xrpl.transaction import safe_sign_and_submit_transaction
+from xrpl.models import FederatorInfo, LedgerAccept
 
 class KeyManager:
     def __init__(self):
@@ -153,21 +153,21 @@ class App:
         self.asset_aliases = AssetAliases()
         root_account = Account(nickname='root',
                                account_id='rHb9CJAWyB4rj91VRWn96DkukG4bwdtyTh',
-                               secret_key='masterpassphrase')
+                               secret_key='snoPBrXtMeMyMHUVTgbuqAfg1SUTb')
         self.key_manager.add(root_account)
 
     def shutdown(self):
         if self.network:
             self.network.shutdown()
         else:
-            self.client.shutdown()
+            self.client.close()
 
     def send_signed(self, txn: Transaction, autofill: bool = True) -> dict:
         '''Sign then send the given transaction'''
         if not self.key_manager.is_account(txn.account):
             raise ValueError('Cannot sign transaction without secret key')
         account_obj = self.key_manager.get_account(txn.account)
-        return safe_sign_and_submit_transaction(txn, account_obj.wallet, self.client, autofill=autofill)
+        return safe_sign_and_submit_transaction(txn, account_obj.wallet, self.client, autofill=True)
 
     def send_command(self, req: Request) -> dict:
         '''Send the command to the rippled server'''
@@ -183,10 +183,10 @@ class App:
             req: Subscribe,
             callback: Optional[Callable[[dict], None]] = None) -> dict:
         '''Send the subscription command to the rippled server. If already subscribed, it will unsubscribe'''
-        r = self.client.send(req)
-        for message in self.client:
-            if callback:
-                callback(message)
+        if not self.client.is_open():
+            self.client.open()
+        self.client.on("transaction", callback)
+        r = self.client.request(req)
         return r
 
     def get_pids(self) -> List[int]:
@@ -287,7 +287,7 @@ class App:
     def create_accounts(self,
                         names: List[str],
                         funding_account: Union[Account, str] = 'root',
-                        amt: Union[str, IssuedCurrencyAmount] = "1_000_000_000") -> List[Account]:
+                        amt: Union[str, IssuedCurrencyAmount] = str(1_000_000_000)) -> List[Account]:
         '''Fund the accounts with nicknames 'names' by using the funding account and amt'''
         accounts = [self.create_account(n) for n in names]
         if not isinstance(funding_account, Account):
@@ -561,19 +561,17 @@ def single_client_app(*,
         app = None
         section = config.port_ws_admin_local
         websocket_uri = f'{section.protocol}://{section.ip}:{section.port}'
-        print(websocket_uri)
         client = WebsocketClient(url=websocket_uri)
         if run_server:
-            to_run = [exe, '--conf', config._file_name]
+            to_run = [exe, '--conf', config.get_file_name()]
             if standalone:
                 to_run.append('-a')
             fout = open(server_out, 'w')
             p = subprocess.Popen(to_run + extra_args,
                                  stdout=fout,
                                  stderr=subprocess.STDOUT)
-            client.set_pid(p.pid)
             print(
-                f'started rippled: config: {config._file_name} PID: {p.pid}',
+                f'started rippled: config: {config.get_file_name()} PID: {p.pid}',
                 flush=True)
             time.sleep(1.5)  # give process time to startup
 

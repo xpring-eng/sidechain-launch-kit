@@ -304,12 +304,16 @@ base58 = ">=2.1.0,<3.0.0"
 ECPy = ">=1.2.5,<2.0.0"
 httpx = ">=0.18.1,<0.19.0"
 typing-extensions = ">=3.7.4,<4.0.0"
-websockets = ">=9.0.1,<10.0.0"
+websockets = {version = ">=9.0.1,<10.0.0", markers = "python_version >= \"3.7\" and python_version < \"3.9\""}
+
+[package.source]
+type = "file"
+url = "../xrpl-py/dist/xrpl-py-1.1.1.tar.gz"
 
 [metadata]
 lock-version = "1.1"
 python-versions = ">= 3.8, < 3.9"
-content-hash = "e6cfad0cb6993ba2c1badcf49ca045714e931be29826084872ebc3c5f89de4bf"
+content-hash = "011af9418af7362db7120cb7505e6549d6dba7f4236bbcd7b2b3d4647d67ca29"
 
 [metadata.files]
 anyio = [
@@ -503,6 +507,5 @@ websockets = [
     {file = "websockets-9.1.tar.gz", hash = "sha256:276d2339ebf0df4f45df453923ebd2270b87900eda5dfd4a6b0cfa15f82111c3"},
 ]
 xrpl-py = [
-    {file = "xrpl-py-1.1.1.tar.gz", hash = "sha256:fb7df81db96d223471c034ac4fac2657048666b8056e38c2b7d32161d9b91798"},
-    {file = "xrpl_py-1.1.1-py3-none-any.whl", hash = "sha256:6d06893fea8976c6d7833751843a62226fdb510a4752efc0d0654e7b965db1c4"},
+    {file = "xrpl-py-1.1.1.tar.gz", hash = "sha256:7f55481df10be17ec66c0efc2504fc1dda7f1159e8de145c67873dba49c60c9d"},
 ]

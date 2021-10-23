@@ -27,8 +27,9 @@ from slk.config_file import ConfigFile
 import slk.interactive as interactive
 from slk.log_analyzer import convert_log
 from slk.test_utils import mc_wait_for_payment_detect, sc_wait_for_payment_detect, mc_connect_subscription, sc_connect_subscription
-from xrpl.models import AccountSet, Payment, SignerListSet, SetRegularKey, TrustSet, Amount
-from slk.library import TicketCreate
+from xrpl.models import AccountSet, Payment, SignerListSet, SetRegularKey, TrustSet, Amount, IssuedCurrencyAmount, SignerEntry
+from xrpl.models import TicketCreate
+from xrpl.utils import xrp_to_drops
 
 
 def parse_args_helper(parser: argparse.ArgumentParser):
@@ -248,20 +249,20 @@ def setup_mainchain(mc_app: App,
     # mc_app(LogLevel('fatal'))
 
     # Allow rippling through the genesis account
-    mc_app(AccountSet(account=params.genesis_account).set_default_ripple(True))
+    mc_app(AccountSet(account=params.genesis_account.account_id, set_flag=8))
     mc_app.maybe_ledger_accept()
 
     # Create and fund the mc door account
     mc_app(
         Payment(account=params.genesis_account.account_id,
                 destination=params.mc_door_account.account_id,
-                amt=str(10_000)))
+                amount=xrp_to_drops(1_000)))
     mc_app.maybe_ledger_accept()
 
     # Create a trust line so USD/root account ious can be sent cross chain
     mc_app(
-        TrustSet(account=params.mc_door_account,
-              limit_amount=IssuedCurrency(value=str(1_000_000),
+        TrustSet(account=params.mc_door_account.account_id,
+              limit_amount=IssuedCurrencyAmount(value=str(1_000_000),
                               currency='USD',
                               issuer=params.genesis_account.account_id)))
 
@@ -270,25 +271,25 @@ def setup_mainchain(mc_app: App,
     by = 5
     quorum = (divide + by - 1) // by
     mc_app(
-        SignerListSet(account=params.mc_door_account,
-                      quorum=quorum,
-                      keys=params.federators))
+        SignerListSet(account=params.mc_door_account.account_id,
+                      signer_quorum=quorum,
+                      signer_entries=[SignerEntry(account=federator, signer_weight=1) for federator in params.federators]))
     mc_app.maybe_ledger_accept()
-    r = mc_app(TicketCreate(account=params.mc_door_account, src_tag=mainDoorKeeper))
+    r = mc_app(TicketCreate(account=params.mc_door_account.account_id, source_tag=mainDoorKeeper, ticket_count=1))
     mc_app.maybe_ledger_accept()
-    mc_app(TicketCreate(account=params.mc_door_account, src_tag=sideDoorKeeper))
+    mc_app(TicketCreate(account=params.mc_door_account.account_id, source_tag=sideDoorKeeper, ticket_count=1))
     mc_app.maybe_ledger_accept()
-    mc_app(TicketCreate(account=params.mc_door_account, src_tag=updateSignerList))
+    mc_app(TicketCreate(account=params.mc_door_account.account_id, source_tag=updateSignerList, ticket_count=1))
     mc_app.maybe_ledger_accept()
-    mc_app(AccountSet(account=params.mc_door_account).set_disable_master())
+    mc_app(AccountSet(account=params.mc_door_account.account_id, set_flag=4))
     mc_app.maybe_ledger_accept()
 
     if setup_user_accounts:
         # Create and fund a regular user account
         mc_app(
-            Payment(account=params.genesis_account,
-                    dst=params.user_account,
-                    amt=XRP(2_000)))
+            Payment(account=params.genesis_account.account_id,
+                    destination=params.user_account,
+                    amount=str(2_000)))
         mc_app.maybe_ledger_accept()
 
 
@@ -299,8 +300,8 @@ def setup_sidechain(sc_app: App,
     if setup_user_accounts:
         sc_app.add_to_keymanager(params.user_account)
 
-    sc_app(LogLevel('fatal'))
-    sc_app(LogLevel('trace', partition='SidechainFederator'))
+    # sc_app(LogLevel('fatal'))
+    # sc_app(LogLevel('trace', partition='SidechainFederator'))
 
     # set the chain's signer list and disable the master key
     divide = 4 * len(params.federators)

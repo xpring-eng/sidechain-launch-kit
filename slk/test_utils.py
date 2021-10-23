@@ -26,11 +26,11 @@ def _sc_subscribe_callback(v: dict):
 
 
 def mc_connect_subscription(app: App, door_account: Account):
-    app(Subscribe(accounts=[door_account]), _mc_subscribe_callback)
+    app(Subscribe(accounts=[door_account.account_id]), _mc_subscribe_callback)
 
 
 def sc_connect_subscription(app: App, door_account: Account):
-    app(Subscribe(accounts=[door_account]), _sc_subscribe_callback)
+    app(Subscribe(accounts=[door_account.account_id]), _sc_subscribe_callback)
 
 
 # This pops elements off the subscribe_queue until the transaction is found
