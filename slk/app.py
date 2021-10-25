@@ -174,25 +174,22 @@ class App:
         else:
             self.client.shutdown()
 
-    def send_signed(self, txn: Transaction, autofill: bool = True) -> dict:
+    def send_signed(self, txn: Transaction) -> dict:
         """Sign then send the given transaction"""
-        print("SIGNING AND SENDING", txn)
         if not self.key_manager.is_account(txn.account):
             raise ValueError("Cannot sign transaction without secret key")
         account_obj = self.key_manager.get_account(txn.account)
-        r = safe_sign_and_submit_transaction(
-            txn, account_obj.wallet, self.client, autofill=True
-        )
-        print(r)
-        return r
+        return safe_sign_and_submit_transaction(
+            txn, account_obj.wallet, self.client
+        ).result
 
     def send_command(self, req: Request) -> dict:
         """Send the command to the rippled server"""
-        return self.client.request(req)
+        return self.client.request(req).result
 
     def request(self, req: Request) -> dict:
         """Send the command to the rippled server"""
-        return self.client.request(req)
+        return self.client.request(req).result
 
     # Need async version to close ledgers from async functions
     async def async_send_command(self, req: Request) -> dict:
@@ -276,8 +273,6 @@ class App:
         self,
         to_send: Union[Transaction, Request, str],
         callback: Optional[Callable[[dict], None]] = None,
-        *,
-        insert_seq_and_fee=False,
     ) -> dict:
         """Call `send_signed` for transactions or `send_command` for commands"""
         if to_send == "open":
@@ -287,9 +282,9 @@ class App:
             return self.send_subscribe_command(to_send, callback)
         assert callback is None
         if isinstance(to_send, Transaction):
-            return self.send_signed(to_send, autofill=insert_seq_and_fee).result
+            return self.send_signed(to_send)
         if isinstance(to_send, Request):
-            return self.send_command(to_send).result
+            return self.send_command(to_send)
         raise ValueError(
             "Expected `to_send` to be either a Transaction, Command, or "
             "SubscriptionCommand"
@@ -420,9 +415,7 @@ class App:
             result = [self.get_account_info(acc) for acc in known_accounts]
             return pd.concat(result, ignore_index=True)
         try:
-            print("TRYING ACCOUNT INFO", account.nickname)
             result = self.client.request(AccountInfo(account=account.account_id)).result
-            print(result)
         except:
             traceback.print_exc()
             # Most likely the account does not exist on the ledger. Give a balance of 0.
@@ -466,11 +459,11 @@ class App:
         as a wildcard
         """
         if peer is None:
-            result = self.request(AccountLines(account=account.account_id)).result
+            result = self.request(AccountLines(account=account.account_id))
         else:
             result = self.request(
                 AccountLines(account=account.account_id, peer=peer.account_id)
-            ).result
+            )
         if "lines" not in result or "account" not in result:
             raise ValueError("Bad result from account_lines command")
         account = result["account"]
@@ -482,9 +475,7 @@ class App:
 
     def get_offers(self, taker_pays: Amount, taker_gets: Amount) -> pd.DataFrame:
         """Return a pandas dataframe of offers"""
-        result = self.request(
-            BookOffers(taker_pays=taker_pays, taker_gets=taker_gets)
-        ).result
+        result = self.request(BookOffers(taker_pays=taker_pays, taker_gets=taker_gets))
         if "offers" not in result:
             raise ValueError("Bad result from book_offers command")
 
@@ -558,11 +549,6 @@ class App:
 
     def asset_from_alias(self, name: str) -> IssuedCurrency:
         return self.asset_aliases.asset_from_alias(name)
-
-    def insert_seq_and_fee(self, txn: Transaction):
-        acc_info = self(AccountInfo(txn.account))
-        # TODO: set better fee (Hard code a fee of 15 for now)
-        txn.set_seq_and_fee(acc_info["account_data"]["Sequence"], 15)
 
     def get_client(self) -> RippleClient:
         return self.client
