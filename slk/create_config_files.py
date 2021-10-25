@@ -1,12 +1,14 @@
 #!/usr/bin/env python3
 
-# Generate rippled config files, each with their own ports, database paths, and validation_seeds.
-# There will be configs for shards/no_shards, main/test nets, two config files for each combination
-# (so one can run in a dogfood mode while another is tested). To avoid confusion,The directory path
-# will be $data_dir/{main | test}.{shard | no_shard}.{dog | test}
+# Generate rippled config files, each with their own ports, database paths, and
+# validation_seeds.
+# There will be configs for shards/no_shards, main/test nets, two config files for each
+# combination (so one can run in a dogfood mode while another is tested). To avoid
+# confusion,The directory path will be
+# $data_dir/{main | test}.{shard | no_shard}.{dog | test}
 # The config file will reside in that directory with the name rippled.cfg
 # The validators file will reside in that directory with the name validators.txt
-'''
+"""
 Script to test and debug sidechains.
 
 The rippled exe location can be set through the command line or
@@ -14,20 +16,20 @@ the environment variable RIPPLED_MAINCHAIN_EXE
 
 The configs_dir (where the config files will reside) can be set through the command line
 or the environment variable RIPPLED_SIDECHAIN_CFG_DIR
-'''
+"""
 
 import argparse
-from dataclasses import dataclass
 import json
 import os
-from pathlib import Path
 import sys
+from dataclasses import dataclass
+from pathlib import Path
 from typing import Dict, List, Optional, Tuple, Union
 
-from slk.config_file import ConfigFile
-from slk.command import ValidationCreate, WalletPropose
-from slk.common import Account, Asset, eprint, XRP
 from slk.app import App, single_client_app
+from slk.command import ValidationCreate, WalletPropose
+from slk.common import XRP, Account, Asset, eprint
+from slk.config_file import ConfigFile
 
 mainnet_validators = """
 [validator_list_sites]
@@ -45,8 +47,8 @@ https://vl.altnet.rippletest.net
 ED264807102805220DA0F312E71FC2C69E1552C9C5790F6C25E3729DEB573D5860
 """
 
-node_size = 'medium'
-default_data_dir = '/home/swd/data/rippled'
+node_size = "medium"
+default_data_dir = "/home/swd/data/rippled"
 
 
 @dataclass
@@ -57,39 +59,42 @@ class Keypair:
 
 
 def generate_node_keypairs(n: int, rip: App) -> List[Keypair]:
-    '''
-    generate keypairs suitable for validator keys
-    '''
+    """generate keypairs suitable for validator keys"""
     result = []
     for i in range(n):
         keys = rip(ValidationCreate())
         result.append(
-            Keypair(public_key=keys["validation_public_key"],
-                    secret_key=keys["validation_seed"],
-                    account_id=None))
+            Keypair(
+                public_key=keys["validation_public_key"],
+                secret_key=keys["validation_seed"],
+                account_id=None,
+            )
+        )
     return result
 
 
 def generate_federator_keypairs(n: int, rip: App) -> List[Keypair]:
-    '''
-    generate keypairs suitable for federator keys
-    '''
+    """generate keypairs suitable for federator keys"""
     result = []
     for i in range(n):
-        keys = rip(WalletPropose(key_type='ed25519'))
+        keys = rip(WalletPropose(key_type="ed25519"))
         result.append(
-            Keypair(public_key=keys["public_key"],
-                    secret_key=keys["master_seed"],
-                    account_id=keys["account_id"]))
+            Keypair(
+                public_key=keys["public_key"],
+                secret_key=keys["master_seed"],
+                account_id=keys["account_id"],
+            )
+        )
     return result
 
 
 class Ports:
-    '''
+    """
     Port numbers for various services.
     Port numbers differ by cfg_index so different configs can run
     at the same time without interfering with each other.
-    '''
+    """
+
     peer_port_base = 51235
     http_admin_port_base = 5005
     ws_public_port_base = 6005
@@ -103,39 +108,48 @@ class Ports:
 
 
 class Network:
-    def __init__(self, num_nodes: int, num_validators: int,
-                 start_cfg_index: int, rip: App):
+    def __init__(
+        self, num_nodes: int, num_validators: int, start_cfg_index: int, rip: App
+    ):
         self.validator_keypairs = generate_node_keypairs(num_validators, rip)
         self.ports = [Ports(start_cfg_index + i) for i in range(num_nodes)]
 
 
 class SidechainNetwork(Network):
-    def __init__(self, num_nodes: int, num_federators: int,
-                 num_validators: int, start_cfg_index: int, rip: App):
+    def __init__(
+        self,
+        num_nodes: int,
+        num_federators: int,
+        num_validators: int,
+        start_cfg_index: int,
+        rip: App,
+    ):
         super().__init__(num_nodes, num_validators, start_cfg_index, rip)
-        self.federator_keypairs = generate_federator_keypairs(
-            num_federators, rip)
-        self.main_account = rip(WalletPropose(key_type='secp256k1'))
+        self.federator_keypairs = generate_federator_keypairs(num_federators, rip)
+        self.main_account = rip(WalletPropose(key_type="secp256k1"))
 
 
 class XChainAsset:
-    def __init__(self, main_asset: Asset, side_asset: Asset,
-                 main_value: Union[int, float], side_value: Union[int, float],
-                 main_refund_penalty: Union[int, float],
-                 side_refund_penalty: Union[int, float]):
+    def __init__(
+        self,
+        main_asset: Asset,
+        side_asset: Asset,
+        main_value: Union[int, float],
+        side_value: Union[int, float],
+        main_refund_penalty: Union[int, float],
+        side_refund_penalty: Union[int, float],
+    ):
         self.main_asset = main_asset(main_value)
         self.side_asset = side_asset(side_value)
         self.main_refund_penalty = main_asset(main_refund_penalty)
         self.side_refund_penalty = side_asset(side_refund_penalty)
 
 
-def generate_asset_stanzas(
-        assets: Optional[Dict[str, XChainAsset]] = None) -> str:
+def generate_asset_stanzas(assets: Optional[Dict[str, XChainAsset]] = None) -> str:
     if assets is None:
         # default to xrp only at a 1:1 value
         assets = {}
-        assets['xrp_xrp_sidechain_asset'] = XChainAsset(
-            XRP(0), XRP(0), 1, 1, 400, 400)
+        assets["xrp_xrp_sidechain_asset"] = XChainAsset(XRP(0), XRP(0), 1, 1, 400, 400)
 
     index_stanza = """
 [sidechain_assets]"""
@@ -143,7 +157,7 @@ def generate_asset_stanzas(
     asset_stanzas = []
 
     for name, xchainasset in assets.items():
-        index_stanza += '\n' + name
+        index_stanza += "\n" + name
         new_stanza = f"""
 [{name}]
 mainchain_asset={json.dumps(xchainasset.main_asset.to_cmd_obj())}
@@ -152,19 +166,19 @@ mainchain_refund_penalty={json.dumps(xchainasset.main_refund_penalty.to_cmd_obj(
 sidechain_refund_penalty={json.dumps(xchainasset.side_refund_penalty.to_cmd_obj())}"""
         asset_stanzas.append(new_stanza)
 
-    return index_stanza + '\n' + '\n'.join(asset_stanzas)
+    return index_stanza + "\n" + "\n".join(asset_stanzas)
 
 
 # First element of the returned tuple is the sidechain stanzas
 # second element is the bootstrap stanzas
 def generate_sidechain_stanza(
-        mainchain_ports: Ports,
-        main_account: dict,
-        federators: List[Keypair],
-        signing_key: str,
-        mainchain_cfg_file: str,
-        xchain_assets: Optional[Dict[str,
-                                     XChainAsset]] = None) -> Tuple[str, str]:
+    mainchain_ports: Ports,
+    main_account: dict,
+    federators: List[Keypair],
+    signing_key: str,
+    mainchain_cfg_file: str,
+    xchain_assets: Optional[Dict[str, XChainAsset]] = None,
+) -> Tuple[str, str]:
     mainchain_ip = "127.0.0.1"
 
     federators_stanza = """
@@ -172,7 +186,8 @@ def generate_sidechain_stanza(
 [sidechain_federators]
 """
     federators_secrets_stanza = """
-# federator signing secret keys (for standalone-mode testing only; Normally won't be in a config file)
+# federator signing secret keys (for standalone-mode testing only; Normally won't be in
+# a config file)
 [sidechain_federators_secrets]
 """
     bootstrap_federators_stanza = """
@@ -183,9 +198,9 @@ def generate_sidechain_stanza(
     assets_stanzas = generate_asset_stanzas(xchain_assets)
 
     for fed in federators:
-        federators_stanza += f'{fed.public_key}\n'
-        federators_secrets_stanza += f'{fed.secret_key}\n'
-        bootstrap_federators_stanza += f'{fed.public_key} {fed.account_id}\n'
+        federators_stanza += f"{fed.public_key}\n"
+        federators_secrets_stanza += f"{fed.secret_key}\n"
+        bootstrap_federators_stanza += f"{fed.public_key} {fed.account_id}\n"
 
     sidechain_stanzas = f"""
 [sidechain]
@@ -210,64 +225,66 @@ mainchain_secret={main_account["master_seed"]}
     return (sidechain_stanzas, bootstrap_stanzas)
 
 
-# cfg_type will typically be either 'dog' or 'test', but can be any string. It is only used
-# to create the data directories.
-def generate_cfg_dir(*,
-                     ports: Ports,
-                     with_shards: bool,
-                     main_net: bool,
-                     cfg_type: str,
-                     sidechain_stanza: str,
-                     sidechain_bootstrap_stanza: str,
-                     validation_seed: Optional[str] = None,
-                     validators: Optional[List[str]] = None,
-                     fixed_ips: Optional[List[Ports]] = None,
-                     data_dir: str,
-                     full_history: bool = False,
-                     with_hooks: bool = False) -> str:
-    ips_stanza = ''
-    this_ip = '127.0.0.1'
+# cfg_type will typically be either 'dog' or 'test', but can be any string. It is only
+# used to create the data directories.
+def generate_cfg_dir(
+    *,
+    ports: Ports,
+    with_shards: bool,
+    main_net: bool,
+    cfg_type: str,
+    sidechain_stanza: str,
+    sidechain_bootstrap_stanza: str,
+    validation_seed: Optional[str] = None,
+    validators: Optional[List[str]] = None,
+    fixed_ips: Optional[List[Ports]] = None,
+    data_dir: str,
+    full_history: bool = False,
+    with_hooks: bool = False,
+) -> str:
+    ips_stanza = ""
+    this_ip = "127.0.0.1"
     if fixed_ips:
-        ips_stanza = '# Fixed ips for a testnet.\n'
-        ips_stanza += '[ips_fixed]\n'
+        ips_stanza = "# Fixed ips for a testnet.\n"
+        ips_stanza += "[ips_fixed]\n"
         for i, p in enumerate(fixed_ips):
             if p.peer_port == ports.peer_port:
                 continue
-            # rippled limits the number of connects per ip. So use the other loopback devices
-            ips_stanza += f'127.0.0.{i+1} {p.peer_port}\n'
+            # rippled limits number of connects per ip. So use other loopback devices
+            ips_stanza += f"127.0.0.{i+1} {p.peer_port}\n"
     else:
-        ips_stanza = '# Where to find some other servers speaking the Ripple protocol.\n'
-        ips_stanza += '[ips]\n'
+        ips_stanza = "# Where to find some other servers speaking Ripple protocol.\n"
+        ips_stanza += "[ips]\n"
         if main_net:
-            ips_stanza += 'r.ripple.com 51235\n'
+            ips_stanza += "r.ripple.com 51235\n"
         else:
-            ips_stanza += 'r.altnet.rippletest.net 51235\n'
-    disable_shards = '' if with_shards else '# '
-    disable_delete = '#' if full_history else ''
-    history_line = 'full' if full_history else '256'
-    earliest_seq_line = ''
+            ips_stanza += "r.altnet.rippletest.net 51235\n"
+    disable_shards = "" if with_shards else "# "
+    disable_delete = "#" if full_history else ""
+    history_line = "full" if full_history else "256"
+    earliest_seq_line = ""
     if sidechain_stanza:
-        earliest_seq_line = 'earliest_seq=1'
-    hooks_line = 'Hooks' if with_hooks else ''
-    validation_seed_stanza = ''
+        earliest_seq_line = "earliest_seq=1"
+    hooks_line = "Hooks" if with_hooks else ""
+    validation_seed_stanza = ""
     if validation_seed:
-        validation_seed_stanza = f'''
+        validation_seed_stanza = f"""
 [validation_seed]
 {validation_seed}
-        '''
-    node_size = 'medium'
-    shard_str = 'shards' if with_shards else 'no_shards'
-    net_str = 'main' if main_net else 'test'
+        """
+    node_size = "medium"
+    shard_str = "shards" if with_shards else "no_shards"
+    net_str = "main" if main_net else "test"
     if not fixed_ips:
-        sub_dir = data_dir + f'/{net_str}.{shard_str}.{cfg_type}'
+        sub_dir = data_dir + f"/{net_str}.{shard_str}.{cfg_type}"
         if sidechain_stanza:
-            sub_dir += '.sidechain'
+            sub_dir += ".sidechain"
     else:
-        sub_dir = data_dir + f'/{cfg_type}'
-    db_path = sub_dir + '/db'
-    debug_logfile = sub_dir + '/debug.log'
-    shard_db_path = sub_dir + '/shards'
-    node_db_path = db_path + '/nudb'
+        sub_dir = data_dir + f"/{cfg_type}"
+    db_path = sub_dir + "/db"
+    debug_logfile = sub_dir + "/debug.log"
+    shard_db_path = sub_dir + "/shards"
+    node_db_path = db_path + "/nudb"
 
     cfg_str = f"""
 [server]
@@ -386,7 +403,7 @@ fixPayChanRecipientOwnerDir
 DeletableAccounts
 fixQualityUpperBound
 RequireFullyCanonicalSig
-fix1781 
+fix1781
 HardenedValidations
 fixAmendmentMajorityCalc
 NegativeUNL
@@ -397,14 +414,14 @@ fixRmSmallIncreasedQOffers
 CheckCashMakesTrustLine
 """
 
-    validators_str = ''
+    validators_str = ""
     for p in [sub_dir, db_path, shard_db_path]:
         Path(p).mkdir(parents=True, exist_ok=True)
     # Add the validators.txt file
     if validators:
-        validators_str = '[validators]\n'
+        validators_str = "[validators]\n"
         for k in validators:
-            validators_str += f'{k}\n'
+            validators_str += f"{k}\n"
     else:
         validators_str = mainnet_validators if main_net else altnet_validators
     with open(sub_dir + "/validators.txt", "w") as f:
@@ -422,11 +439,12 @@ CheckCashMakesTrustLine
     return sub_dir + "/rippled.cfg"
 
 
-def generate_multinode_net(out_dir: str,
-                           mainnet: Network,
-                           sidenet: SidechainNetwork,
-                           xchain_assets: Optional[Dict[str,
-                                                        XChainAsset]] = None):
+def generate_multinode_net(
+    out_dir: str,
+    mainnet: Network,
+    sidenet: SidechainNetwork,
+    xchain_assets: Optional[Dict[str, XChainAsset]] = None,
+):
     mainnet_cfgs = []
     for i in range(len(mainnet.ports)):
         validator_kp = mainnet.validator_keypairs[i]
@@ -435,11 +453,12 @@ def generate_multinode_net(out_dir: str,
             ports=ports,
             with_shards=False,
             main_net=True,
-            cfg_type=f'mainchain_{i}',
-            sidechain_stanza='',
-            sidechain_bootstrap_stanza='',
+            cfg_type=f"mainchain_{i}",
+            sidechain_stanza="",
+            sidechain_bootstrap_stanza="",
             validation_seed=validator_kp.secret_key,
-            data_dir=out_dir)
+            data_dir=out_dir,
+        )
         mainnet_cfgs.append(mainchain_cfg_file)
 
     for i in range(len(sidenet.ports)):
@@ -448,16 +467,19 @@ def generate_multinode_net(out_dir: str,
 
         mainnet_i = i % len(mainnet.ports)
         sidechain_stanza, sidechain_bootstrap_stanza = generate_sidechain_stanza(
-            mainnet.ports[mainnet_i], sidenet.main_account,
+            mainnet.ports[mainnet_i],
+            sidenet.main_account,
             sidenet.federator_keypairs,
-            sidenet.federator_keypairs[i].secret_key, mainnet_cfgs[mainnet_i],
-            xchain_assets)
+            sidenet.federator_keypairs[i].secret_key,
+            mainnet_cfgs[mainnet_i],
+            xchain_assets,
+        )
 
         generate_cfg_dir(
             ports=ports,
             with_shards=False,
             main_net=True,
-            cfg_type=f'sidechain_{i}',
+            cfg_type=f"sidechain_{i}",
             sidechain_stanza=sidechain_stanza,
             sidechain_bootstrap_stanza=sidechain_bootstrap_stanza,
             validation_seed=validator_kp.secret_key,
@@ -465,32 +487,35 @@ def generate_multinode_net(out_dir: str,
             fixed_ips=sidenet.ports,
             data_dir=out_dir,
             full_history=True,
-            with_hooks=False)
+            with_hooks=False,
+        )
 
 
 def parse_args():
     parser = argparse.ArgumentParser(
-        description=('Create config files for testing sidechains'))
-
-    parser.add_argument(
-        '--exe',
-        '-e',
-        help=('path to rippled executable'),
+        description=("Create config files for testing sidechains")
     )
 
     parser.add_argument(
-        '--usd',
-        '-u',
-        action='store_true',
-        help=('include a USD/root IOU asset for cross chain transfers'),
+        "--exe",
+        "-e",
+        help=("path to rippled executable"),
     )
 
     parser.add_argument(
-        '--cfgs_dir',
-        '-c',
-        help=
-        ('path to configuration file dir (where the output config files will be located)'
-         ),
+        "--usd",
+        "-u",
+        action="store_true",
+        help=("include a USD/root IOU asset for cross chain transfers"),
+    )
+
+    parser.add_argument(
+        "--cfgs_dir",
+        "-c",
+        help=(
+            "path to configuration file dir (where the output config files will be "
+            "located)"
+        ),
     )
 
     return parser.parse_known_args()[0]
@@ -501,14 +526,14 @@ class Params:
         args = parse_args()
 
         self.exe = None
-        if 'RIPPLED_MAINCHAIN_EXE' in os.environ:
-            self.exe = os.environ['RIPPLED_MAINCHAIN_EXE']
+        if "RIPPLED_MAINCHAIN_EXE" in os.environ:
+            self.exe = os.environ["RIPPLED_MAINCHAIN_EXE"]
         if args.exe:
             self.exe = args.exe
 
         self.configs_dir = None
-        if 'RIPPLED_SIDECHAIN_CFG_DIR' in os.environ:
-            self.configs_dir = os.environ['RIPPLED_SIDECHAIN_CFG_DIR']
+        if "RIPPLED_SIDECHAIN_CFG_DIR" in os.environ:
+            self.configs_dir = os.environ["RIPPLED_SIDECHAIN_CFG_DIR"]
         if args.cfgs_dir:
             self.configs_dir = args.cfgs_dir
 
@@ -517,18 +542,19 @@ class Params:
             self.usd = args.usd
 
     def check_error(self) -> str:
-        '''
+        """
         Check for errors. Return `None` if no errors,
         otherwise return a string describing the error
-        '''
+        """
         if not self.exe:
-            return 'Missing exe location. Either set the env variable RIPPLED_MAINCHAIN_EXE or use the --exe_mainchain command line switch'
+            return "Missing exe location. Either set the env variable "
+            "RIPPLED_MAINCHAIN_EXE or use the --exe_mainchain command line switch"
         if not self.configs_dir:
-            return 'Missing configs directory location. Either set the env variable RIPPLED_SIDECHAIN_CFG_DIR or use the --cfgs_dir command line switch'
+            return "Missing configs directory location. Either set the env variable "
+            "RIPPLED_SIDECHAIN_CFG_DIR or use the --cfgs_dir command line switch"
 
 
-def main(params: Params,
-         xchain_assets: Optional[Dict[str, XChainAsset]] = None):
+def main(params: Params, xchain_assets: Optional[Dict[str, XChainAsset]] = None):
 
     if err_str := params.check_error():
         eprint(err_str)
@@ -538,67 +564,76 @@ def main(params: Params,
         ports=Ports(index),
         with_shards=False,
         main_net=True,
-        cfg_type='non_validator',
-        sidechain_stanza='',
-        sidechain_bootstrap_stanza='',
+        cfg_type="non_validator",
+        sidechain_stanza="",
+        sidechain_bootstrap_stanza="",
         validation_seed=None,
-        data_dir=params.configs_dir)
+        data_dir=params.configs_dir,
+    )
     index = index + 1
 
     nonvalidator_config = ConfigFile(file_name=nonvalidator_cfg_file_name)
-    with single_client_app(exe=params.exe,
-                           config=nonvalidator_config,
-                           standalone=True) as rip:
-        mainnet = Network(num_nodes=1,
-                          num_validators=1,
-                          start_cfg_index=index,
-                          rip=rip)
-        sidenet = SidechainNetwork(num_nodes=5,
-                                   num_federators=5,
-                                   num_validators=5,
-                                   start_cfg_index=index + 1,
-                                   rip=rip)
+    with single_client_app(
+        exe=params.exe, config=nonvalidator_config, standalone=True
+    ) as rip:
+        mainnet = Network(num_nodes=1, num_validators=1, start_cfg_index=index, rip=rip)
+        sidenet = SidechainNetwork(
+            num_nodes=5,
+            num_federators=5,
+            num_validators=5,
+            start_cfg_index=index + 1,
+            rip=rip,
+        )
         generate_multinode_net(
-            out_dir=f'{params.configs_dir}/sidechain_testnet',
+            out_dir=f"{params.configs_dir}/sidechain_testnet",
             mainnet=mainnet,
             sidenet=sidenet,
-            xchain_assets=xchain_assets)
+            xchain_assets=xchain_assets,
+        )
         index = index + 2
 
-        (Path(params.configs_dir) / 'logs').mkdir(parents=True, exist_ok=True)
+        (Path(params.configs_dir) / "logs").mkdir(parents=True, exist_ok=True)
 
         for with_shards in [True, False]:
             for is_main_net in [True, False]:
-                for cfg_type in ['dog', 'test', 'one', 'two']:
-                    if not is_main_net and cfg_type not in ['dog', 'test']:
+                for cfg_type in ["dog", "test", "one", "two"]:
+                    if not is_main_net and cfg_type not in ["dog", "test"]:
                         continue
 
-                    mainnet = Network(num_nodes=1,
-                                      num_validators=1,
-                                      start_cfg_index=index,
-                                      rip=rip)
+                    mainnet = Network(
+                        num_nodes=1, num_validators=1, start_cfg_index=index, rip=rip
+                    )
                     mainchain_cfg_file = generate_cfg_dir(
                         data_dir=params.configs_dir,
                         ports=mainnet.ports[0],
                         with_shards=with_shards,
                         main_net=is_main_net,
                         cfg_type=cfg_type,
-                        sidechain_stanza='',
-                        sidechain_bootstrap_stanza='',
-                        validation_seed=mainnet.validator_keypairs[0].
-                        secret_key)
+                        sidechain_stanza="",
+                        sidechain_bootstrap_stanza="",
+                        validation_seed=mainnet.validator_keypairs[0].secret_key,
+                    )
 
-                    sidenet = SidechainNetwork(num_nodes=1,
-                                               num_federators=5,
-                                               num_validators=1,
-                                               start_cfg_index=index + 1,
-                                               rip=rip)
+                    sidenet = SidechainNetwork(
+                        num_nodes=1,
+                        num_federators=5,
+                        num_validators=1,
+                        start_cfg_index=index + 1,
+                        rip=rip,
+                    )
                     signing_key = sidenet.federator_keypairs[0].secret_key
 
-                    sidechain_stanza, sizechain_bootstrap_stanza = generate_sidechain_stanza(
-                        mainnet.ports[0], sidenet.main_account,
-                        sidenet.federator_keypairs, signing_key,
-                        mainchain_cfg_file, xchain_assets)
+                    (
+                        sidechain_stanza,
+                        sizechain_bootstrap_stanza,
+                    ) = generate_sidechain_stanza(
+                        mainnet.ports[0],
+                        sidenet.main_account,
+                        sidenet.federator_keypairs,
+                        signing_key,
+                        mainchain_cfg_file,
+                        xchain_assets,
+                    )
 
                     generate_cfg_dir(
                         data_dir=params.configs_dir,
@@ -608,23 +643,25 @@ def main(params: Params,
                         cfg_type=cfg_type,
                         sidechain_stanza=sidechain_stanza,
                         sidechain_bootstrap_stanza=sizechain_bootstrap_stanza,
-                        validation_seed=sidenet.validator_keypairs[0].
-                        secret_key)
+                        validation_seed=sidenet.validator_keypairs[0].secret_key,
+                    )
                     index = index + 2
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     params = Params()
 
     xchain_assets = None
     if params.usd:
         xchain_assets = {}
-        xchain_assets['xrp_xrp_sidechain_asset'] = XChainAsset(
-            XRP(0), XRP(0), 1, 1, 200, 200)
+        xchain_assets["xrp_xrp_sidechain_asset"] = XChainAsset(
+            XRP(0), XRP(0), 1, 1, 200, 200
+        )
         root_account = Account(account_id="rHb9CJAWyB4rj91VRWn96DkukG4bwdtyTh")
-        main_iou_asset = Asset(value=0, currency='USD', issuer=root_account)
-        side_iou_asset = Asset(value=0, currency='USD', issuer=root_account)
-        xchain_assets['iou_iou_sidechain_asset'] = XChainAsset(
-            main_iou_asset, side_iou_asset, 1, 1, 0.02, 0.02)
+        main_iou_asset = Asset(value=0, currency="USD", issuer=root_account)
+        side_iou_asset = Asset(value=0, currency="USD", issuer=root_account)
+        xchain_assets["iou_iou_sidechain_asset"] = XChainAsset(
+            main_iou_asset, side_iou_asset, 1, 1, 0.02, 0.02
+        )
 
     main(params, xchain_assets)

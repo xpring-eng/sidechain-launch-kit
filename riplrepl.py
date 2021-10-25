@@ -1,12 +1,11 @@
 #!/usr/bin/env python3
-'''
-Script to run an interactive shell to test sidechains.
-'''
+"""Script to run an interactive shell to test sidechains."""
 
-from slk.common import disable_eprint, eprint
+import sys
+
 import slk.interactive as interactive
 import slk.sidechain as sidechain
-import sys
+from slk.common import disable_eprint, eprint
 
 
 def main():
@@ -30,5 +29,5 @@ def main():
         sidechain.multinode_interactive_repl(params)
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     main()

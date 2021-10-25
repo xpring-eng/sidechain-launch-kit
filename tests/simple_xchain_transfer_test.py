@@ -1,33 +1,29 @@
-import logging
-import pprint
-import pytest
-from multiprocessing import Process, Value
-from typing import Dict
 import sys
 import time
+from multiprocessing import Process, Value
+from typing import Dict
 
-from slk.app import App
-from slk.common import Asset, eprint, disable_eprint, XRP
-import slk.interactive as interactive
-from slk.sidechain import Params
 import slk.sidechain as sidechain
 import slk.test_utils as test_utils
+from slk.app import App
+from slk.common import XRP, Asset, disable_eprint, eprint
+from slk.sidechain import Params
 from slk.transaction import Payment, Trust
 
 
 def simple_xrp_test(mc_app: App, sc_app: App, params: Params):
-    alice = mc_app.account_from_alias('alice')
-    adam = sc_app.account_from_alias('adam')
+    alice = mc_app.account_from_alias("alice")
+    adam = sc_app.account_from_alias("adam")
 
     # main to side
     # First txn funds the side chain account
     with test_utils.test_context(mc_app, sc_app):
         to_send_asset = XRP(1000)
         pre_bal = sc_app.get_balance(adam, to_send_asset)
-        sidechain.main_to_side_transfer(mc_app, sc_app, alice, adam,
-                                        to_send_asset, params)
-        test_utils.wait_for_balance_change(sc_app, adam, pre_bal,
-                                           to_send_asset)
+        sidechain.main_to_side_transfer(
+            mc_app, sc_app, alice, adam, to_send_asset, params
+        )
+        test_utils.wait_for_balance_change(sc_app, adam, pre_bal, to_send_asset)
 
     for i in range(2):
         # even amounts for main to side
@@ -35,10 +31,10 @@ def simple_xrp_test(mc_app: App, sc_app: App, params: Params):
             with test_utils.test_context(mc_app, sc_app):
                 to_send_asset = XRP(value)
                 pre_bal = sc_app.get_balance(adam, to_send_asset)
-                sidechain.main_to_side_transfer(mc_app, sc_app, alice, adam,
-                                                to_send_asset, params)
-                test_utils.wait_for_balance_change(sc_app, adam, pre_bal,
-                                                   to_send_asset)
+                sidechain.main_to_side_transfer(
+                    mc_app, sc_app, alice, adam, to_send_asset, params
+                )
+                test_utils.wait_for_balance_change(sc_app, adam, pre_bal, to_send_asset)
 
         # side to main
         # odd amounts for side to main
@@ -46,38 +42,36 @@ def simple_xrp_test(mc_app: App, sc_app: App, params: Params):
             with test_utils.test_context(mc_app, sc_app):
                 to_send_asset = XRP(value)
                 pre_bal = mc_app.get_balance(alice, to_send_asset)
-                sidechain.side_to_main_transfer(mc_app, sc_app, adam, alice,
-                                                to_send_asset, params)
-                test_utils.wait_for_balance_change(mc_app, alice, pre_bal,
-                                                   to_send_asset)
+                sidechain.side_to_main_transfer(
+                    mc_app, sc_app, adam, alice, to_send_asset, params
+                )
+                test_utils.wait_for_balance_change(
+                    mc_app, alice, pre_bal, to_send_asset
+                )
 
 
 def simple_iou_test(mc_app: App, sc_app: App, params: Params):
-    alice = mc_app.account_from_alias('alice')
-    adam = sc_app.account_from_alias('adam')
+    alice = mc_app.account_from_alias("alice")
+    adam = sc_app.account_from_alias("adam")
 
-    mc_asset = Asset(value=0,
-                     currency='USD',
-                     issuer=mc_app.account_from_alias('root'))
-    sc_asset = Asset(value=0,
-                     currency='USD',
-                     issuer=sc_app.account_from_alias('door'))
-    mc_app.add_asset_alias(mc_asset, 'mcd')  # main chain dollar
-    sc_app.add_asset_alias(sc_asset, 'scd')  # side chain dollar
+    mc_asset = Asset(value=0, currency="USD", issuer=mc_app.account_from_alias("root"))
+    sc_asset = Asset(value=0, currency="USD", issuer=sc_app.account_from_alias("door"))
+    mc_app.add_asset_alias(mc_asset, "mcd")  # main chain dollar
+    sc_app.add_asset_alias(sc_asset, "scd")  # side chain dollar
     mc_app(Trust(account=alice, limit_amt=mc_asset(1_000_000)))
 
-    ## make sure adam account on the side chain exists and set the trust line
+    # make sure adam account on the side chain exists and set the trust line
     with test_utils.test_context(mc_app, sc_app):
-        sidechain.main_to_side_transfer(mc_app, sc_app, alice, adam, XRP(300),
-                                        params)
+        sidechain.main_to_side_transfer(mc_app, sc_app, alice, adam, XRP(300), params)
 
     # create a trust line to alice and pay her USD/root
     mc_app(Trust(account=alice, limit_amt=mc_asset(1_000_000)))
     mc_app.maybe_ledger_accept()
     mc_app(
-        Payment(account=mc_app.account_from_alias('root'),
-                dst=alice,
-                amt=mc_asset(10_000)))
+        Payment(
+            account=mc_app.account_from_alias("root"), dst=alice, amt=mc_asset(10_000)
+        )
+    )
     mc_app.maybe_ledger_accept()
 
     # create a trust line for adam
@@ -90,10 +84,10 @@ def simple_iou_test(mc_app: App, sc_app: App, params: Params):
                 to_send_asset = mc_asset(value)
                 rcv_asset = sc_asset(value)
                 pre_bal = sc_app.get_balance(adam, rcv_asset)
-                sidechain.main_to_side_transfer(mc_app, sc_app, alice, adam,
-                                                to_send_asset, params)
-                test_utils.wait_for_balance_change(sc_app, adam, pre_bal,
-                                                   rcv_asset)
+                sidechain.main_to_side_transfer(
+                    mc_app, sc_app, alice, adam, to_send_asset, params
+                )
+                test_utils.wait_for_balance_change(sc_app, adam, pre_bal, rcv_asset)
 
         # side to main
         # odd amounts for side to main
@@ -102,19 +96,18 @@ def simple_iou_test(mc_app: App, sc_app: App, params: Params):
                 to_send_asset = sc_asset(value)
                 rcv_asset = mc_asset(value)
                 pre_bal = mc_app.get_balance(alice, to_send_asset)
-                sidechain.side_to_main_transfer(mc_app, sc_app, adam, alice,
-                                                to_send_asset, params)
-                test_utils.wait_for_balance_change(mc_app, alice, pre_bal,
-                                                   rcv_asset)
+                sidechain.side_to_main_transfer(
+                    mc_app, sc_app, adam, alice, to_send_asset, params
+                )
+                test_utils.wait_for_balance_change(mc_app, alice, pre_bal, rcv_asset)
 
 
 def run(mc_app: App, sc_app: App, params: Params):
     # process will run while stop token is non-zero
-    stop_token = Value('i', 1)
+    stop_token = Value("i", 1)
     p = None
     if mc_app.standalone:
-        p = Process(target=sidechain.close_mainchain_ledgers,
-                    args=(stop_token, params))
+        p = Process(target=sidechain.close_mainchain_ledgers, args=(stop_token, params))
         p.start()
     try:
         # TODO: Tests fail without this sleep. Fix this bug.
@@ -127,16 +120,15 @@ def run(mc_app: App, sc_app: App, params: Params):
             stop_token.value = 0
             p.join()
         sidechain._convert_log_files_to_json(
-            mc_app.get_configs() + sc_app.get_configs(), 'final.json')
+            mc_app.get_configs() + sc_app.get_configs(), "final.json"
+        )
 
 
 def standalone_test(params: Params):
     def callback(mc_app: App, sc_app: App):
         run(mc_app, sc_app, params)
 
-    sidechain._standalone_with_callback(params,
-                                        callback,
-                                        setup_user_accounts=False)
+    sidechain._standalone_with_callback(params, callback, setup_user_accounts=False)
 
 
 def setup_accounts(mc_app: App, sc_app: App, params: Params):
@@ -144,30 +136,28 @@ def setup_accounts(mc_app: App, sc_app: App, params: Params):
     # Setup address book and add a funded account on the mainchain.
     # Typical female names are addresses on the mainchain.
     # The first account is funded.
-    alice = mc_app.create_account('alice')
-    beth = mc_app.create_account('beth')
-    carol = mc_app.create_account('carol')
-    deb = mc_app.create_account('deb')
-    ella = mc_app.create_account('ella')
+    alice = mc_app.create_account("alice")
+    mc_app.create_account("beth")
+    mc_app.create_account("carol")
+    mc_app.create_account("deb")
+    mc_app.create_account("ella")
     mc_app(Payment(account=params.genesis_account, dst=alice, amt=XRP(20_000)))
     mc_app.maybe_ledger_accept()
 
     # Typical male names are addresses on the sidechain.
     # All accounts are initially unfunded
-    adam = sc_app.create_account('adam')
-    bob = sc_app.create_account('bob')
-    charlie = sc_app.create_account('charlie')
-    dan = sc_app.create_account('dan')
-    ed = sc_app.create_account('ed')
+    sc_app.create_account("adam")
+    sc_app.create_account("bob")
+    sc_app.create_account("charlie")
+    sc_app.create_account("dan")
+    sc_app.create_account("ed")
 
 
 def multinode_test(params: Params):
     def callback(mc_app: App, sc_app: App):
         run(mc_app, sc_app, params)
 
-    sidechain._multinode_with_callback(params,
-                                       callback,
-                                       setup_user_accounts=False)
+    sidechain._multinode_with_callback(params, callback, setup_user_accounts=False)
 
 
 def test_simple_xchain(configs_dirs_dict: Dict[int, str]):

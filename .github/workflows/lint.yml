@@ -1,0 +1,39 @@
+name: Lint
+
+on:
+  push:
+    branches: [ master ]
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  lint-and-type-check:
+    name: Lint and type-check
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v2
+
+      - name: Set up Python 3.x
+        uses: actions/setup-python@v2
+        with:
+          python-version: '3.x'
+
+      - name: Display Python version
+        run: |
+          python -c "import sys; print(sys.version)"
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install poetry
+          poetry install
+
+      - name: Lint
+        run: |
+          poetry run flake8 slk tests
+
+      # - name: Type-check
+      #   run: |
+      #     poetry run mypy --strict slk
