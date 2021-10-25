@@ -508,11 +508,6 @@ class App:
         )
         return df
 
-    def account_balance(self, account: Account, asset: Amount) -> Amount:
-        """get the account's balance of the asset"""
-        # TODO: implement?
-        pass
-
     def substitute_nicknames(
         self, df: pd.DataFrame, cols: List[str] = ["account", "peer"]
     ) -> pd.DataFrame:
