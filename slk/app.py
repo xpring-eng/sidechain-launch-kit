@@ -1,6 +1,7 @@
 import os
 import subprocess
 import time
+import traceback
 from contextlib import contextmanager
 from pathlib import Path
 from typing import Callable, Dict, List, Optional, Set, Union
@@ -175,12 +176,15 @@ class App:
 
     def send_signed(self, txn: Transaction, autofill: bool = True) -> dict:
         """Sign then send the given transaction"""
+        print("SIGNING AND SENDING", txn)
         if not self.key_manager.is_account(txn.account):
             raise ValueError("Cannot sign transaction without secret key")
         account_obj = self.key_manager.get_account(txn.account)
-        return safe_sign_and_submit_transaction(
+        r = safe_sign_and_submit_transaction(
             txn, account_obj.wallet, self.client, autofill=True
         )
+        print(r)
+        return r
 
     def send_command(self, req: Request) -> dict:
         """Send the command to the rippled server"""
@@ -416,8 +420,11 @@ class App:
             result = [self.get_account_info(acc) for acc in known_accounts]
             return pd.concat(result, ignore_index=True)
         try:
+            print("TRYING ACCOUNT INFO", account.nickname)
             result = self.client.request(AccountInfo(account=account.account_id)).result
+            print(result)
         except:
+            traceback.print_exc()
             # Most likely the account does not exist on the ledger. Give a balance of 0.
             return pd.DataFrame(
                 {

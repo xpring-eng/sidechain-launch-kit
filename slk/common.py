@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import binascii
 import sys
 from typing import Any, Optional
@@ -42,13 +44,14 @@ class Account:
         self.wallet = Wallet(secret_key, 0)
 
     # TODO: fix type here
-    def create(cls: Any, name: str):
+    @classmethod
+    def create(cls: Any, name: str) -> Account:
         wallet = Wallet.create()
         return Account(
             account_id=wallet.classic_address,
             nickname=name,
             public_key=wallet.public_key,
-            secret_key=wallet.private_key,
+            secret_key=wallet.seed,
         )
 
     # Accounts are equal if they represent the same account on the ledger

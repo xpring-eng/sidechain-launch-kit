@@ -7,7 +7,7 @@ import time
 from contextlib import contextmanager
 from typing import List, Optional
 
-from xrpl.models import Amount, IssuedCurrencyAmount, Subscribe
+from xrpl.models import Amount, Subscribe
 
 from slk.app import App, balances_dataframe
 from slk.common import Account
@@ -17,11 +17,13 @@ SC_SUBSCRIBE_QUEUE = []
 
 
 def _mc_subscribe_callback(v: dict):
+    print("MAINCHAIN CALLBACK", v)
     MC_SUBSCRIBE_QUEUE.append(v)
     logging.info(f"mc subscribe_callback:\n{json.dumps(v, indent=1)}")
 
 
 def _sc_subscribe_callback(v: dict):
+    print("SIDECHAIN CALLBACK", v)
     SC_SUBSCRIBE_QUEUE.append(v)
     logging.info(f"sc subscribe_callback:\n{json.dumps(v, indent=1)}")
 
@@ -35,13 +37,13 @@ def sc_connect_subscription(app: App, door_account: Account):
 
 
 # This pops elements off the subscribe_queue until the transaction is found
-# It mofifies the queue in place.
+# It modifies the queue in place.
 async def async_wait_for_payment_detect(
     app: App,
     subscribe_queue: List[dict],
     src: Account,
     dst: Account,
-    amt_asset: IssuedCurrencyAmount,
+    amt_asset: Amount,
 ):
     logging.info(
         f"Wait for payment {src.account_id = } {dst.account_id = } {amt_asset = }"
