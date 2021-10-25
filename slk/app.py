@@ -80,7 +80,6 @@ class KeyManager:
         df = pd.DataFrame(data={'name': names, 'id': account_ids})
         return f'{df.to_string(index=False)}'
 
-# TODO: use IssuedCurrency instead of IssuedCurrencyAmount here
 class AssetAliases:
     def __init__(self):
         self._aliases = {}  # alias -> IssuedCurrency
