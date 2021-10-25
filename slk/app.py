@@ -7,7 +7,7 @@ import subprocess
 import time
 from typing import Callable, Dict, List, Optional, Set, Union
 
-from xrpl.clients import WebsocketClient
+from slk.ripple_client import RippleClient
 from slk.common import Account
 # from slk.command import SubscriptionCommand, WalletPropose
 from slk.config_file import ConfigFile
@@ -135,7 +135,7 @@ class App:
                  *,
                  standalone: bool,
                  network: Optional[testnet.Network] = None,
-                 client: Optional[WebsocketClient] = None):
+                 client: Optional[RippleClient] = None):
         if network and client:
             raise ValueError('Cannot specify both a testnet and client in App')
         if not network and not client:
@@ -160,7 +160,7 @@ class App:
         if self.network:
             self.network.shutdown()
         else:
-            self.client.close()
+            self.client.shutdown()
 
     def send_signed(self, txn: Transaction, autofill: bool = True) -> dict:
         '''Sign then send the given transaction'''
@@ -505,7 +505,7 @@ class App:
         # TODO: set better fee (Hard code a fee of 15 for now)
         txn.set_seq_and_fee(acc_info['account_data']['Sequence'], 15)
 
-    def get_client(self) -> WebsocketClient:
+    def get_client(self) -> RippleClient:
         return self.client
 
 
@@ -562,17 +562,16 @@ def single_client_app(*,
             extra_args = []
         to_run = None
         app = None
-        section = config.port_ws_admin_local
-        websocket_uri = f'{section.protocol}://{section.ip}:{section.port}'
-        client = WebsocketClient(url=websocket_uri)
+        client = RippleClient(config=config, command_log=command_log, exe=exe)
         if run_server:
-            to_run = [exe, '--conf', config.get_file_name()]
+            to_run = [client.exe, '--conf', client.config_file_name]
             if standalone:
                 to_run.append('-a')
             fout = open(server_out, 'w')
             p = subprocess.Popen(to_run + extra_args,
                                  stdout=fout,
                                  stderr=subprocess.STDOUT)
+            client.set_pid(p.pid)
             print(
                 f'started rippled: config: {config.get_file_name()} PID: {p.pid}',
                 flush=True)
