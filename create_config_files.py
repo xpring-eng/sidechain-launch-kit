@@ -26,11 +26,12 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Dict, List, Optional, Tuple, Union
 
+from xrpl import CryptoAlgorithm
 from xrpl.models import Amount, IssuedCurrencyAmount
+from xrpl.wallet import Wallet
 
 from slk.app import App, single_client_app
-from slk.command import ValidationCreate, WalletPropose
-from slk.common import Account, eprint
+from slk.common import eprint
 from slk.config_file import ConfigFile
 
 mainnet_validators = """
@@ -63,8 +64,13 @@ class Keypair:
 def generate_node_keypairs(n: int, rip: App) -> List[Keypair]:
     """generate keypairs suitable for validator keys"""
     result = []
+    rip.client.open()
     for i in range(n):
-        keys = rip(ValidationCreate())
+        req = {
+            "id": f"vc_{i}_{n}",
+            "command": "validation_create",
+        }
+        keys = rip(req)
         result.append(
             Keypair(
                 public_key=keys["validation_public_key"],
@@ -79,12 +85,12 @@ def generate_federator_keypairs(n: int, rip: App) -> List[Keypair]:
     """generate keypairs suitable for federator keys"""
     result = []
     for i in range(n):
-        keys = rip(WalletPropose(key_type="ed25519"))
+        wallet = Wallet.create()
         result.append(
             Keypair(
-                public_key=keys["public_key"],
-                secret_key=keys["master_seed"],
-                account_id=keys["account_id"],
+                public_key=wallet.public_key,
+                secret_key=wallet.seed,
+                account_id=wallet.classic_address,
             )
         )
     return result
@@ -128,7 +134,23 @@ class SidechainNetwork(Network):
     ):
         super().__init__(num_nodes, num_validators, start_cfg_index, rip)
         self.federator_keypairs = generate_federator_keypairs(num_federators, rip)
-        self.main_account = rip(WalletPropose(key_type="secp256k1"))
+        self.main_account = Wallet.create(CryptoAlgorithm.SECP256K1)
+
+
+def same_amount_new_value(prev_asset, new_value):
+    if isinstance(prev_asset, str):
+        return str(new_value)
+    else:
+        return IssuedCurrencyAmount(
+            value=str(new_value), issuer=prev_asset.issuer, currency=prev_asset.currency
+        )
+
+
+def amt_to_json(amt):
+    if isinstance(amt, str):
+        return amt
+    else:
+        return amt.to_dict()
 
 
 class XChainAsset:
@@ -141,10 +163,14 @@ class XChainAsset:
         main_refund_penalty: Union[int, float],
         side_refund_penalty: Union[int, float],
     ):
-        self.main_asset = main_asset(main_value)
-        self.side_asset = side_asset(side_value)
-        self.main_refund_penalty = main_asset(main_refund_penalty)
-        self.side_refund_penalty = side_asset(side_refund_penalty)
+        self.main_asset = same_amount_new_value(main_asset, main_value)
+        self.side_asset = same_amount_new_value(side_asset, side_value)
+        self.main_refund_penalty = same_amount_new_value(
+            main_asset, main_refund_penalty
+        )
+        self.side_refund_penalty = same_amount_new_value(
+            side_asset, side_refund_penalty
+        )
 
 
 def generate_asset_stanzas(assets: Optional[Dict[str, XChainAsset]] = None) -> str:
@@ -162,10 +188,10 @@ def generate_asset_stanzas(assets: Optional[Dict[str, XChainAsset]] = None) -> s
         index_stanza += "\n" + name
         new_stanza = f"""
 [{name}]
-mainchain_asset={json.dumps(xchainasset.main_asset.to_cmd_obj())}
-sidechain_asset={json.dumps(xchainasset.side_asset.to_cmd_obj())}
-mainchain_refund_penalty={json.dumps(xchainasset.main_refund_penalty.to_cmd_obj())}
-sidechain_refund_penalty={json.dumps(xchainasset.side_refund_penalty.to_cmd_obj())}"""
+mainchain_asset={json.dumps(amt_to_json(xchainasset.main_asset))}
+sidechain_asset={json.dumps(amt_to_json(xchainasset.side_asset))}
+mainchain_refund_penalty={json.dumps(amt_to_json(xchainasset.main_refund_penalty))}
+sidechain_refund_penalty={json.dumps(amt_to_json(xchainasset.side_refund_penalty))}"""
         asset_stanzas.append(new_stanza)
 
     return index_stanza + "\n" + "\n".join(asset_stanzas)
@@ -207,7 +233,7 @@ def generate_sidechain_stanza(
     sidechain_stanzas = f"""
 [sidechain]
 signing_key={signing_key}
-mainchain_account={main_account["account_id"]}
+mainchain_account={main_account.classic_address}
 mainchain_ip={mainchain_ip}
 mainchain_port_ws={mainchain_ports.ws_public_port}
 # mainchain config file is: {mainchain_cfg_file}
@@ -220,7 +246,7 @@ mainchain_port_ws={mainchain_ports.ws_public_port}
 """
     bootstrap_stanzas = f"""
 [sidechain]
-mainchain_secret={main_account["master_seed"]}
+mainchain_secret={main_account.seed}
 
 {bootstrap_federators_stanza}
 """
@@ -657,7 +683,7 @@ if __name__ == "__main__":
     if params.usd:
         xchain_assets = {}
         xchain_assets["xrp_xrp_sidechain_asset"] = XChainAsset("0", "0", 1, 1, 200, 200)
-        root_account = Account(account_id="rHb9CJAWyB4rj91VRWn96DkukG4bwdtyTh")
+        root_account = "rHb9CJAWyB4rj91VRWn96DkukG4bwdtyTh"
         main_iou_asset = IssuedCurrencyAmount(
             value=0, currency="USD", issuer=root_account
         )

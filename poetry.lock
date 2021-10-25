@@ -914,5 +914,5 @@ websockets = [
     {file = "websockets-9.1.tar.gz", hash = "sha256:276d2339ebf0df4f45df453923ebd2270b87900eda5dfd4a6b0cfa15f82111c3"},
 ]
 xrpl-py = [
-    {file = "xrpl-py-1.1.1.tar.gz", hash = "sha256:65c8fa2ecfada618ee7d05592f48aef20644d56d8ee4c9f21743179d9060b254"},
+    {file = "xrpl-py-1.1.1.tar.gz", hash = "sha256:5aa2120086205fa2f7d0f1e534a1feb653630ecd1569fd9bccc4dcf74048c1a5"},
 ]

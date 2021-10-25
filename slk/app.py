@@ -191,6 +191,10 @@ class App:
         """Send the command to the rippled server"""
         return self.client.request(req).result
 
+    def request_json(self, req: dict) -> dict:
+        """Send the JSON command to the rippled server"""
+        return self.client.request_json(req)["result"]
+
     # Need async version to close ledgers from async functions
     async def async_send_command(self, req: Request) -> dict:
         """Asynchronously send the command to the rippled server"""
@@ -285,6 +289,8 @@ class App:
             return self.send_signed(to_send)
         if isinstance(to_send, Request):
             return self.send_command(to_send)
+        if isinstance(to_send, dict):
+            return self.request_json(to_send)
         raise ValueError(
             "Expected `to_send` to be either a Transaction, Command, or "
             "SubscriptionCommand"
