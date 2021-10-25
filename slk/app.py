@@ -6,6 +6,7 @@ from pathlib import Path
 import subprocess
 import time
 from typing import Callable, Dict, List, Optional, Set, Union
+import traceback
 
 from slk.ripple_client import RippleClient
 from slk.common import Account
@@ -171,10 +172,14 @@ class App:
     def send_command(self, req: Request) -> dict:
         '''Send the command to the rippled server'''
         return self.client.request(req)
+    
+    def request(self, req: Request) -> dict:
+        '''Send the command to the rippled server'''
+        return self.client.request(req)
 
     # Need async version to close ledgers from async functions
     async def async_send_command(self, req: Request) -> dict:
-        '''Send the command to the rippled server'''
+        '''Asynchronously send the command to the rippled server'''
         return await self.client.request_impl(req)
 
     def send_subscribe_command(
@@ -186,7 +191,7 @@ class App:
             self.client.open()
         self.client.on("transaction", callback)
         r = self.client.request(req)
-        return r
+        return r.result
 
     def get_pids(self) -> List[int]:
         if self.network:
@@ -244,11 +249,11 @@ class App:
                 ]
             for i in server_indexes:
                 if self.network.is_running(i):
-                    result_dict[i] = self.network.get_client(i).send_command(
-                        FederatorInfo())
+                    result_dict[i] = self.network.get_client(i).request(
+                        FederatorInfo()).result
         else:
             if 0 in server_indexes:
-                result_dict[0] = self.client.send_command(FederatorInfo())
+                result_dict[0] = self.client.request(FederatorInfo()).result
         return result_dict
 
     def __call__(self,
@@ -264,9 +269,9 @@ class App:
             return self.send_subscribe_command(to_send, callback)
         assert callback is None
         if isinstance(to_send, Transaction):
-            return self.send_signed(to_send, autofill=insert_seq_and_fee)
+            return self.send_signed(to_send, autofill=insert_seq_and_fee).reslut
         if isinstance(to_send, Request):
-            return self.send_command(to_send)
+            return self.send_command(to_send).result
         raise ValueError(
             'Expected `to_send` to be either a Transaction, Command, or SubscriptionCommand'
         )
@@ -336,6 +341,7 @@ class App:
             try:
                 df = self.get_account_info(account)
             except:
+                traceback.print_exc()
                 # Most likely the account does not exist on the ledger. Give a balance of zero.
                 df = pd.DataFrame({
                     'account': [account],
@@ -383,7 +389,7 @@ class App:
             result = [self.get_account_info(acc) for acc in known_accounts]
             return pd.concat(result, ignore_index=True)
         try:
-            result = self.client.send_command(AccountInfo(account))
+            result = self.client.request(AccountInfo(account=account.account_id)).result
         except:
             # Most likely the account does not exist on the ledger. Give a balance of zero.
             return pd.DataFrame({
@@ -418,7 +424,10 @@ class App:
                         account: Account,
                         peer: Optional[Account] = None) -> pd.DataFrame:
         '''Return a pandas dataframe account trust lines. If peer account is None, treat as a wildcard'''
-        result = self.send_command(AccountLines(account, peer=peer))
+        if peer is None:
+            result = self.request(AccountLines(account=account.account_id)).result
+        else:
+            result = self.request(AccountLines(account=account.account_id, peer=peer.account_id)).result
         if 'lines' not in result or 'account' not in result:
             raise ValueError('Bad result from account_lines command')
         account = result['account']
@@ -428,9 +437,9 @@ class App:
             d['account'] = account
         return pd.DataFrame(lines)
 
-    def get_offers(self, taker_pays: IssuedCurrencyAmount, taker_gets: IssuedCurrencyAmount) -> pd.DataFrame:
+    def get_offers(self, taker_pays: Amount, taker_gets: Amount) -> pd.DataFrame:
         '''Return a pandas dataframe of offers'''
-        result = self.send_command(BookOffers(taker_pays, taker_gets))
+        result = self.request(BookOffers(taker_pays=taker_pays, taker_gets=taker_gets)).result
         if 'offers' not in result:
             raise ValueError('Bad result from book_offers command')
 
