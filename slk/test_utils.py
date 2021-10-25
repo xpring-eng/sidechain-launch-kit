@@ -17,13 +17,11 @@ SC_SUBSCRIBE_QUEUE = []
 
 
 def _mc_subscribe_callback(v: dict):
-    print("MAINCHAIN CALLBACK", v)
     MC_SUBSCRIBE_QUEUE.append(v)
     logging.info(f"mc subscribe_callback:\n{json.dumps(v, indent=1)}")
 
 
 def _sc_subscribe_callback(v: dict):
-    print("SIDECHAIN CALLBACK", v)
     SC_SUBSCRIBE_QUEUE.append(v)
     logging.info(f"sc subscribe_callback:\n{json.dumps(v, indent=1)}")
 
