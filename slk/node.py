@@ -36,9 +36,6 @@ class Node:
     def shutdown(self):
         self.client.close()
 
-    def set_pid(self, pid: int):
-        self.pid = pid
-
     def get_pid(self) -> Optional[int]:
         return self.pid
 
@@ -87,7 +84,7 @@ class Node:
         self.process = subprocess.Popen(
             to_run + extra_args, stdout=fout, stderr=subprocess.STDOUT
         )
-        self.set_pid(self.process.pid)
+        self.pid = self.process.pid
         print(
             f"started rippled: config: {self.config_file_name} PID: {self.process.pid}",
             flush=True,
@@ -99,4 +96,4 @@ class Node:
         subprocess.Popen(to_run + ["stop"], stdout=fout, stderr=subprocess.STDOUT)
 
         self.process.wait()
-        self.set_pid(-1)
+        self.pid = -1
