@@ -1,6 +1,6 @@
 import os
 import subprocess
-from typing import Any, Dict, List, Optional, cast
+from typing import List, Optional
 
 from xrpl.clients import WebsocketClient
 from xrpl.models import ServerInfo
@@ -39,16 +39,12 @@ class Node:
     def get_pid(self) -> Optional[int]:
         return self.pid
 
-    def get_config(self) -> ConfigFile:
-        return self.config
-
     def request(self, req) -> dict:
         response = self.client.request(req)
         if response.is_successful():
             return response
 
-        result = cast(Dict[str, Any], response.result)
-        raise Exception(result)
+        raise Exception(response.reslt)
 
     def sign_and_submit(self, txn, wallet) -> dict:
         return safe_sign_and_submit_transaction(txn, wallet, self.client).result
