@@ -199,8 +199,7 @@ class App:
         if not self.node.client.is_open():
             self.node.client.open()
         self.node.client.on("transaction", callback)
-        r = self.node.request(req)
-        return r.result
+        return self.node.request(req)
 
     def get_pids(self) -> List[int]:
         if self.network:
@@ -257,12 +256,10 @@ class App:
                 ]
             for i in server_indexes:
                 if self.network.is_running(i):
-                    result_dict[i] = (
-                        self.network.get_node(i).request(FederatorInfo()).result
-                    )
+                    result_dict[i] = self.network.get_node(i).request(FederatorInfo())
         else:
             if 0 in server_indexes:
-                result_dict[0] = self.node.request(FederatorInfo()).result
+                result_dict[0] = self.node.request(FederatorInfo())
         return result_dict
 
     def __call__(
@@ -413,7 +410,7 @@ class App:
             result = [self.get_account_info(acc) for acc in known_accounts]
             return pd.concat(result, ignore_index=True)
         try:
-            result = self.node.request(AccountInfo(account=account.account_id)).result
+            result = self.node.request(AccountInfo(account=account.account_id))
         except:
             traceback.print_exc()
             # Most likely the account does not exist on the ledger. Give a balance of 0.

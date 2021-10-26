@@ -40,11 +40,7 @@ class Node:
         return self.pid
 
     def request(self, req) -> dict:
-        response = self.client.request(req)
-        if response.is_successful():
-            return response
-
-        raise Exception(response.reslt)
+        return self.client.request(req).result
 
     def sign_and_submit(self, txn, wallet) -> dict:
         return safe_sign_and_submit_transaction(txn, wallet, self.client).result

@@ -113,8 +113,8 @@ class Network:
         for i in range(600):
             r = node.request(ServerInfo())
             state = None
-            if "info" in r.result:
-                state = r.result["info"]["server_state"]
+            if "info" in r:
+                state = r["info"]["server_state"]
                 if state == "proposing":
                     print(f"Synced: {server_index} : {state}", flush=True)
                     break
@@ -125,8 +125,8 @@ class Network:
         for i in range(600):
             r = node.request(ServerInfo())
             state = None
-            if "info" in r.result:
-                complete_ledgers = r.result["info"]["complete_ledgers"]
+            if "info" in r:
+                complete_ledgers = r["info"]["complete_ledgers"]
                 if complete_ledgers and complete_ledgers != "empty":
                     print(
                         f"Have complete ledgers: {server_index} : {state}", flush=True
