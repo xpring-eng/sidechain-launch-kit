@@ -180,10 +180,6 @@ class App:
         account_obj = self.key_manager.get_account(txn.account)
         return self.node.sign_and_submit(txn, account_obj.wallet)
 
-    def send_command(self, req: Request) -> dict:
-        """Send the command to the rippled server"""
-        return self.node.request(req)
-
     def request(self, req: Request) -> dict:
         """Send the command to the rippled server"""
         return self.node.request(req)
@@ -193,7 +189,7 @@ class App:
         return self.node.request_json(req)["result"]
 
     # Need async version to close ledgers from async functions
-    async def async_send_command(self, req: Request) -> dict:
+    async def async_request(self, req: Request) -> dict:
         """Asynchronously send the command to the rippled server"""
         return await self.node.request_impl(req)
 
@@ -275,7 +271,7 @@ class App:
         to_send: Union[Transaction, Request, str],
         callback: Optional[Callable[[dict], None]] = None,
     ) -> dict:
-        """Call `send_signed` for transactions or `send_command` for commands"""
+        """Call `send_signed` for transactions or `request` for requests"""
         if to_send == "open":
             self.node.client.open()
             return
@@ -285,7 +281,7 @@ class App:
         if isinstance(to_send, Transaction):
             return self.send_signed(to_send)
         if isinstance(to_send, Request):
-            return self.send_command(to_send)
+            return self.request(to_send)
         if isinstance(to_send, dict):
             return self.request_json(to_send)
         raise ValueError(
@@ -340,7 +336,7 @@ class App:
     async def async_maybe_ledger_accept(self):
         if not self.standalone:
             return
-        await self.async_send_command(LedgerAccept())
+        await self.async_request(LedgerAccept())
 
     def get_balances(
         self,
