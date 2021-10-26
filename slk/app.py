@@ -1,5 +1,4 @@
 import os
-import subprocess
 import time
 import traceback
 from contextlib import contextmanager
@@ -603,25 +602,15 @@ def single_node_app(
     standalone=False,
 ):
     """Start a ripple server and return an app"""
+    if extra_args is None:
+        extra_args = []
+    server_running = False
+    app = None
+    node = Node(config=config, command_log=command_log, exe=exe)
     try:
-        if extra_args is None:
-            extra_args = []
-        to_run = None
-        app = None
-        node = Node(config=config, command_log=command_log, exe=exe)
         if run_server:
-            to_run = [node.exe, "--conf", node.config_file_name]
-            if standalone:
-                to_run.append("-a")
-            fout = open(server_out, "w")
-            p = subprocess.Popen(
-                to_run + extra_args, stdout=fout, stderr=subprocess.STDOUT
-            )
-            node.set_pid(p.pid)
-            print(
-                f"started rippled: config: {node.config_file_name} PID: {p.pid}",
-                flush=True,
-            )
+            node.start_server(extra_args, standalone=standalone, server_out=server_out)
+            server_running = True
             time.sleep(1.5)  # give process time to startup
 
         app = App(node=node, standalone=standalone)
@@ -629,9 +618,8 @@ def single_node_app(
     finally:
         if app:
             app.shutdown()
-        if run_server and to_run:
-            subprocess.Popen(to_run + ["stop"], stdout=fout, stderr=subprocess.STDOUT)
-            p.wait()
+        if run_server and server_running:
+            node.stop_server()
 
 
 def configs_for_testnet(config_file_prefix: str) -> List[ConfigFile]:

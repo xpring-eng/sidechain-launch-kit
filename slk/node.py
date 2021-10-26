@@ -1,4 +1,6 @@
-from typing import Any, Dict, Optional, cast
+import os
+import subprocess
+from typing import Any, Dict, List, Optional, cast
 
 from xrpl.clients import WebsocketClient
 from xrpl.models import ServerInfo
@@ -22,6 +24,7 @@ class Node:
         self.subscription_websockets = []
         self.tasks = []
         self.pid = None
+        self.process = None
         if command_log:
             with open(self.command_log, "w") as f:
                 f.write("# Start \n")
@@ -68,3 +71,32 @@ class Node:
         if "validated_ledger" in r:
             ret["ledger_seq"] = r["validated_ledger"]["seq"]
         return ret
+
+    def start_server(
+        self,
+        extra_args: List[str],
+        *,
+        standalone: bool = False,
+        server_out: str = os.devnull,
+    ):
+        to_run = [self.exe, "--conf", self.config_file_name]
+        if standalone:
+            to_run.append("-a")
+        print(f"Starting server {self.config_file_name}")
+        fout = open(server_out, "w")
+        self.process = subprocess.Popen(
+            to_run + extra_args, stdout=fout, stderr=subprocess.STDOUT
+        )
+        self.set_pid(self.process.pid)
+        print(
+            f"started rippled: config: {self.config_file_name} PID: {self.process.pid}",
+            flush=True,
+        )
+
+    def stop_server(self, *, server_out: str = os.devnull):
+        to_run = [self.exe, "--conf", self.config_file_name]
+        fout = open(os.devnull, "w")
+        subprocess.Popen(to_run + ["stop"], stdout=fout, stderr=subprocess.STDOUT)
+
+        self.process.wait()
+        self.set_pid(-1)

@@ -2,7 +2,6 @@
 
 import glob
 import os
-import subprocess
 import time
 from typing import List, Optional, Set, Union
 
@@ -36,7 +35,6 @@ class Network:
         self.configs = configs
         self.nodes = []
         self.running_server_indexes = set()
-        self.processes = {}
 
         if not run_server:
             run_server = []
@@ -164,19 +162,8 @@ class Network:
                 continue
 
             node = self.nodes[i]
-            to_run = [node.exe, "--conf", node.config_file_name]
-            print(f"Starting server {node.config_file_name}")
-            fout = open(os.devnull, "w")
-            p = subprocess.Popen(
-                to_run + extra_args[i], stdout=fout, stderr=subprocess.STDOUT
-            )
-            node.set_pid(p.pid)
-            print(
-                f"started rippled: config: {node.config_file_name} PID: {p.pid}",
-                flush=True,
-            )
+            node.start_server(extra_args[i])
             self.running_server_indexes.add(i)
-            self.processes[i] = p
 
         time.sleep(2)  # give servers time to start
 
@@ -194,12 +181,5 @@ class Network:
             if i not in self.running_server_indexes:
                 continue
             node = self.nodes[i]
-            to_run = [node.exe, "--conf", node.config_file_name]
-            fout = open(os.devnull, "w")
-            subprocess.Popen(to_run + ["stop"], stdout=fout, stderr=subprocess.STDOUT)
+            node.stop_server()
             self.running_server_indexes.discard(i)
-
-        for i in server_indexes:
-            self.processes[i].wait()
-            del self.processes[i]
-            self.get_node(i).set_pid(-1)
