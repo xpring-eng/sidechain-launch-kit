@@ -22,7 +22,6 @@ from xrpl.models import (
     is_xrp,
 )
 from xrpl.models.transactions.transaction import Transaction
-from xrpl.transaction import safe_sign_and_submit_transaction
 
 import slk.testnet as testnet
 from slk.common import Account
@@ -179,17 +178,15 @@ class App:
         if not self.key_manager.is_account(txn.account):
             raise ValueError("Cannot sign transaction without secret key")
         account_obj = self.key_manager.get_account(txn.account)
-        return safe_sign_and_submit_transaction(
-            txn, account_obj.wallet, self.node.client
-        ).result
+        return self.node.sign_and_submit(txn, account_obj.wallet)
 
     def send_command(self, req: Request) -> dict:
         """Send the command to the rippled server"""
-        return self.node.request(req).result
+        return self.node.request(req)
 
     def request(self, req: Request) -> dict:
         """Send the command to the rippled server"""
-        return self.node.request(req).result
+        return self.node.request(req)
 
     def request_json(self, req: dict) -> dict:
         """Send the JSON command to the rippled server"""

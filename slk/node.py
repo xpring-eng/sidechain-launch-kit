@@ -2,6 +2,7 @@ from typing import Any, Dict, Optional, cast
 
 from xrpl.clients import WebsocketClient
 from xrpl.models import ServerInfo
+from xrpl.transaction import safe_sign_and_submit_transaction
 
 from slk.config_file import ConfigFile
 
@@ -48,6 +49,9 @@ class Node:
 
         result = cast(Dict[str, Any], response.result)
         raise Exception(result)
+
+    def sign_and_submit(self, txn, wallet) -> dict:
+        return safe_sign_and_submit_transaction(txn, wallet, self.client).result
 
     # Get a dict of the server_state, validated_ledger_seq, and complete_ledgers
     def get_brief_server_info(self) -> dict:
