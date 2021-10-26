@@ -27,7 +27,7 @@ from xrpl.transaction import safe_sign_and_submit_transaction
 import slk.testnet as testnet
 from slk.common import Account
 from slk.config_file import ConfigFile
-from slk.ripple_client import RippleClient
+from slk.node import Node
 
 
 class KeyManager:
@@ -144,20 +144,20 @@ class App:
         *,
         standalone: bool,
         network: Optional[testnet.Network] = None,
-        client: Optional[RippleClient] = None,
+        node: Optional[Node] = None,
     ):
-        if network and client:
-            raise ValueError("Cannot specify both a testnet and client in App")
-        if not network and not client:
-            raise ValueError("Must specify a testnet or a client in App")
+        if network and node:
+            raise ValueError("Cannot specify both a testnet and node in App")
+        if not network and not node:
+            raise ValueError("Must specify a testnet or a node in App")
 
         self.standalone = standalone
         self.network = network
 
-        if client:
-            self.client = client
+        if node:
+            self.node = node
         else:
-            self.client = self.network.get_client(0)
+            self.node = self.network.get_node(0)
 
         self.key_manager = KeyManager()
         self.asset_aliases = AssetAliases()
@@ -172,7 +172,7 @@ class App:
         if self.network:
             self.network.shutdown()
         else:
-            self.client.shutdown()
+            self.node.shutdown()
 
     def send_signed(self, txn: Transaction) -> dict:
         """Sign then send the given transaction"""
@@ -180,46 +180,46 @@ class App:
             raise ValueError("Cannot sign transaction without secret key")
         account_obj = self.key_manager.get_account(txn.account)
         return safe_sign_and_submit_transaction(
-            txn, account_obj.wallet, self.client
+            txn, account_obj.wallet, self.node.client
         ).result
 
     def send_command(self, req: Request) -> dict:
         """Send the command to the rippled server"""
-        return self.client.request(req).result
+        return self.node.request(req).result
 
     def request(self, req: Request) -> dict:
         """Send the command to the rippled server"""
-        return self.client.request(req).result
+        return self.node.request(req).result
 
     def request_json(self, req: dict) -> dict:
         """Send the JSON command to the rippled server"""
-        return self.client.request_json(req)["result"]
+        return self.node.request_json(req)["result"]
 
     # Need async version to close ledgers from async functions
     async def async_send_command(self, req: Request) -> dict:
         """Asynchronously send the command to the rippled server"""
-        return await self.client.request_impl(req)
+        return await self.node.request_impl(req)
 
     def send_subscribe_command(
         self, req: Subscribe, callback: Optional[Callable[[dict], None]] = None
     ) -> dict:
         """Send the subscription command to the rippled server."""
-        if not self.client.is_open():
-            self.client.open()
-        self.client.on("transaction", callback)
-        r = self.client.request(req)
+        if not self.node.client.is_open():
+            self.node.client.open()
+        self.node.client.on("transaction", callback)
+        r = self.node.request(req)
         return r.result
 
     def get_pids(self) -> List[int]:
         if self.network:
             return self.network.get_pids()
-        if pid := self.client.get_pid():
+        if pid := self.node.get_pid():
             return [pid]
 
     def get_running_status(self) -> List[bool]:
         if self.network:
             return self.network.get_running_status()
-        if self.client.get_pid():
+        if self.node.get_pid():
             return [True]
         else:
             return [False]
@@ -230,7 +230,7 @@ class App:
             return self.network.get_brief_server_info()
         else:
             ret = {}
-            for (k, v) in self.client.get_brief_server_info().items():
+            for (k, v) in self.node.get_brief_server_info().items():
                 ret[k] = [v]
             return ret
 
@@ -260,17 +260,17 @@ class App:
             if not server_indexes:
                 server_indexes = [
                     i
-                    for i in range(self.network.num_clients())
+                    for i in range(self.network.num_nodes())
                     if self.network.is_running(i)
                 ]
             for i in server_indexes:
                 if self.network.is_running(i):
                     result_dict[i] = (
-                        self.network.get_client(i).request(FederatorInfo()).result
+                        self.network.get_node(i).request(FederatorInfo()).result
                     )
         else:
             if 0 in server_indexes:
-                result_dict[0] = self.client.request(FederatorInfo()).result
+                result_dict[0] = self.node.request(FederatorInfo()).result
         return result_dict
 
     def __call__(
@@ -280,7 +280,7 @@ class App:
     ) -> dict:
         """Call `send_signed` for transactions or `send_command` for commands"""
         if to_send == "open":
-            self.client.open()
+            self.node.client.open()
             return
         if isinstance(to_send, Subscribe):
             return self.send_subscribe_command(to_send, callback)
@@ -299,7 +299,7 @@ class App:
     def get_configs(self) -> List[str]:
         if self.network:
             return self.network.get_configs()
-        return [self.client.config]
+        return [self.node.config]
 
     def create_account(self, name: str) -> Account:
         """Create an account. Use the name as the alias."""
@@ -421,7 +421,7 @@ class App:
             result = [self.get_account_info(acc) for acc in known_accounts]
             return pd.concat(result, ignore_index=True)
         try:
-            result = self.client.request(AccountInfo(account=account.account_id)).result
+            result = self.node.request(AccountInfo(account=account.account_id)).result
         except:
             traceback.print_exc()
             # Most likely the account does not exist on the ledger. Give a balance of 0.
@@ -551,8 +551,8 @@ class App:
     def asset_from_alias(self, name: str) -> IssuedCurrency:
         return self.asset_aliases.asset_from_alias(name)
 
-    def get_client(self) -> RippleClient:
-        return self.client
+    def get_node(self) -> Node:
+        return self.node
 
 
 def balances_dataframe(
@@ -597,9 +597,9 @@ def balances_dataframe(
     return df
 
 
-# Start an app with a single client
+# Start an app with a single node
 @contextmanager
-def single_client_app(
+def single_node_app(
     *,
     config: ConfigFile,
     command_log: Optional[str] = None,
@@ -615,23 +615,23 @@ def single_client_app(
             extra_args = []
         to_run = None
         app = None
-        client = RippleClient(config=config, command_log=command_log, exe=exe)
+        node = Node(config=config, command_log=command_log, exe=exe)
         if run_server:
-            to_run = [client.exe, "--conf", client.config_file_name]
+            to_run = [node.exe, "--conf", node.config_file_name]
             if standalone:
                 to_run.append("-a")
             fout = open(server_out, "w")
             p = subprocess.Popen(
                 to_run + extra_args, stdout=fout, stderr=subprocess.STDOUT
             )
-            client.set_pid(p.pid)
+            node.set_pid(p.pid)
             print(
-                f"started rippled: config: {client.config_file_name} PID: {p.pid}",
+                f"started rippled: config: {node.config_file_name} PID: {p.pid}",
                 flush=True,
             )
             time.sleep(1.5)  # give process time to startup
 
-        app = App(client=client, standalone=standalone)
+        app = App(node=node, standalone=standalone)
         yield app
     finally:
         if app:

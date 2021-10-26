@@ -1,4 +1,4 @@
-from typing import Optional
+from typing import Any, Dict, Optional, cast
 
 from xrpl.clients import WebsocketClient
 from xrpl.models import ServerInfo
@@ -6,7 +6,7 @@ from xrpl.models import ServerInfo
 from slk.config_file import ConfigFile
 
 
-class RippleClient(WebsocketClient):
+class Node:
     """Client to send commands to the rippled server"""
 
     def __init__(
@@ -14,7 +14,7 @@ class RippleClient(WebsocketClient):
     ):
         section = config.port_ws_admin_local
         self.websocket_uri = f"{section.protocol}://{section.ip}:{section.port}"
-        super().__init__(url=self.websocket_uri)
+        self.client = WebsocketClient(url=self.websocket_uri)
         self.config = config
         self.exe = exe
         self.command_log = command_log
@@ -30,7 +30,7 @@ class RippleClient(WebsocketClient):
         return self.config.get_file_name()
 
     def shutdown(self):
-        self.close()
+        self.client.close()
 
     def set_pid(self, pid: int):
         self.pid = pid
@@ -41,12 +41,20 @@ class RippleClient(WebsocketClient):
     def get_config(self) -> ConfigFile:
         return self.config
 
+    def request(self, req) -> dict:
+        response = self.client.request(req)
+        if response.is_successful():
+            return response
+
+        result = cast(Dict[str, Any], response.result)
+        raise Exception(result)
+
     # Get a dict of the server_state, validated_ledger_seq, and complete_ledgers
     def get_brief_server_info(self) -> dict:
         ret = {"server_state": "NA", "ledger_seq": "NA", "complete_ledgers": "NA"}
         if not self.pid or self.pid == -1:
             return ret
-        r = self.request(ServerInfo()).result
+        r = self.client.request(ServerInfo()).result
         if "info" not in r:
             return ret
         r = r["info"]
