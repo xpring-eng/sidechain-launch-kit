@@ -88,7 +88,7 @@ def generate_federator_keypairs(n: int, rip: App) -> List[Keypair]:
     """generate keypairs suitable for federator keys"""
     result = []
     for i in range(n):
-        # TODO: clean this up
+        # TODO: clean this up after the PR gets merged in the C++ code
         wallet = Wallet.create(crypto_algorithm=CryptoAlgorithm.ED25519)
         entropy = decode_seed(wallet.seed)[0]
         result.append(
