@@ -401,7 +401,14 @@ def _xchain_transfer(
     to_chain_door: Account,
 ):
     memo = Memo(memo_data=dst.account_id_str_as_hex())
-    from_chain(Payment(account=src, dst=from_chain_door, amt=amt, memos=[memo]))
+    from_chain(
+        Payment(
+            account=src.account_id,
+            destination=from_chain_door.account_id,
+            amount=amt,
+            memos=[memo],
+        )
+    )
     from_chain.maybe_ledger_accept()
     if to_chain.standalone:
         # from_chain (side chain) sends a txn, but won't close the to_chain (main chain)

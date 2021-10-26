@@ -4,6 +4,7 @@ import binascii
 import sys
 from typing import Any, Optional
 
+from xrpl.models import IssuedCurrencyAmount
 from xrpl.wallet import Wallet
 
 EPRINT_ENABLED = True
@@ -86,3 +87,12 @@ class Account:
             "public_key_hex": self.public_key_hex,
             "secret_key": self.secret_key,
         }
+
+
+def same_amount_new_value(prev_asset, new_value):
+    if isinstance(prev_asset, str):
+        return str(new_value)
+    else:
+        return IssuedCurrencyAmount(
+            value=str(new_value), issuer=prev_asset.issuer, currency=prev_asset.currency
+        )

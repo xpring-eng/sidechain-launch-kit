@@ -33,7 +33,7 @@ from xrpl.models import Amount, IssuedCurrencyAmount
 from xrpl.wallet import Wallet
 
 from slk.app import App, single_client_app
-from slk.common import eprint
+from slk.common import eprint, same_amount_new_value
 from slk.config_file import ConfigFile
 
 mainnet_validators = """
@@ -140,15 +140,6 @@ class SidechainNetwork(Network):
         super().__init__(num_nodes, num_validators, start_cfg_index, rip)
         self.federator_keypairs = generate_federator_keypairs(num_federators, rip)
         self.main_account = Wallet.create(CryptoAlgorithm.SECP256K1)
-
-
-def same_amount_new_value(prev_asset, new_value):
-    if isinstance(prev_asset, str):
-        return str(new_value)
-    else:
-        return IssuedCurrencyAmount(
-            value=str(new_value), issuer=prev_asset.issuer, currency=prev_asset.currency
-        )
 
 
 def amt_to_json(amt):

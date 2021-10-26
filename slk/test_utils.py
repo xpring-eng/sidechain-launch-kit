@@ -7,10 +7,10 @@ import time
 from contextlib import contextmanager
 from typing import List, Optional
 
-from xrpl.models import Amount, Subscribe
+from xrpl.models import Amount, IssuedCurrencyAmount, Subscribe
 
 from slk.app import App, balances_dataframe
-from slk.common import Account
+from slk.common import Account, same_amount_new_value
 
 MC_SUBSCRIBE_QUEUE = []
 SC_SUBSCRIBE_QUEUE = []
@@ -126,8 +126,10 @@ def wait_for_balance_change(
         f"{final_diff = }"
     )
     for i in range(30):
-        new_bal = app.get_balance(acc, pre_balance(0))
-        diff = new_bal - pre_balance
+        new_bal = same_amount_new_value(
+            pre_balance, app.get_balance(acc, same_amount_new_value(pre_balance, 0))
+        )
+        diff = value_diff(new_bal, pre_balance)
         if new_bal != pre_balance:
             logging.info(
                 f"Balance changed {acc.account_id = } {pre_balance = } {new_bal = } "
@@ -159,6 +161,20 @@ def log_chain_state(mc_app, sc_app, log, msg="Chain State"):
     log(f"{msg} Balances: \n{df_as_str}")
     federator_info = sc_app.federator_info()
     log(f"{msg} Federator Info: \n{pprint.pformat(federator_info)}")
+
+
+def value_diff(bigger: Amount, smaller: Amount) -> Amount:
+    if isinstance(bigger, str):
+        assert isinstance(smaller, str)
+        return str(int(bigger) - int(smaller))
+    else:
+        assert bigger.issuer == smaller.issuer
+        assert bigger.currency == smaller.currency
+        return IssuedCurrencyAmount(
+            value=str(int(bigger.value) - int(smaller.value)),
+            issuer=bigger.issuer,
+            currency=bigger.currency,
+        )
 
 
 # Tests can set this to True to help debug test failures by showing account

@@ -1,8 +1,8 @@
 import pytest
+from xrpl.models import IssuedCurrencyAmount
 
-import slk.create_config_files as create_config_files
+import create_config_files
 import slk.sidechain as sidechain
-from slk.common import XRP, Account, Asset
 
 """
 Sidechains uses argparse.ArgumentParser to add command line options.
@@ -34,11 +34,15 @@ def pytest_addoption(parser):
 def _xchain_assets(ratio: int = 1):
     assets = {}
     assets["xrp_xrp_sidechain_asset"] = create_config_files.XChainAsset(
-        XRP(0), XRP(0), 1, 1 * ratio, 200, 200 * ratio
+        "0", "0", 1, 1 * ratio, 200, 200 * ratio
     )
-    root_account = Account(account_id="rHb9CJAWyB4rj91VRWn96DkukG4bwdtyTh")
-    main_iou_asset = Asset(value=0, currency="USD", issuer=root_account)
-    side_iou_asset = Asset(value=0, currency="USD", issuer=root_account)
+    root_account = "rHb9CJAWyB4rj91VRWn96DkukG4bwdtyTh"
+    main_iou_asset = IssuedCurrencyAmount(
+        value="0", currency="USD", issuer=root_account
+    )
+    side_iou_asset = IssuedCurrencyAmount(
+        value="0", currency="USD", issuer=root_account
+    )
     assets["iou_iou_sidechain_asset"] = create_config_files.XChainAsset(
         main_iou_asset, side_iou_asset, 1, 1 * ratio, 0.02, 0.02 * ratio
     )

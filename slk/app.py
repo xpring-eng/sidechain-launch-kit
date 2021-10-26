@@ -403,13 +403,13 @@ class App:
                 )
             return df.loc[:, ["account", "balance", "currency", "peer", "limit"]]
 
-    def get_balance(self, account: Account, asset: IssuedCurrency) -> IssuedCurrency:
+    def get_balance(self, account: Account, asset: IssuedCurrency) -> str:
         """Get a balance from a single account in a single asset"""
         try:
             df = self.get_balances(account, asset)
-            return asset(df.iloc[0]["balance"])
+            return str(df.iloc[0]["balance"])
         except:
-            return asset(0)
+            return "0"
 
     def get_account_info(self, account: Optional[Account] = None) -> pd.DataFrame:
         """
