@@ -26,6 +26,8 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Dict, List, Optional, Tuple, Union
 
+from dotenv import load_dotenv
+
 from xrpl import CryptoAlgorithm
 from xrpl.core.addresscodec import decode_seed, encode_account_public_key
 from xrpl.core.addresscodec.codec import _FAMILY_SEED_PREFIX, SEED_LENGTH, _encode
@@ -54,6 +56,8 @@ ED264807102805220DA0F312E71FC2C69E1552C9C5790F6C25E3729DEB573D5860
 
 node_size = "medium"
 default_data_dir = "/home/swd/data/rippled"
+
+load_dotenv()
 
 
 @dataclass

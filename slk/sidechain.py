@@ -31,6 +31,7 @@ from xrpl.models import (
     TrustSet,
 )
 from xrpl.utils import xrp_to_drops
+from dotenv import load_dotenv
 
 import slk.interactive as interactive
 from slk.app import App, configs_for_testnet, single_client_app, testnet_app
@@ -38,6 +39,8 @@ from slk.common import Account, disable_eprint, eprint
 from slk.config_file import ConfigFile
 from slk.log_analyzer import convert_log
 from slk.test_utils import mc_connect_subscription, sc_connect_subscription
+
+load_dotenv()
 
 
 def parse_args_helper(parser: argparse.ArgumentParser):
