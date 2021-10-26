@@ -69,7 +69,7 @@ class Network:
 
     def shutdown(self):
         for a in self.nodes:
-            a.close()
+            a.shutdown()
 
         self.servers_stop()
 
