@@ -85,12 +85,13 @@ def generate_federator_keypairs(n: int, rip: App) -> List[Keypair]:
     """generate keypairs suitable for federator keys"""
     result = []
     for i in range(n):
-        wallet = Wallet.create(crypto_algorithm=CryptoAlgorithm.ED25519)
+        req = {"id": f"wp_{i}_{n}", "command": "wallet_propose", "key_type": "ed25519"}
+        keys = rip(req)
         result.append(
             Keypair(
-                public_key=wallet.public_key,
-                secret_key=wallet.seed,
-                account_id=wallet.classic_address,
+                public_key=keys["public_key"],
+                secret_key=keys["master_seed"],
+                account_id=keys["account_id"],
             )
         )
     return result
