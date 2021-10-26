@@ -27,7 +27,8 @@ from pathlib import Path
 from typing import Dict, List, Optional, Tuple, Union
 
 from xrpl import CryptoAlgorithm
-from xrpl.core.addresscodec import encode_account_public_key
+from xrpl.core.addresscodec import decode_seed, encode_account_public_key
+from xrpl.core.addresscodec.codec import _FAMILY_SEED_PREFIX, SEED_LENGTH, _encode
 from xrpl.models import Amount, IssuedCurrencyAmount
 from xrpl.wallet import Wallet
 
@@ -67,6 +68,7 @@ def generate_node_keypairs(n: int, rip: App) -> List[Keypair]:
     result = []
     rip.client.open()
     for i in range(n):
+        # TODO: do this locally
         req = {
             "id": f"vc_{i}_{n}",
             "command": "validation_create",
@@ -86,11 +88,13 @@ def generate_federator_keypairs(n: int, rip: App) -> List[Keypair]:
     """generate keypairs suitable for federator keys"""
     result = []
     for i in range(n):
+        # TODO: clean this up
         wallet = Wallet.create(crypto_algorithm=CryptoAlgorithm.ED25519)
+        entropy = decode_seed(wallet.seed)[0]
         result.append(
             Keypair(
                 public_key=encode_account_public_key(bytes.fromhex(wallet.public_key)),
-                secret_key=wallet.seed,
+                secret_key=_encode(entropy, _FAMILY_SEED_PREFIX, SEED_LENGTH),
                 account_id=wallet.classic_address,
             )
         )
