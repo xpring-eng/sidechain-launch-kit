@@ -27,6 +27,7 @@ from pathlib import Path
 from typing import Dict, List, Optional, Tuple, Union
 
 from xrpl import CryptoAlgorithm
+from xrpl.core.addresscodec import encode_account_public_key
 from xrpl.models import Amount, IssuedCurrencyAmount
 from xrpl.wallet import Wallet
 
@@ -85,13 +86,12 @@ def generate_federator_keypairs(n: int, rip: App) -> List[Keypair]:
     """generate keypairs suitable for federator keys"""
     result = []
     for i in range(n):
-        req = {"id": f"wp_{i}_{n}", "command": "wallet_propose", "key_type": "ed25519"}
-        keys = rip(req)
+        wallet = Wallet.create(crypto_algorithm=CryptoAlgorithm.ED25519)
         result.append(
             Keypair(
-                public_key=keys["public_key"],
-                secret_key=keys["master_seed"],
-                account_id=keys["account_id"],
+                public_key=encode_account_public_key(bytes.fromhex(wallet.public_key)),
+                secret_key=wallet.seed,
+                account_id=wallet.classic_address,
             )
         )
     return result
