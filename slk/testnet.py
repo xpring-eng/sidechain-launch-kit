@@ -32,7 +32,7 @@ class Network:
                 f"{len(configs) = } {len(run_server) = }"
             )
 
-        self.configs = configs
+        configs = configs
         self.nodes = []
         self.running_server_indexes = set()
 
@@ -46,11 +46,9 @@ class Network:
             command_logs = []
         command_logs += [None] * (len(configs) - len(command_logs))
 
-        self.command_logs = command_logs
-
         # remove the old database directories.
         # we want tests to start from the same empty state every time
-        for config in self.configs:
+        for config in configs:
             db_path = config.database_path.get_line()
             if db_path and os.path.isdir(db_path):
                 files = glob.glob(f"{db_path}/**", recursive=True)
@@ -59,7 +57,7 @@ class Network:
                         continue
                     os.unlink(f)
 
-        for config, log in zip(self.configs, self.command_logs):
+        for config, log in zip(configs, command_logs):
             node = Node(config=config, command_log=log, exe=exe)
             self.nodes.append(node)
 
@@ -86,8 +84,8 @@ class Network:
     # Get a dict of the server_state, validated_ledger_seq, and complete_ledgers
     def get_brief_server_info(self) -> dict:
         ret = {"server_state": [], "ledger_seq": [], "complete_ledgers": []}
-        for c in self.nodes:
-            r = c.get_brief_server_info()
+        for n in self.nodes:
+            r = n.get_brief_server_info()
             for (k, v) in r.items():
                 ret[k].append(v)
         return ret
@@ -105,7 +103,7 @@ class Network:
     def wait_for_validated_ledger(self, server_index: Optional[int] = None):
         """Don't return until the network has at least one validated ledger"""
         if server_index is None:
-            for i in range(len(self.configs)):
+            for i in range(len(self.nodes)):
                 self.wait_for_validated_ledger(i)
             return
 
@@ -155,7 +153,7 @@ class Network:
 
         if extra_args is None:
             extra_args = []
-        extra_args += [list()] * (len(self.configs) - len(extra_args))
+        extra_args += [list()] * (len(self.nodes) - len(extra_args))
 
         for i in server_indexes:
             if i in self.running_server_indexes or not self.run_server[i]:
