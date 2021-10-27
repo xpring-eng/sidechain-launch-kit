@@ -21,8 +21,9 @@ from xrpl.models import (
     TrustSet,
     is_xrp,
 )
+from xrpl.utils import drops_to_xrp
 
-from slk.app import App, balances_dataframe
+from slk.app import App
 from slk.common import Account
 
 
@@ -193,10 +194,20 @@ class SidechainRepl(cmd.Cmd):
     # balance
     def do_balance(self, line):
         args = line.split()
+        arg_index = 0
+
+        """
+        Args:
+            args[0] (optional): mainchain/sidechain
+            args[1] (optional): account name
+            args[2] (optional): currency
+        """
+
         if len(args) > 3:
             print('Error: Too many arguments to balance command. Type "help" for help.')
             return
 
+        # whether XRP is measured in drops or XRP
         in_drops = False
         if args and args[-1] in ["xrp", "drops"]:
             unit = args[-1]
@@ -206,20 +217,23 @@ class SidechainRepl(cmd.Cmd):
             elif unit == "drops":
                 in_drops = True
 
+        # which chain
         chains = [self.mc_app, self.sc_app]
         chain_names = ["mainchain", "sidechain"]
-        if args and args[0] in ["mainchain", "sidechain"]:
+        if args and args[arg_index] in ["mainchain", "sidechain"]:
             chain_names = [args[0]]
-            args.pop(0)
+            arg_index += 1
             if chain_names[0] == "mainchain":
                 chains = [self.mc_app]
             else:
                 chains = [self.sc_app]
 
+        # account
         account_ids = [None] * len(chains)
-        if args:
-            nickname = args[0]
-            args.pop()
+        if len(args) > arg_index:
+            nickname = args[arg_index]
+            # TODO: fix bug where "balance sidechain root" prints out "side door"
+            arg_index += 1
             account_ids = []
             for c in chains:
                 if not c.is_alias(nickname):
@@ -227,10 +241,11 @@ class SidechainRepl(cmd.Cmd):
                     return
                 account_ids.append(c.account_from_alias(nickname))
 
+        # currency
         assets = [["0"]] * len(chains)
-        if args:
-            asset_alias = args[0]
-            args.pop()
+        if len(args) > arg_index:
+            asset_alias = args[arg_index]
+            arg_index += 1
             if len(chains) != 1:
                 print(
                     "Error: iou assets can only be shown for a single chain at a time"
@@ -244,10 +259,32 @@ class SidechainRepl(cmd.Cmd):
             # XRP and all assets in the assets alias list
             assets = [["0"] + c.known_iou_assets() for c in chains]
 
-        assert not args
+        # should be done analyzing all the params
+        assert arg_index == len(args)
 
-        df = balances_dataframe(chains, chain_names, account_ids, assets, in_drops)
-        _print_df_to_tabulate(df)
+        result = []
+        for chain, chain_name, acc, asset in zip(
+            chains, chain_names, account_ids, assets
+        ):
+            chain_result = chain.get_balances(acc, asset)
+            chain.substitute_nicknames(chain_result)
+            for chain_res in chain_result:
+                if not in_drops:
+                    chain_res["balance"] = drops_to_xrp(chain_res["balance"])
+                else:
+                    chain_res["balance"] = int(chain_res["balance"])
+                chain_short_name = "main" if chain_name == "mainchain" else "side"
+                chain_res["account"] = chain_short_name + " " + chain_res["account"]
+            result += chain_result
+        print(
+            tabulate(
+                result,
+                headers="keys",
+                tablefmt="presto",
+                floatfmt=",.6f",
+                numalign="right",
+            )
+        )
 
     def complete_balance(self, text, line, begidx, endidx):
         args = line.split()

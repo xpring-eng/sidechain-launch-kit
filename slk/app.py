@@ -1,6 +1,5 @@
 import os
 import time
-import traceback
 from contextlib import contextmanager
 from pathlib import Path
 from typing import Callable, Dict, List, Optional, Set, Union
@@ -326,7 +325,7 @@ class App:
     def get_balances(
         self,
         account: Union[Account, List[Account], None] = None,
-        asset: Union[Amount, List[Amount]] = "0",
+        token: Union[Amount, List[Amount]] = "0",
     ) -> pd.DataFrame:
         """
         Return a pandas dataframe of account balances. If account is None, treat as a
@@ -335,37 +334,34 @@ class App:
         if account is None:
             account = self.key_manager.known_accounts()
         if isinstance(account, list):
-            result = [self.get_balances(acc, asset) for acc in account]
-            return pd.concat(result, ignore_index=True)
-        if isinstance(asset, list):
-            result = [self.get_balances(account, ass) for ass in asset]
-            return pd.concat(result, ignore_index=True)
-        if is_xrp(asset):
+            return [d for acc in account for d in self.get_balances(acc, token)]
+        if isinstance(token, list):
+            return [d for ass in token for d in self.get_balances(account, ass)]
+        if is_xrp(token):
             try:
-                df = self.get_account_info(account)
+                account_info = self.get_account_info(account)
             except:
                 # Most likely the account does not exist on the ledger. Give a balance
                 # of zero.
-                df = pd.DataFrame(
-                    {
-                        "account": [account],
-                        "balance": [0],
-                        "flags": [0],
-                        "owner_count": [0],
-                        "previous_txn_id": ["NA"],
-                        "previous_txn_lgr_seq": [-1],
-                        "sequence": [-1],
-                    }
-                )
-            df = df.assign(currency="XRP", peer="", limit="")
-            return df.loc[:, ["account", "balance", "currency", "peer", "limit"]]
+                account_info = {
+                    "account": [account],
+                    "balance": [0],
+                    "flags": [0],
+                    "owner_count": [0],
+                    "previous_txn_id": ["NA"],
+                    "previous_txn_lgr_seq": [-1],
+                    "sequence": [-1],
+                }
+            account_info.update({"currency": "XRP", "peer": "", "limit": ""})
+            needed_data = ["account", "balance", "currency", "peer", "limit"]
+            return [{k: account_info[k] for k in account_info if k in needed_data}]
         else:
             try:
                 df = self.get_trust_lines(account)
                 if df.empty:
-                    return df
+                    return []
                 df = df[
-                    (df["peer"] == asset.issuer) & (df["currency"] == asset.currency)
+                    (df["peer"] == token.issuer) & (df["currency"] == token.currency)
                 ]
             except:
                 # Most likely the account does not exist on the ledger. Return an empty
@@ -379,61 +375,58 @@ class App:
                         "limit": [],
                     }
                 )
-            return df.loc[:, ["account", "balance", "currency", "peer", "limit"]]
+            df = df.loc[:, ["account", "balance", "currency", "peer", "limit"]]
+            return df.to_dict("records")
 
-    def get_balance(self, account: Account, asset: IssuedCurrency) -> str:
-        """Get a balance from a single account in a single asset"""
+    def get_balance(self, account: Account, token: IssuedCurrency) -> str:
+        """Get a balance from a single account in a single token"""
         try:
-            df = self.get_balances(account, asset)
+            df = self.get_balances(account, token)
             return str(df.iloc[0]["balance"])
         except:
             return "0"
 
-    def get_account_info(self, account: Optional[Account] = None) -> pd.DataFrame:
+    def get_account_info(self, account: Optional[Account] = None) -> Union[dict, list]:
         """
         Return a pandas dataframe of account info. If account is None, treat as a
         wildcard (use address book)
         """
         if account is None:
             known_accounts = self.key_manager.known_accounts()
-            result = [self.get_account_info(acc) for acc in known_accounts]
-            return pd.concat(result, ignore_index=True)
+            return [self.get_account_info(acc) for acc in known_accounts]
         try:
             result = self.node.request(AccountInfo(account=account.account_id))
         except:
-            traceback.print_exc()
             # Most likely the account does not exist on the ledger. Give a balance of 0.
-            return pd.DataFrame(
-                {
-                    "account": [account],
-                    "balance": [0],
-                    "flags": [0],
-                    "owner_count": [0],
-                    "previous_txn_id": ["NA"],
-                    "previous_txn_lgr_seq": [-1],
-                    "sequence": [-1],
-                }
-            )
+            return {
+                "account": [account],
+                "balance": [0],
+                "flags": [0],
+                "owner_count": [0],
+                "previous_txn_id": ["NA"],
+                "previous_txn_lgr_seq": [-1],
+                "sequence": [-1],
+            }
         if "account_data" not in result:
             raise ValueError("Bad result from account_info command")
         info = result["account_data"]
         for dk in ["LedgerEntryType", "index"]:
             del info[dk]
-        df = pd.DataFrame([info])
-        df.rename(
-            columns={
-                "Account": "account",
-                "Balance": "balance",
-                "Flags": "flags",
-                "OwnerCount": "owner_count",
-                "PreviousTxnID": "previous_txn_id",
-                "PreviousTxnLgrSeq": "previous_txn_lgr_seq",
-                "Sequence": "sequence",
-            },
-            inplace=True,
-        )
-        df["balance"] = df["balance"].astype(int)
-        return df
+        rename_dict = {
+            "Account": "account",
+            "Balance": "balance",
+            "Flags": "flags",
+            "OwnerCount": "owner_count",
+            "PreviousTxnID": "previous_txn_id",
+            "PreviousTxnLgrSeq": "previous_txn_lgr_seq",
+            "Sequence": "sequence",
+        }
+        for key in rename_dict:
+            if key in info:
+                new_key = rename_dict[key]
+                info[new_key] = info[key]
+                del info[key]
+        return info
 
     def get_trust_lines(
         self, account: Account, peer: Optional[Account] = None
@@ -495,6 +488,13 @@ class App:
     def substitute_nicknames(
         self, df: pd.DataFrame, cols: List[str] = ["account", "peer"]
     ) -> pd.DataFrame:
+        if isinstance(df, list):
+            for res in df:
+                for c in cols:
+                    if c not in res:
+                        continue
+                    res[c] = self.key_manager.alias_or_account_id(res[c])
+            return
         result = df.copy(deep=True)
         for c in cols:
             if c not in result:
@@ -553,6 +553,7 @@ def balances_dataframe(
         in_drops: bool,
     ):
         b = chain.get_balances(acc, asset)
+        print("BALANCE_DF", b)
         if not in_drops:
             b.loc[b["currency"] == "XRP", "balance"] /= 1_000_000
             b = chain.substitute_nicknames(b)
