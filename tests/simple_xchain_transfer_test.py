@@ -14,7 +14,7 @@ from tests.utils import (
     mc_connect_subscription,
     sc_connect_subscription,
     set_test_context_verbose_logging,
-    test_context,
+    tst_context,
     wait_for_balance_change,
 )
 
@@ -25,7 +25,7 @@ def simple_xrp_test(mc_app: App, sc_app: App, params: Params):
 
     # main to side
     # First txn funds the side chain account
-    with test_context(mc_app, sc_app):
+    with tst_context(mc_app, sc_app):
         to_send_asset = xrp_to_drops(1000)
         pre_bal = sc_app.get_balance(adam, to_send_asset)
         sidechain.main_to_side_transfer(
@@ -36,7 +36,7 @@ def simple_xrp_test(mc_app: App, sc_app: App, params: Params):
     for i in range(2):
         # even amounts for main to side
         for value in range(10, 20, 2):
-            with test_context(mc_app, sc_app):
+            with tst_context(mc_app, sc_app):
                 to_send_asset = xrp_to_drops(value)
                 pre_bal = sc_app.get_balance(adam, to_send_asset)
                 sidechain.main_to_side_transfer(
@@ -47,7 +47,7 @@ def simple_xrp_test(mc_app: App, sc_app: App, params: Params):
         # side to main
         # odd amounts for side to main
         for value in range(9, 19, 2):
-            with test_context(mc_app, sc_app):
+            with tst_context(mc_app, sc_app):
                 to_send_asset = xrp_to_drops(value)
                 pre_bal = mc_app.get_balance(alice, to_send_asset)
                 sidechain.side_to_main_transfer(
@@ -76,7 +76,7 @@ def simple_iou_test(mc_app: App, sc_app: App, params: Params):
     )
 
     # make sure adam account on the side chain exists and set the trust line
-    with test_context(mc_app, sc_app):
+    with tst_context(mc_app, sc_app):
         sidechain.main_to_side_transfer(
             mc_app, sc_app, alice, adam, xrp_to_drops(300), params
         )
@@ -109,7 +109,7 @@ def simple_iou_test(mc_app: App, sc_app: App, params: Params):
     for i in range(2):
         # even amounts for main to side
         for value in range(10, 20, 2):
-            with test_context(mc_app, sc_app):
+            with tst_context(mc_app, sc_app):
                 to_send_asset = same_amount_new_value(mc_asset, value)
                 rcv_asset = same_amount_new_value(sc_asset, value)
                 pre_bal = same_amount_new_value(
@@ -124,7 +124,7 @@ def simple_iou_test(mc_app: App, sc_app: App, params: Params):
         # side to main
         # odd amounts for side to main
         for value in range(9, 19, 2):
-            with test_context(mc_app, sc_app):
+            with tst_context(mc_app, sc_app):
                 to_send_asset = same_amount_new_value(sc_asset, value)
                 rcv_asset = same_amount_new_value(mc_asset, value)
                 pre_bal = same_amount_new_value(
