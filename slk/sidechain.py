@@ -38,7 +38,7 @@ from slk.app import App, configs_for_testnet, single_node_app, testnet_app
 from slk.common import Account, disable_eprint, eprint
 from slk.config_file import ConfigFile
 from slk.log_analyzer import convert_log
-from slk.test_utils import mc_connect_subscription, sc_connect_subscription
+from tests.utils import mc_connect_subscription, sc_connect_subscription
 
 load_dotenv()
 

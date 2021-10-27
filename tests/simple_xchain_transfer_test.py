@@ -7,7 +7,7 @@ from xrpl.models import IssuedCurrencyAmount, Payment, TrustSet
 from xrpl.utils import xrp_to_drops
 
 import slk.sidechain as sidechain
-import slk.test_utils as test_utils
+import tests.utils as test_utils
 from slk.app import App
 from slk.common import disable_eprint, eprint, same_amount_new_value
 from slk.sidechain import Params
