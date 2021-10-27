@@ -156,6 +156,8 @@ def run(mc_app: App, sc_app: App, params: Params):
 
 def standalone_test(params: Params):
     def callback(mc_app: App, sc_app: App):
+        test_utils.mc_connect_subscription(mc_app, params.mc_door_account)
+        test_utils.sc_connect_subscription(sc_app, params.sc_door_account)
         run(mc_app, sc_app, params)
 
     sidechain._standalone_with_callback(params, callback, setup_user_accounts=False)
@@ -191,6 +193,8 @@ def setup_accounts(mc_app: App, sc_app: App, params: Params):
 
 def multinode_test(params: Params):
     def callback(mc_app: App, sc_app: App):
+        test_utils.mc_connect_subscription(mc_app, params.mc_door_account)
+        test_utils.sc_connect_subscription(sc_app, params.sc_door_account)
         run(mc_app, sc_app, params)
 
     sidechain._multinode_with_callback(params, callback, setup_user_accounts=False)
