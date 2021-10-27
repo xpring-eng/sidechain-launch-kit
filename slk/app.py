@@ -187,11 +187,6 @@ class App:
         """Send the JSON command to the rippled server"""
         return self.node.client.request_json(req)["result"]
 
-    # Need async version to close ledgers from async functions
-    async def async_request(self, req: Request) -> dict:
-        """Asynchronously send the command to the rippled server"""
-        return await self.node.client.request_impl(req)
-
     def send_subscribe_command(
         self, req: Subscribe, callback: Optional[Callable[[dict], None]] = None
     ) -> dict:
@@ -327,12 +322,6 @@ class App:
         if not self.standalone:
             return
         self(LedgerAccept())
-
-    # Need async version to close ledgers from async functions
-    async def async_maybe_ledger_accept(self):
-        if not self.standalone:
-            return
-        await self.async_request(LedgerAccept())
 
     def get_balances(
         self,
