@@ -182,6 +182,11 @@ def value_diff(bigger: Amount, smaller: Amount) -> Amount:
 test_context_verbose_logging = False
 
 
+def set_test_context_verbose_logging(new_val: bool) -> None:
+    global test_context_verbose_logging
+    test_context_verbose_logging = new_val
+
+
 @contextmanager
 def test_context(mc_app, sc_app, verbose_logging: Optional[bool] = None):
     """Write extra context info to the log on test failure"""
