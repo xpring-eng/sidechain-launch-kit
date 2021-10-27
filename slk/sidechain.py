@@ -541,7 +541,6 @@ def _multinode_with_callback(
         if params.with_pauses:
             input("Pausing after mainchain start (press enter to continue)")
 
-        # mc_connect_subscription(mc_app, params.mc_door_account)
         setup_mainchain(mc_app, params, setup_user_accounts)
         if params.with_pauses:
             input("Pausing after mainchain setup (press enter to continue)")
@@ -569,7 +568,6 @@ def _multinode_with_callback(
             if params.with_pauses:
                 input("Pausing after testnet start (press enter to continue)")
 
-            # sc_connect_subscription(n_app, params.sc_door_account)
             setup_sidechain(n_app, params, setup_user_accounts)
             if params.with_pauses:
                 input("Pausing after sidechain setup (press enter to continue)")
