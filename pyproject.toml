@@ -42,6 +42,7 @@ toml = "^0.10.2"
 websockets = "^9.1"
 xrpl-py = { git = "https://github.com/XRPLF/xrpl-py.git", branch = "sidechain" }
 python-dotenv = "^0.19.1"
+tabulate = "^0.8.9"
 
 [tool.poetry.dev-dependencies]
 flake8 = "^3.8.4"

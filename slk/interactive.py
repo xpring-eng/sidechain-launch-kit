@@ -8,6 +8,7 @@ from pathlib import Path
 from typing import Optional
 
 import pandas as pd
+from tabulate import tabulate
 
 # from slk.transaction import SetHook, Payment, Trust
 from xrpl.models import (
@@ -57,6 +58,16 @@ def _removesuffix(self: str, suffix: str) -> str:
         return self[: -len(suffix)]
     else:
         return self[:]
+
+
+def _print_df_to_tabulate(df: pd.DataFrame, first_column: str = "account") -> None:
+    jsn = json.loads(df.to_json(orient="split"))
+    headers = [first_column] + jsn["columns"]
+    assert len(jsn["index"]) == len(jsn["data"])
+    data = [
+        [" ".join(jsn["index"][i])] + jsn["data"][i] for i in range(len(jsn["index"]))
+    ]
+    print(tabulate(data, headers, tablefmt="presto", floatfmt=",.6f", numalign="right"))
 
 
 class SidechainRepl(cmd.Cmd):
@@ -236,8 +247,7 @@ class SidechainRepl(cmd.Cmd):
         assert not args
 
         df = balances_dataframe(chains, chain_names, account_ids, assets, in_drops)
-        df_as_str = df.to_string(float_format=lambda x: f"{x:,.6f}")
-        print(f"{df_as_str}\n")
+        _print_df_to_tabulate(df)
 
     def complete_balance(self, text, line, begidx, endidx):
         args = line.split()
@@ -321,8 +331,7 @@ class SidechainRepl(cmd.Cmd):
             dfs.append(self._account_info_df(chain, acc))
             keys.append(_removesuffix(chain_name, "chain"))
         df = pd.concat(dfs, keys=keys)
-        df_as_str = df.to_string(float_format=lambda x: f"{x:,.6f}")
-        print(f"{df_as_str}\n")
+        _print_df_to_tabulate(df)
 
     def complete_account_info(self, text, line, begidx, endidx):
         args = line.split()
