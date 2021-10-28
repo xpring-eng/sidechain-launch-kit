@@ -119,7 +119,7 @@ A python module for transactions. Currently there are transactions for:
 
 Typically, a transaction is submitted through the call operator on an `App` object. For example, to make a payment from the account `alice` to the account `bob` for 500 XRP:
 ```
-    mc_app(Payment(account=alice, dst=bob, amt=XRP(500)))
+    mc_app(Payment(account=alice, destination=bob, amount=xrp_to_drops(500)))
 ```
 (where mc_app is an App object representing the main chain).
 

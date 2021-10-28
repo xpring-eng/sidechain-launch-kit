@@ -6,7 +6,8 @@ import subprocess
 import time
 from typing import List, Optional, Set, Union
 
-from slk.command import ServerInfo
+from xrpl.models import ServerInfo
+
 from slk.config_file import ConfigFile
 from slk.ripple_client import RippleClient
 
@@ -68,7 +69,7 @@ class Network:
 
     def shutdown(self):
         for a in self.clients:
-            a.shutdown()
+            a.close()
 
         self.servers_stop()
 
@@ -111,11 +112,13 @@ class Network:
             return
 
         client = self.clients[server_index]
+        if not client.is_open():
+            client.open()
         for i in range(600):
-            r = client.send_command(ServerInfo())
+            r = client.request(ServerInfo())
             state = None
-            if "info" in r:
-                state = r["info"]["server_state"]
+            if "info" in r.result:
+                state = r.result["info"]["server_state"]
                 if state == "proposing":
                     print(f"Synced: {server_index} : {state}", flush=True)
                     break
@@ -124,10 +127,10 @@ class Network:
             time.sleep(1)
 
         for i in range(600):
-            r = client.send_command(ServerInfo())
+            r = client.request(ServerInfo())
             state = None
-            if "info" in r:
-                complete_ledgers = r["info"]["complete_ledgers"]
+            if "info" in r.result:
+                complete_ledgers = r.result["info"]["complete_ledgers"]
                 if complete_ledgers and complete_ledgers != "empty":
                     print(
                         f"Have complete ledgers: {server_index} : {state}", flush=True

@@ -3,12 +3,14 @@ import time
 from multiprocessing import Process, Value
 from typing import Dict
 
+from xrpl.models import IssuedCurrencyAmount, Payment, TrustSet
+from xrpl.utils import xrp_to_drops
+
 import slk.sidechain as sidechain
 import slk.test_utils as test_utils
 from slk.app import App
-from slk.common import XRP, Asset, disable_eprint, eprint
+from slk.common import disable_eprint, eprint, same_amount_new_value
 from slk.sidechain import Params
-from slk.transaction import Payment, Trust
 
 
 def simple_xrp_test(mc_app: App, sc_app: App, params: Params):
@@ -18,7 +20,7 @@ def simple_xrp_test(mc_app: App, sc_app: App, params: Params):
     # main to side
     # First txn funds the side chain account
     with test_utils.test_context(mc_app, sc_app):
-        to_send_asset = XRP(1000)
+        to_send_asset = xrp_to_drops(1000)
         pre_bal = sc_app.get_balance(adam, to_send_asset)
         sidechain.main_to_side_transfer(
             mc_app, sc_app, alice, adam, to_send_asset, params
@@ -29,7 +31,7 @@ def simple_xrp_test(mc_app: App, sc_app: App, params: Params):
         # even amounts for main to side
         for value in range(10, 20, 2):
             with test_utils.test_context(mc_app, sc_app):
-                to_send_asset = XRP(value)
+                to_send_asset = xrp_to_drops(value)
                 pre_bal = sc_app.get_balance(adam, to_send_asset)
                 sidechain.main_to_side_transfer(
                     mc_app, sc_app, alice, adam, to_send_asset, params
@@ -40,7 +42,7 @@ def simple_xrp_test(mc_app: App, sc_app: App, params: Params):
         # odd amounts for side to main
         for value in range(9, 19, 2):
             with test_utils.test_context(mc_app, sc_app):
-                to_send_asset = XRP(value)
+                to_send_asset = xrp_to_drops(value)
                 pre_bal = mc_app.get_balance(alice, to_send_asset)
                 sidechain.side_to_main_transfer(
                     mc_app, sc_app, adam, alice, to_send_asset, params
@@ -54,36 +56,62 @@ def simple_iou_test(mc_app: App, sc_app: App, params: Params):
     alice = mc_app.account_from_alias("alice")
     adam = sc_app.account_from_alias("adam")
 
-    mc_asset = Asset(value=0, currency="USD", issuer=mc_app.account_from_alias("root"))
-    sc_asset = Asset(value=0, currency="USD", issuer=sc_app.account_from_alias("door"))
+    mc_asset = IssuedCurrencyAmount(
+        value="0", currency="USD", issuer=mc_app.account_from_alias("root").account_id
+    )
+    sc_asset = IssuedCurrencyAmount(
+        value="0", currency="USD", issuer=sc_app.account_from_alias("door").account_id
+    )
     mc_app.add_asset_alias(mc_asset, "mcd")  # main chain dollar
     sc_app.add_asset_alias(sc_asset, "scd")  # side chain dollar
-    mc_app(Trust(account=alice, limit_amt=mc_asset(1_000_000)))
+    mc_app(
+        TrustSet(
+            account=alice.account_id,
+            limit_amount=same_amount_new_value(mc_asset, 1_000_000),
+        )
+    )
 
     # make sure adam account on the side chain exists and set the trust line
     with test_utils.test_context(mc_app, sc_app):
-        sidechain.main_to_side_transfer(mc_app, sc_app, alice, adam, XRP(300), params)
+        sidechain.main_to_side_transfer(
+            mc_app, sc_app, alice, adam, xrp_to_drops(300), params
+        )
 
     # create a trust line to alice and pay her USD/root
-    mc_app(Trust(account=alice, limit_amt=mc_asset(1_000_000)))
+    mc_app(
+        TrustSet(
+            account=alice.account_id,
+            limit_amount=same_amount_new_value(mc_asset, 1_000_000),
+        )
+    )
     mc_app.maybe_ledger_accept()
     mc_app(
         Payment(
-            account=mc_app.account_from_alias("root"), dst=alice, amt=mc_asset(10_000)
+            account=mc_app.account_from_alias("root").account_id,
+            destination=alice.account_id,
+            amount=same_amount_new_value(mc_asset, 10_000),
         )
     )
     mc_app.maybe_ledger_accept()
 
     # create a trust line for adam
-    sc_app(Trust(account=adam, limit_amt=sc_asset(1_000_000)))
+    sc_app(
+        TrustSet(
+            account=adam.account_id,
+            limit_amount=same_amount_new_value(sc_asset, 1_000_000),
+        )
+    )
 
     for i in range(2):
         # even amounts for main to side
         for value in range(10, 20, 2):
             with test_utils.test_context(mc_app, sc_app):
-                to_send_asset = mc_asset(value)
-                rcv_asset = sc_asset(value)
-                pre_bal = sc_app.get_balance(adam, rcv_asset)
+                to_send_asset = same_amount_new_value(mc_asset, value)
+                rcv_asset = same_amount_new_value(sc_asset, value)
+                pre_bal = same_amount_new_value(
+                    sc_asset, sc_app.get_balance(adam, rcv_asset)
+                )
+                print("IN IOU TESTINGGGGGG", to_send_asset, rcv_asset, pre_bal)
                 sidechain.main_to_side_transfer(
                     mc_app, sc_app, alice, adam, to_send_asset, params
                 )
@@ -93,9 +121,11 @@ def simple_iou_test(mc_app: App, sc_app: App, params: Params):
         # odd amounts for side to main
         for value in range(9, 19, 2):
             with test_utils.test_context(mc_app, sc_app):
-                to_send_asset = sc_asset(value)
-                rcv_asset = mc_asset(value)
-                pre_bal = mc_app.get_balance(alice, to_send_asset)
+                to_send_asset = same_amount_new_value(sc_asset, value)
+                rcv_asset = same_amount_new_value(mc_asset, value)
+                pre_bal = same_amount_new_value(
+                    to_send_asset, mc_app.get_balance(alice, to_send_asset)
+                )
                 sidechain.side_to_main_transfer(
                     mc_app, sc_app, adam, alice, to_send_asset, params
                 )
@@ -141,7 +171,13 @@ def setup_accounts(mc_app: App, sc_app: App, params: Params):
     mc_app.create_account("carol")
     mc_app.create_account("deb")
     mc_app.create_account("ella")
-    mc_app(Payment(account=params.genesis_account, dst=alice, amt=XRP(20_000)))
+    mc_app(
+        Payment(
+            account=params.genesis_account.account_id,
+            destination=alice.account_id,
+            amount=xrp_to_drops(20_000),
+        )
+    )
     mc_app.maybe_ledger_accept()
 
     # Typical male names are addresses on the sidechain.

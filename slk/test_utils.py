@@ -7,9 +7,10 @@ import time
 from contextlib import contextmanager
 from typing import List, Optional
 
+from xrpl.models import Amount, IssuedCurrencyAmount, Subscribe
+
 from slk.app import App, balances_dataframe
-from slk.command import Subscribe
-from slk.common import Account, Asset
+from slk.common import Account, same_amount_new_value
 
 MC_SUBSCRIBE_QUEUE = []
 SC_SUBSCRIBE_QUEUE = []
@@ -26,17 +27,21 @@ def _sc_subscribe_callback(v: dict):
 
 
 def mc_connect_subscription(app: App, door_account: Account):
-    app(Subscribe(accounts=[door_account]), _mc_subscribe_callback)
+    app(Subscribe(accounts=[door_account.account_id]), _mc_subscribe_callback)
 
 
 def sc_connect_subscription(app: App, door_account: Account):
-    app(Subscribe(accounts=[door_account]), _sc_subscribe_callback)
+    app(Subscribe(accounts=[door_account.account_id]), _sc_subscribe_callback)
 
 
 # This pops elements off the subscribe_queue until the transaction is found
-# It mofifies the queue in place.
+# It modifies the queue in place.
 async def async_wait_for_payment_detect(
-    app: App, subscribe_queue: List[dict], src: Account, dst: Account, amt_asset: Asset
+    app: App,
+    subscribe_queue: List[dict],
+    src: Account,
+    dst: Account,
+    amt_asset: Amount,
 ):
     logging.info(
         f"Wait for payment {src.account_id = } {dst.account_id = } {amt_asset = }"
@@ -53,7 +58,7 @@ async def async_wait_for_payment_detect(
             if txn["TransactionType"] != "Payment":
                 continue
 
-            txn_asset = Asset(from_rpc_result=txn["Amount"])
+            txn_asset = txn["Amount"]
             if (
                 txn["Account"] == src.account_id
                 and txn["Destination"] == dst.account_id
@@ -99,14 +104,14 @@ async def async_wait_for_payment_detect(
     )
 
 
-def mc_wait_for_payment_detect(app: App, src: Account, dst: Account, amt_asset: Asset):
+def mc_wait_for_payment_detect(app: App, src: Account, dst: Account, amt_asset: Amount):
     logging.info("mainchain waiting for payment detect")
     return asyncio.get_event_loop().run_until_complete(
         async_wait_for_payment_detect(app, MC_SUBSCRIBE_QUEUE, src, dst, amt_asset)
     )
 
 
-def sc_wait_for_payment_detect(app: App, src: Account, dst: Account, amt_asset: Asset):
+def sc_wait_for_payment_detect(app: App, src: Account, dst: Account, amt_asset: Amount):
     logging.info("sidechain waiting for payment detect")
     return asyncio.get_event_loop().run_until_complete(
         async_wait_for_payment_detect(app, SC_SUBSCRIBE_QUEUE, src, dst, amt_asset)
@@ -114,15 +119,17 @@ def sc_wait_for_payment_detect(app: App, src: Account, dst: Account, amt_asset: 
 
 
 def wait_for_balance_change(
-    app: App, acc: Account, pre_balance: Asset, final_diff: Optional[Asset] = None
+    app: App, acc: Account, pre_balance: Amount, final_diff: Optional[Amount] = None
 ):
     logging.info(
         f"waiting for balance change {acc.account_id = } {pre_balance = } "
         f"{final_diff = }"
     )
     for i in range(30):
-        new_bal = app.get_balance(acc, pre_balance(0))
-        diff = new_bal - pre_balance
+        new_bal = same_amount_new_value(
+            pre_balance, app.get_balance(acc, same_amount_new_value(pre_balance, 0))
+        )
+        diff = value_diff(new_bal, pre_balance)
         if new_bal != pre_balance:
             logging.info(
                 f"Balance changed {acc.account_id = } {pre_balance = } {new_bal = } "
@@ -154,6 +161,20 @@ def log_chain_state(mc_app, sc_app, log, msg="Chain State"):
     log(f"{msg} Balances: \n{df_as_str}")
     federator_info = sc_app.federator_info()
     log(f"{msg} Federator Info: \n{pprint.pformat(federator_info)}")
+
+
+def value_diff(bigger: Amount, smaller: Amount) -> Amount:
+    if isinstance(bigger, str):
+        assert isinstance(smaller, str)
+        return str(int(bigger) - int(smaller))
+    else:
+        assert bigger.issuer == smaller.issuer
+        assert bigger.currency == smaller.currency
+        return IssuedCurrencyAmount(
+            value=str(int(bigger.value) - int(smaller.value)),
+            issuer=bigger.issuer,
+            currency=bigger.currency,
+        )
 
 
 # Tests can set this to True to help debug test failures by showing account

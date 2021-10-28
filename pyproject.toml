@@ -20,6 +20,9 @@ documentation = "README.md"
 include = [
   "LICENSE",
 ]
+packages = [
+  { include = "slk" },
+]
 
 [tool.poetry.dependencies]
 python = ">= 3.8, < 3.9"
@@ -36,7 +39,8 @@ python-dateutil = "^2.8.2"
 pytz = "^2021.1"
 six = "^1.16.0"
 toml = "^0.10.2"
-websockets = "^8.1"
+websockets = "^9.1"
+xrpl-py = { git = "https://github.com/XRPLF/xrpl-py.git", branch = "sidechain" }
 
 [tool.poetry.dev-dependencies]
 flake8 = "^3.8.4"

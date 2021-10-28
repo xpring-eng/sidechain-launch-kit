@@ -9,10 +9,20 @@ from typing import Optional
 
 import pandas as pd
 
+# from slk.transaction import SetHook, Payment, Trust
+from xrpl.models import (
+    AccountTx,
+    IssuedCurrency,
+    IssuedCurrencyAmount,
+    Memo,
+    Payment,
+    Subscribe,
+    TrustSet,
+    is_xrp,
+)
+
 from slk.app import App, balances_dataframe
-from slk.command import AccountTx, Subscribe
-from slk.common import XRP, Account, Asset
-from slk.transaction import Payment, SetHook, Trust
+from slk.common import Account
 
 
 def clear_screen():
@@ -206,7 +216,7 @@ class SidechainRepl(cmd.Cmd):
                     return
                 account_ids.append(c.account_from_alias(nickname))
 
-        assets = [[XRP(0)]] * len(chains)
+        assets = [["0"]] * len(chains)
         if args:
             asset_alias = args[0]
             args.pop()
@@ -221,7 +231,7 @@ class SidechainRepl(cmd.Cmd):
             assets = [[chains[0].asset_from_alias(asset_alias)]]
         else:
             # XRP and all assets in the assets alias list
-            assets = [[XRP(0)] + c.known_iou_assets() for c in chains]
+            assets = [["0"] + c.known_iou_assets() for c in chains]
 
         assert not args
 
@@ -351,6 +361,16 @@ class SidechainRepl(cmd.Cmd):
             print('Error: Too many arguments to pay command. Type "help" for help.')
             return
 
+        """
+        Args:
+            # args[-1]: 'pay'
+            args[0]: chain name
+            args[1]: sender
+            args[2]: destination
+            args[3]: amount
+            args[4]: units (XRP if not specified)
+        """
+
         in_drops = False
         if args and args[-1] in ["xrp", "drops"]:
             unit = args[-1]
@@ -358,7 +378,6 @@ class SidechainRepl(cmd.Cmd):
                 in_drops = False
             elif unit == "drops":
                 in_drops = True
-            args.pop()
 
         chain = None
         if args[0] not in ["mainchain", "sidechain"]:
@@ -369,67 +388,72 @@ class SidechainRepl(cmd.Cmd):
             chain = self.mc_app
         else:
             chain = self.sc_app
-        args.pop(0)
 
-        nickname = args[0]
-        if nickname == "door":
+        src_nickname = args[1]
+        if src_nickname == "door":
             print(
                 'Error: The "door" account should never be used as a source of '
                 "payments."
             )
             return
-        if not chain.is_alias(nickname):
-            print(f"Error: {nickname} is not in the address book")
+        if not chain.is_alias(src_nickname):
+            print(f"Error: {src_nickname} is not in the address book")
             return
-        src_account = chain.account_from_alias(nickname)
-        args.pop(0)
+        src_account = chain.account_from_alias(src_nickname)
 
-        nickname = args[0]
-        if nickname == "door":
+        dst_nickname = args[2]
+        if dst_nickname == "door":
             print(
                 'Error: "pay" cannot be used for cross chain transactions. Use the '
                 '"xchain" command instead.'
             )
             return
-        if not chain.is_alias(nickname):
-            print(f"Error: {nickname} is not in the address book")
+        if not chain.is_alias(dst_nickname):
+            print(f"Error: {dst_nickname} is not in the address book")
             return
-        dst_account = chain.account_from_alias(nickname)
-        args.pop(0)
+        dst_account = chain.account_from_alias(dst_nickname)
 
         amt_value = None
         try:
-            amt_value = int(args[0])
+            amt_value = int(args[3])
         except:
             try:
                 if not in_drops:
-                    amt_value = float(args[0])
+                    # could be a decimal (drops must be whole numbers)
+                    amt_value = float(args[3])
             except:
                 pass
 
         if amt_value is None:
-            print(f"Error: {args[0]} is an invalid amount.")
+            print(f"Error: {args[3]} is an invalid amount.")
             return
-        args.pop(0)
 
-        asset = Asset(value=0)
+        asset = None
 
-        if args:
-            asset_alias = args[0]
-            args.pop(0)
+        if len(args) > 4:
+            asset_alias = args[4]
             if not chain.is_asset_alias(asset_alias):
-                print(f"Error: {args[0]} is an invalid asset alias.")
+                print(f"Error: {args[4]} is an invalid asset alias.")
                 return
             asset = chain.asset_from_alias(asset_alias)
 
-        assert not args
-
-        if asset.is_xrp() and not in_drops:
+        if ((asset is not None and is_xrp(asset)) or asset is None) and not in_drops:
             amt_value *= 1_000_000
 
-        amt = asset(value=amt_value)
+        if asset is not None:
+            amt = IssuedCurrencyAmount(
+                value=amt_value, issuer=asset.issuer, currency=asset.currency
+            )
+        else:
+            amt = str(amt_value)
 
-        chain(Payment(account=src_account, dst=dst_account, amt=amt))
+        chain(
+            Payment(
+                account=src_account.account_id,
+                destination=dst_account.account_id,
+                amount=amt,
+            )
+        )
         chain.maybe_ledger_accept()
 
     def complete_pay(self, text, line, begidx, endidx):
@@ -480,6 +504,16 @@ class SidechainRepl(cmd.Cmd):
         if len(args) > 5:
             print('Error: Too many arguments to pay command. Type "help" for help.')
             return
+
+        """
+        Args:
+            # args[-1]: 'pay'
+            args[0]: chain name of the sender
+            args[1]: sender on args[0] chain
+            args[2]: destination on other chain
+            args[3]: amount
+            args[4]: units (XRP if not specified)
+        """
 
         in_drops = False
         if args and args[-1] in ["xrp", "drops"]:
@@ -544,7 +578,7 @@ class SidechainRepl(cmd.Cmd):
             return
         args.pop(0)
 
-        asset = Asset(value=0)
+        asset = None
 
         if args:
             asset_alias = args[0]
@@ -556,15 +590,27 @@ class SidechainRepl(cmd.Cmd):
 
         assert not args
 
-        if asset.is_xrp() and not in_drops:
+        if ((asset is not None and is_xrp(asset)) or asset is None) and not in_drops:
             amt_value *= 1_000_000
 
-        amt = asset(value=amt_value)
+        if asset is not None:
+            amt = IssuedCurrencyAmount(
+                value=amt_value, issuer=asset.issuer, currency=asset.currency
+            )
+        else:
+            amt = str(amt_value)
 
         assert not args
-        memos = [{"Memo": {"MemoData": dst_account.account_id_str_as_hex()}}]
+        memos = [Memo(memo_data=dst_account.account_id_str_as_hex())]
         door_account = chain.account_from_alias("door")
-        chain(Payment(account=src_account, dst=door_account, amt=amt, memos=memos))
+        chain(
+            Payment(
+                account=src_account.account_id,
+                destination=door_account.account_id,
+                amount=amt,
+                memos=memos,
+            )
+        )
         chain.maybe_ledger_accept()
         if other_chain.standalone:
             # from_chain (side chain) sends a txn, but won't close the to_chain
@@ -935,7 +981,7 @@ class SidechainRepl(cmd.Cmd):
             print(f"Error: The issuer {issuer} is not part of the address book.")
             return
 
-        asset = Asset(
+        asset = IssuedCurrencyAmount(
             value=0, currency=currency, issuer=chain.account_from_alias(issuer)
         )
         chain.add_asset_alias(asset, alias)
@@ -1067,7 +1113,7 @@ class SidechainRepl(cmd.Cmd):
             return
 
         asset = chain.asset_from_alias(alias)(amount)
-        chain(Trust(account=account, limit_amt=asset))
+        chain(TrustSet(account=account.account_id, limit_amount=asset))
         chain.maybe_ledger_accept()
 
     def complete_set_trust(self, text, line, begidx, endidx):
@@ -1242,63 +1288,63 @@ class SidechainRepl(cmd.Cmd):
     ##################
     # hook
 
-    def do_hook(self, line):
-        args = line.split()
-        if len(args) != 2:
-            print('Error: hook command takes two arguments. Type "help" for help.')
-            return
-        nickname = args[0]
-        args.pop(0)
-        hook_name = args[0]
-        args.pop(0)
-        assert not args
+    # TODO: re-add hook functionality
+    # def do_hook(self, line):
+    #     args = line.split()
+    #     if len(args) != 2:
+    #         print(
+    #             f'Error: hook command takes two arguments. Type "help" for help.'
+    #         )
+    #         return
+    #     nickname = args[0]
+    #     args.pop(0)
+    #     hook_name = args[0]
+    #     args.pop(0)
+    #     assert not args
 
-        if nickname == "door":
-            print('Error: Cannot set hooks on the "door" account.')
-            return
+    #     if nickname == 'door':
+    #         print(f'Error: Cannot set hooks on the "door" account.')
+    #         return
 
-        if not self.sc_app.is_alias(nickname):
-            print(f"Error: {nickname} is not in the address book")
-            return
+    #     if not self.sc_app.is_alias(nickname):
+    #         print(f'Error: {nickname} is not in the address book')
+    #         return
 
-        src_account = self.sc_app.account_from_alias(nickname)
+    #     src_account = self.sc_app.account_from_alias(nickname)
 
-        if hook_name not in _valid_hook_names:
-            print(
-                f"{hook_name} is not a valid hook. Valid hooks are: {_valid_hook_names}"
-            )
-            return
+    #     if hook_name not in _valid_hook_names:
+    #         print(
+    #             f'{hook_name} is not a valid hook. Valid hooks are: '
+    #             f'{_valid_hook_names}'
+    #         )
+    #         return
 
-        hook_file = HOOKS_DIR / hook_name / f"{hook_name}.wasm"
-        if not os.path.isfile(hook_file):
-            print(f"Error: The hook file {hook_file} does not exist.")
-            return
-        create_code = _file_to_hex(hook_file)
-        self.sc_app(SetHook(account=src_account, create_code=create_code))
-        self.sc_app.maybe_ledger_accept()
+    #     hook_file = HOOKS_DIR / hook_name / f'{hook_name}.wasm'
+    #     if not os.path.isfile(hook_file):
+    #         print(f'Error: The hook file {hook_file} does not exist.')
+    #         return
+    #     create_code = _file_to_hex(hook_file)
+    #     self.sc_app(SetHook(account=src_account.account_id, create_code=create_code))
+    #     self.sc_app.maybe_ledger_accept()
 
-    def complete_hook(self, text, line, begidx, endidx):
-        args = line.split()
-        arg_num = len(args)
-        if not text:
-            arg_num += 1
-        if arg_num == 2:  # account
-            return self._complete_account(text, line, chain_name="sidechain")
-        elif arg_num == 3:  # hook
-            if not text:
-                return _valid_hook_names
-            return [c for c in _valid_hook_names if c.startswith(text)]
-        return []
+    # def complete_hook(self, text, line, begidx, endidx):
+    #     args = line.split()
+    #     arg_num = len(args)
+    #     if not text:
+    #         arg_num += 1
+    #     if arg_num == 2:  # account
+    #         return self._complete_account(text, line, chain_name='sidechain')
+    #     elif arg_num == 3:  # hook
+    #         if not text:
+    #             return _valid_hook_names
+    #         return [c for c in _valid_hook_names if c.startswith(text)]
+    #     return []
 
-    def help_hook(self):
-        print(
-            "\n".join(
-                [
-                    "hook account hook_name",
-                    "Set a hook on a sidechain account",
-                ]
-            )
-        )
+    # def help_hook(self):
+    #     print('\n'.join([
+    #         'hook account hook_name',
+    #         'Set a hook on a sidechain account',
+    #     ]))
 
     # hook
     ##################
@@ -1323,10 +1369,12 @@ class SidechainRepl(cmd.Cmd):
             self.mc_app.create_account(a)
         for a in ["brad", "carol"]:
             self.sc_app.create_account(a)
-        amt = Asset(value=5000 * 1_000_000)
+        amt = str(5000 * 1_000_000)
         src = self.mc_app.account_from_alias("root")
         dst = self.mc_app.account_from_alias("alice")
-        self.mc_app(Payment(account=src, dst=dst, amt=amt))
+        self.mc_app(
+            Payment(account=src.account_id, destination=dst.account_id, amount=amt)
+        )
         self.mc_app.maybe_ledger_accept()
 
     # setup_accounts
@@ -1338,36 +1386,32 @@ class SidechainRepl(cmd.Cmd):
     def do_setup_ious(self, arg):
         mc_app = self.mc_app
         sc_app = self.sc_app
-        mc_asset = Asset(
-            value=0, currency="USD", issuer=mc_app.account_from_alias("root")
+        mc_asset = IssuedCurrency(
+            currency="USD", issuer=mc_app.account_from_alias("root")
         )
-        sc_asset = Asset(
-            value=0, currency="USD", issuer=sc_app.account_from_alias("door")
+        sc_asset = IssuedCurrency(
+            currency="USD", issuer=sc_app.account_from_alias("door")
         )
         mc_app.add_asset_alias(mc_asset, "rrr")
         sc_app.add_asset_alias(sc_asset, "ddd")
         mc_app(
-            Trust(
-                account=mc_app.account_from_alias("alice"),
-                limit_amt=mc_asset(1_000_000),
+            TrustSet(
+                account=mc_app.account_from_alias("alice").account_id,
+                limit_amount=mc_asset(1_000_000),
             )
         )
 
         # create brad account on the side chain and set the trust line
         memos = [
-            {
-                "Memo": {
-                    "MemoData": sc_app.account_from_alias(
-                        "brad"
-                    ).account_id_str_as_hex()
-                }
-            }
+            Memo.from_dict(
+                {"MemoData": sc_app.account_from_alias("brad").account_id_str_as_hex()}
+            )
         ]
         mc_app(
             Payment(
-                account=mc_app.account_from_alias("alice"),
-                dst=mc_app.account_from_alias("door"),
-                amt=Asset(value=3000 * 1_000_000),
+                account=mc_app.account_from_alias("alice").account_id,
+                destination=mc_app.account_from_alias("door").account_id,
+                amount=str(3000 * 1_000_000),
                 memos=memos,
             )
         )
@@ -1375,17 +1419,17 @@ class SidechainRepl(cmd.Cmd):
 
         # create a trust line to alice and pay her USD/rrr
         mc_app(
-            Trust(
-                account=mc_app.account_from_alias("alice"),
-                limit_amt=mc_asset(1_000_000),
+            TrustSet(
+                account=mc_app.account_from_alias("alice").account_id,
+                limit_amount=mc_asset(1_000_000),
             )
         )
         mc_app.maybe_ledger_accept()
         mc_app(
             Payment(
-                account=mc_app.account_from_alias("root"),
-                dst=mc_app.account_from_alias("alice"),
-                amt=mc_asset(10_000),
+                account=mc_app.account_from_alias("root").account_id,
+                destination=mc_app.account_from_alias("alice").account_id,
+                amount=mc_asset(10_000),
             )
         )
         mc_app.maybe_ledger_accept()
@@ -1394,8 +1438,9 @@ class SidechainRepl(cmd.Cmd):
 
         # create a trust line for brad
         sc_app(
-            Trust(
-                account=sc_app.account_from_alias("brad"), limit_amt=sc_asset(1_000_000)
+            TrustSet(
+                account=sc_app.account_from_alias("brad").account_id,
+                limit_amount=sc_asset(1_000_000),
             )
         )
 
@@ -1454,7 +1499,7 @@ class SidechainRepl(cmd.Cmd):
 
         account = chain.account_from_alias(accountStr)
 
-        result = json.dumps(chain(AccountTx(account=account)), indent=1)
+        result = json.dumps(chain(AccountTx(account=account.account_id)), indent=1)
         print(f"{result}")
         if out_file:
             with open(out_file, "a") as f:
