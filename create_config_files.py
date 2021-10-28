@@ -33,7 +33,7 @@ from xrpl.core.addresscodec.codec import _FAMILY_SEED_PREFIX, SEED_LENGTH, _enco
 from xrpl.models import Amount, IssuedCurrencyAmount
 from xrpl.wallet import Wallet
 
-from slk.app import App, single_client_app
+from slk.app import App, single_node_app
 from slk.common import eprint, same_amount_new_value
 from slk.config_file import ConfigFile
 
@@ -69,7 +69,7 @@ class Keypair:
 def generate_node_keypairs(n: int, rip: App) -> List[Keypair]:
     """generate keypairs suitable for validator keys"""
     result = []
-    rip.client.open()
+    rip.node.client.open()
     for i in range(n):
         # TODO: do this locally
         req = {
@@ -600,7 +600,7 @@ def main(params: Params, xchain_assets: Optional[Dict[str, XChainAsset]] = None)
     index = index + 1
 
     nonvalidator_config = ConfigFile(file_name=nonvalidator_cfg_file_name)
-    with single_client_app(
+    with single_node_app(
         exe=params.exe, config=nonvalidator_config, standalone=True
     ) as rip:
         mainnet = Network(num_nodes=1, num_validators=1, start_cfg_index=index, rip=rip)

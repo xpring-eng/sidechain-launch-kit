@@ -2,14 +2,13 @@
 
 import glob
 import os
-import subprocess
 import time
 from typing import List, Optional, Set, Union
 
 from xrpl.models import ServerInfo
 
 from slk.config_file import ConfigFile
-from slk.ripple_client import RippleClient
+from slk.node import Node
 
 
 class Network:
@@ -33,10 +32,9 @@ class Network:
                 f"{len(configs) = } {len(run_server) = }"
             )
 
-        self.configs = configs
-        self.clients = []
+        configs = configs
+        self.nodes = []
         self.running_server_indexes = set()
-        self.processes = {}
 
         if not run_server:
             run_server = []
@@ -48,11 +46,9 @@ class Network:
             command_logs = []
         command_logs += [None] * (len(configs) - len(command_logs))
 
-        self.command_logs = command_logs
-
         # remove the old database directories.
         # we want tests to start from the same empty state every time
-        for config in self.configs:
+        for config in configs:
             db_path = config.database_path.get_line()
             if db_path and os.path.isdir(db_path):
                 files = glob.glob(f"{db_path}/**", recursive=True)
@@ -61,35 +57,35 @@ class Network:
                         continue
                     os.unlink(f)
 
-        for config, log in zip(self.configs, self.command_logs):
-            client = RippleClient(config=config, command_log=log, exe=exe)
-            self.clients.append(client)
+        for config, log in zip(configs, command_logs):
+            node = Node(config=config, command_log=log, exe=exe)
+            self.nodes.append(node)
 
         self.servers_start(extra_args=extra_args)
 
     def shutdown(self):
-        for a in self.clients:
-            a.close()
+        for a in self.nodes:
+            a.shutdown()
 
         self.servers_stop()
 
-    def num_clients(self) -> int:
-        return len(self.clients)
+    def num_nodes(self) -> int:
+        return len(self.nodes)
 
-    def get_client(self, i: int) -> RippleClient:
-        return self.clients[i]
+    def get_node(self, i: int) -> Node:
+        return self.nodes[i]
 
     def get_configs(self) -> List[ConfigFile]:
-        return [c.config for c in self.clients]
+        return [c.config for c in self.nodes]
 
     def get_pids(self) -> List[int]:
-        return [c.get_pid() for c in self.clients if c.get_pid() is not None]
+        return [c.get_pid() for c in self.nodes if c.get_pid() is not None]
 
     # Get a dict of the server_state, validated_ledger_seq, and complete_ledgers
     def get_brief_server_info(self) -> dict:
         ret = {"server_state": [], "ledger_seq": [], "complete_ledgers": []}
-        for c in self.clients:
-            r = c.get_brief_server_info()
+        for n in self.nodes:
+            r = n.get_brief_server_info()
             for (k, v) in r.items():
                 ret[k].append(v)
         return ret
@@ -99,7 +95,7 @@ class Network:
     # crashes, or is started or stopped through other means, an incorrect status
     # may be reported.
     def get_running_status(self) -> List[bool]:
-        return [i in self.running_server_indexes for i in range(len(self.clients))]
+        return [i in self.running_server_indexes for i in range(len(self.nodes))]
 
     def is_running(self, index: int) -> bool:
         return index in self.running_server_indexes
@@ -107,18 +103,18 @@ class Network:
     def wait_for_validated_ledger(self, server_index: Optional[int] = None):
         """Don't return until the network has at least one validated ledger"""
         if server_index is None:
-            for i in range(len(self.configs)):
+            for i in range(len(self.nodes)):
                 self.wait_for_validated_ledger(i)
             return
 
-        client = self.clients[server_index]
-        if not client.is_open():
-            client.open()
+        node = self.nodes[server_index]
+        if not node.client.is_open():
+            node.client.open()
         for i in range(600):
-            r = client.request(ServerInfo())
+            r = node.request(ServerInfo())
             state = None
-            if "info" in r.result:
-                state = r.result["info"]["server_state"]
+            if "info" in r:
+                state = r["info"]["server_state"]
                 if state == "proposing":
                     print(f"Synced: {server_index} : {state}", flush=True)
                     break
@@ -127,10 +123,10 @@ class Network:
             time.sleep(1)
 
         for i in range(600):
-            r = client.request(ServerInfo())
+            r = node.request(ServerInfo())
             state = None
-            if "info" in r.result:
-                complete_ledgers = r.result["info"]["complete_ledgers"]
+            if "info" in r:
+                complete_ledgers = r["info"]["complete_ledgers"]
                 if complete_ledgers and complete_ledgers != "empty":
                     print(
                         f"Have complete ledgers: {server_index} : {state}", flush=True
@@ -144,7 +140,7 @@ class Network:
                 )
             time.sleep(1)
 
-        raise ValueError("Could not sync server {client.config_file_name}")
+        raise ValueError("Could not sync server {node.config_file_name}")
 
     def servers_start(
         self,
@@ -153,30 +149,19 @@ class Network:
         extra_args: Optional[List[List[str]]] = None,
     ):
         if server_indexes is None:
-            server_indexes = [i for i in range(len(self.clients))]
+            server_indexes = [i for i in range(len(self.nodes))]
 
         if extra_args is None:
             extra_args = []
-        extra_args += [list()] * (len(self.configs) - len(extra_args))
+        extra_args += [list()] * (len(self.nodes) - len(extra_args))
 
         for i in server_indexes:
             if i in self.running_server_indexes or not self.run_server[i]:
                 continue
 
-            client = self.clients[i]
-            to_run = [client.exe, "--conf", client.config_file_name]
-            print(f"Starting server {client.config_file_name}")
-            fout = open(os.devnull, "w")
-            p = subprocess.Popen(
-                to_run + extra_args[i], stdout=fout, stderr=subprocess.STDOUT
-            )
-            client.set_pid(p.pid)
-            print(
-                f"started rippled: config: {client.config_file_name} PID: {p.pid}",
-                flush=True,
-            )
+            node = self.nodes[i]
+            node.start_server(extra_args[i])
             self.running_server_indexes.add(i)
-            self.processes[i] = p
 
         time.sleep(2)  # give servers time to start
 
@@ -193,13 +178,6 @@ class Network:
         for i in server_indexes:
             if i not in self.running_server_indexes:
                 continue
-            client = self.clients[i]
-            to_run = [client.exe, "--conf", client.config_file_name]
-            fout = open(os.devnull, "w")
-            subprocess.Popen(to_run + ["stop"], stdout=fout, stderr=subprocess.STDOUT)
+            node = self.nodes[i]
+            node.stop_server()
             self.running_server_indexes.discard(i)
-
-        for i in server_indexes:
-            self.processes[i].wait()
-            del self.processes[i]
-            self.get_client(i).set_pid(-1)

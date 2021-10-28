@@ -34,7 +34,7 @@ from xrpl.models import (
 from xrpl.utils import xrp_to_drops
 
 import slk.interactive as interactive
-from slk.app import App, configs_for_testnet, single_client_app, testnet_app
+from slk.app import App, configs_for_testnet, single_node_app, testnet_app
 from slk.common import Account, disable_eprint, eprint
 from slk.config_file import ConfigFile
 from slk.log_analyzer import convert_log
@@ -479,7 +479,7 @@ def _standalone_with_callback(
         input("Start mainchain server and press enter to continue: ")
     else:
         _rm_debug_log(params.mainchain_config)
-    with single_client_app(
+    with single_node_app(
         config=params.mainchain_config,
         exe=params.mainchain_exe,
         standalone=True,
@@ -493,7 +493,7 @@ def _standalone_with_callback(
             input("Start sidechain server and press enter to continue: ")
         else:
             _rm_debug_log(params.sidechain_config)
-        with single_client_app(
+        with single_node_app(
             config=params.sidechain_config,
             exe=params.sidechain_exe,
             standalone=True,
@@ -534,7 +534,7 @@ def _multinode_with_callback(
     _rm_debug_log(mainchain_cfg)
     if params.debug_mainchain:
         input("Start mainchain server and press enter to continue: ")
-    with single_client_app(
+    with single_node_app(
         config=mainchain_cfg,
         exe=params.mainchain_exe,
         standalone=True,
@@ -597,7 +597,7 @@ def multinode_test(params: Params):
 # payments - will automatically close ledgers. However, some operations, like
 # refunds, need an extra close. This loop automatically closes ledgers.
 def close_mainchain_ledgers(stop_token: Value, params: Params, sleep_time=4):
-    with single_client_app(
+    with single_node_app(
         config=params.mainchain_config,
         exe=params.mainchain_exe,
         standalone=True,
