@@ -19,6 +19,7 @@ import time
 from multiprocessing import Process, Value
 from typing import Callable, List, Optional
 
+from dotenv import load_dotenv
 from xrpl.models import (
     AccountSet,
     Amount,
@@ -38,6 +39,8 @@ from slk.common import Account, disable_eprint, eprint
 from slk.config_file import ConfigFile
 from slk.log_analyzer import convert_log
 from slk.test_utils import mc_connect_subscription, sc_connect_subscription
+
+load_dotenv()
 
 
 def parse_args_helper(parser: argparse.ArgumentParser):
