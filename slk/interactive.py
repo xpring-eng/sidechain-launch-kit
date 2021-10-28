@@ -59,16 +59,6 @@ def _removesuffix(self: str, suffix: str) -> str:
         return self[:]
 
 
-def _print_df_to_tabulate(df: pd.DataFrame, first_column: str = "account") -> None:
-    jsn = json.loads(df.to_json(orient="split"))
-    headers = [first_column] + jsn["columns"]
-    assert len(jsn["index"]) == len(jsn["data"])
-    data = [
-        [" ".join(jsn["index"][i])] + jsn["data"][i] for i in range(len(jsn["index"]))
-    ]
-    print(tabulate(data, headers, tablefmt="presto", floatfmt=",.6f", numalign="right"))
-
-
 class SidechainRepl(cmd.Cmd):
     """Simple repl for interacting with side chains"""
 
