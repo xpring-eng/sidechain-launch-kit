@@ -328,7 +328,7 @@ class App:
         token: Union[Amount, List[Amount]] = "0",
     ) -> pd.DataFrame:
         """
-        Return a pandas dataframe of account balances. If account is None, treat as a
+        Return a list of dicts of account balances. If account is None, treat as a
         wildcard (use address book)
         """
         if account is None:
@@ -381,14 +381,14 @@ class App:
     def get_balance(self, account: Account, token: IssuedCurrency) -> str:
         """Get a balance from a single account in a single token"""
         try:
-            df = self.get_balances(account, token)
-            return str(df.iloc[0]["balance"])
+            result = self.get_balances(account, token)
+            return result[0]["balance"]
         except:
             return "0"
 
     def get_account_info(self, account: Optional[Account] = None) -> Union[dict, list]:
         """
-        Return a pandas dataframe of account info. If account is None, treat as a
+        Return a dictionary of account info. If account is None, treat as a
         wildcard (use address book)
         """
         if account is None:
@@ -397,15 +397,16 @@ class App:
         try:
             result = self.node.request(AccountInfo(account=account.account_id))
         except:
+            # TODO: better error checking
             # Most likely the account does not exist on the ledger. Give a balance of 0.
             return {
-                "account": [account],
-                "balance": [0],
-                "flags": [0],
-                "owner_count": [0],
-                "previous_txn_id": ["NA"],
-                "previous_txn_lgr_seq": [-1],
-                "sequence": [-1],
+                "account": account.account_id,
+                "balance": "0",
+                "flags": 0,
+                "owner_count": 0,
+                "previous_txn_id": "NA",
+                "previous_txn_lgr_seq": -1,
+                "sequence": -1,
             }
         if "account_data" not in result:
             raise ValueError("Bad result from account_info command")
