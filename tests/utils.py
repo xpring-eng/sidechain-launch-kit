@@ -5,9 +5,10 @@ import time
 from contextlib import contextmanager
 from typing import Optional
 
+from tabulate import tabulate
 from xrpl.models import Amount, IssuedCurrencyAmount, Subscribe
 
-from slk.app import App, balances_dataframe
+from slk.app import App, balances_data
 from slk.common import Account, same_amount_new_value
 
 MC_SUBSCRIBE_QUEUE = []
@@ -70,9 +71,15 @@ def wait_for_balance_change(
 def log_chain_state(mc_app, sc_app, log, msg="Chain State"):
     chains = [mc_app, sc_app]
     chain_names = ["mainchain", "sidechain"]
-    balances = balances_dataframe(chains, chain_names)
-    df_as_str = balances.to_string(float_format=lambda x: f"{x:,.6f}")
-    log(f"{msg} Balances: \n{df_as_str}")
+    balances = balances_data(chains, chain_names)
+    data_as_str = tabulate(
+        balances,
+        headers="keys",
+        tablefmt="presto",
+        floatfmt=",.6f",
+        numalign="right",
+    )
+    log(f"{msg} Balances: \n{data_as_str}")
     federator_info = sc_app.federator_info()
     log(f"{msg} Federator Info: \n{pprint.pformat(federator_info)}")
 

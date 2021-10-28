@@ -21,9 +21,8 @@ from xrpl.models import (
     TrustSet,
     is_xrp,
 )
-from xrpl.utils import drops_to_xrp
 
-from slk.app import App
+from slk.app import App, balances_data
 
 
 def clear_screen():
@@ -254,20 +253,7 @@ class SidechainRepl(cmd.Cmd):
         # should be done analyzing all the params
         assert arg_index == len(args)
 
-        result = []
-        for chain, chain_name, acc, asset in zip(
-            chains, chain_names, account_ids, assets
-        ):
-            chain_result = chain.get_balances(acc, asset)
-            chain.substitute_nicknames(chain_result)
-            for chain_res in chain_result:
-                if not in_drops:
-                    chain_res["balance"] = drops_to_xrp(chain_res["balance"])
-                else:
-                    chain_res["balance"] = int(chain_res["balance"])
-                chain_short_name = "main" if chain_name == "mainchain" else "side"
-                chain_res["account"] = chain_short_name + " " + chain_res["account"]
-            result += chain_result
+        result = balances_data(chains, chain_names, account_ids, assets, in_drops)
         print(
             tabulate(
                 result,

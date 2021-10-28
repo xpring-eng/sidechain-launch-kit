@@ -19,6 +19,7 @@ from xrpl.models import (
     is_xrp,
 )
 from xrpl.models.transactions.transaction import Transaction
+from xrpl.utils import drops_to_xrp
 
 import slk.testnet as testnet
 from slk.common import Account
@@ -325,7 +326,7 @@ class App:
         self,
         account: Union[Account, List[Account], None] = None,
         token: Union[Amount, List[Amount]] = "0",
-    ) -> pd.DataFrame:
+    ) -> List[dict]:
         """
         Return a list of dicts of account balances. If account is None, treat as a
         wildcard (use address book)
@@ -498,47 +499,26 @@ class App:
         return self.node
 
 
-def balances_dataframe(
+def balances_data(
     chains: List[App],
     chain_names: List[str],
     account_ids: Optional[List[Account]] = None,
     assets: List[Amount] = None,
     in_drops: bool = False,
 ):
-    def _removesuffix(self: str, suffix: str) -> str:
-        if suffix and self.endswith(suffix):
-            return self[: -len(suffix)]
-        else:
-            return self[:]
-
-    def _balance_df(
-        chain: App,
-        acc: Optional[Account],
-        asset: Union[Amount, List[Amount]],
-        in_drops: bool,
-    ):
-        b = chain.get_balances(acc, asset)
-        print("BALANCE_DF", b)
-        if not in_drops:
-            b.loc[b["currency"] == "XRP", "balance"] /= 1_000_000
-            b = chain.substitute_nicknames(b)
-            b = b.set_index("account")
-            return b
-
-    if account_ids is None:
-        account_ids = [None] * len(chains)
-
-    if assets is None:
-        # XRP and all assets in the assets alias list
-        assets = [["0"] + c.known_iou_assets() for c in chains]
-
-    dfs = []
-    keys = []
+    result = []
     for chain, chain_name, acc, asset in zip(chains, chain_names, account_ids, assets):
-        dfs.append(_balance_df(chain, acc, asset, in_drops))
-        keys.append(_removesuffix(chain_name, "chain"))
-    df = pd.concat(dfs, keys=keys)
-    return df
+        chain_result = chain.get_balances(acc, asset)
+        chain.substitute_nicknames(chain_result)
+        for chain_res in chain_result:
+            if not in_drops:
+                chain_res["balance"] = drops_to_xrp(chain_res["balance"])
+            else:
+                chain_res["balance"] = int(chain_res["balance"])
+            chain_short_name = "main" if chain_name == "mainchain" else "side"
+            chain_res["account"] = chain_short_name + " " + chain_res["account"]
+        result += chain_result
+    return result
 
 
 # Start an app with a single node
