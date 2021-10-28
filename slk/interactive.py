@@ -24,7 +24,6 @@ from xrpl.models import (
 from xrpl.utils import drops_to_xrp
 
 from slk.app import App
-from slk.common import Account
 
 
 def clear_screen():
@@ -325,11 +324,6 @@ class SidechainRepl(cmd.Cmd):
 
     ##################
     # account_info
-    def _account_info_df(self, chain: App, acc: Optional[Account]):
-        b = chain.get_account_info(acc)
-        b = chain.substitute_nicknames(b)
-        b = b.set_index("account")
-        return b
 
     def do_account_info(self, line):
         args = line.split()
@@ -362,13 +356,24 @@ class SidechainRepl(cmd.Cmd):
 
         assert not args
 
-        dfs = []
-        keys = []
+        results = []
         for chain, chain_name, acc in zip(chains, chain_names, account_ids):
-            dfs.append(self._account_info_df(chain, acc))
-            keys.append(_removesuffix(chain_name, "chain"))
-        df = pd.concat(dfs, keys=keys)
-        _print_df_to_tabulate(df)
+            result = chain.get_account_info(acc)
+            # TODO: refactor substitute_nicknames to handle the chain name too
+            chain.substitute_nicknames(result)
+            chain_short_name = "main" if chain_name == "mainchain" else "side"
+            for res in result:
+                res["account"] = chain_short_name + " " + res["account"]
+            results += result
+        print(
+            tabulate(
+                results,
+                headers="keys",
+                tablefmt="presto",
+                floatfmt=",.6f",
+                numalign="right",
+            )
+        )
 
     def complete_account_info(self, text, line, begidx, endidx):
         args = line.split()
