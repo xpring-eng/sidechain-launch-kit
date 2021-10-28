@@ -19,6 +19,7 @@ import time
 from multiprocessing import Process, Value
 from typing import Callable, List, Optional
 
+from dotenv import load_dotenv
 from xrpl.models import (
     AccountSet,
     Amount,
@@ -31,7 +32,6 @@ from xrpl.models import (
     TrustSet,
 )
 from xrpl.utils import xrp_to_drops
-from dotenv import load_dotenv
 
 import slk.interactive as interactive
 from slk.app import App, configs_for_testnet, single_client_app, testnet_app

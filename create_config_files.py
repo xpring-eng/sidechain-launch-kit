@@ -27,7 +27,6 @@ from pathlib import Path
 from typing import Dict, List, Optional, Tuple, Union
 
 from dotenv import load_dotenv
-
 from xrpl import CryptoAlgorithm
 from xrpl.core.addresscodec import decode_seed, encode_account_public_key
 from xrpl.core.addresscodec.codec import _FAMILY_SEED_PREFIX, SEED_LENGTH, _encode
