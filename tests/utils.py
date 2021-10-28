@@ -1,11 +1,9 @@
-import asyncio
-import collections
 import json
 import logging
 import pprint
 import time
 from contextlib import contextmanager
-from typing import List, Optional
+from typing import Optional
 
 from xrpl.models import Amount, IssuedCurrencyAmount, Subscribe
 
@@ -32,90 +30,6 @@ def mc_connect_subscription(app: App, door_account: Account):
 
 def sc_connect_subscription(app: App, door_account: Account):
     app(Subscribe(accounts=[door_account.account_id]), _sc_subscribe_callback)
-
-
-# This pops elements off the subscribe_queue until the transaction is found
-# It modifies the queue in place.
-async def async_wait_for_payment_detect(
-    app: App,
-    subscribe_queue: List[dict],
-    src: Account,
-    dst: Account,
-    amt_asset: Amount,
-):
-    logging.info(
-        f"Wait for payment {src.account_id = } {dst.account_id = } {amt_asset = }"
-    )
-    n_txns = 10  # keep this many txn in a circular buffer.
-    # If the payment is not detected, write them to the log.
-    last_n_paytxns = collections.deque(maxlen=n_txns)
-    for i in range(30):
-        while subscribe_queue:
-            d = subscribe_queue.pop(0)
-            if "transaction" not in d:
-                continue
-            txn = d["transaction"]
-            if txn["TransactionType"] != "Payment":
-                continue
-
-            txn_asset = txn["Amount"]
-            if (
-                txn["Account"] == src.account_id
-                and txn["Destination"] == dst.account_id
-                and txn_asset == amt_asset
-            ):
-                if d["engine_result_code"] == 0:
-                    logging.info(
-                        f"Found payment {src.account_id = } {dst.account_id = } "
-                        f"{amt_asset = }"
-                    )
-                    return
-                else:
-                    logging.error(
-                        f"Expected payment failed {src.account_id = } "
-                        f"{dst.account_id = } {amt_asset = }"
-                    )
-                    raise ValueError(
-                        f"Expected payment failed {src.account_id = } "
-                        f"{dst.account_id = } {amt_asset = }"
-                    )
-            else:
-                last_n_paytxns.append(txn)
-        if i > 0 and not (i % 5):
-            logging.warning(
-                f"Waiting for txn detect {src.account_id = } {dst.account_id = } "
-                f"{amt_asset = }"
-            )
-        # side chain can send transactions to the main chain, but won't close the ledger
-        # We don't know when the transaction will be sent, so may need to close the
-        # ledger here
-        await app.async_maybe_ledger_accept()
-        await asyncio.sleep(2)
-    logging.warning(
-        f"Last {len(last_n_paytxns)} pay txns while waiting for payment detect"
-    )
-    for t in last_n_paytxns:
-        logging.warning(f"Detected pay transaction while waiting for payment: {t}")
-    logging.error(
-        f"Expected txn detect {src.account_id = } {dst.account_id = } {amt_asset = }"
-    )
-    raise ValueError(
-        f"Expected txn detect {src.account_id = } {dst.account_id = } {amt_asset = }"
-    )
-
-
-def mc_wait_for_payment_detect(app: App, src: Account, dst: Account, amt_asset: Amount):
-    logging.info("mainchain waiting for payment detect")
-    return asyncio.get_event_loop().run_until_complete(
-        async_wait_for_payment_detect(app, MC_SUBSCRIBE_QUEUE, src, dst, amt_asset)
-    )
-
-
-def sc_wait_for_payment_detect(app: App, src: Account, dst: Account, amt_asset: Amount):
-    logging.info("sidechain waiting for payment detect")
-    return asyncio.get_event_loop().run_until_complete(
-        async_wait_for_payment_detect(app, SC_SUBSCRIBE_QUEUE, src, dst, amt_asset)
-    )
 
 
 def wait_for_balance_change(
@@ -182,8 +96,13 @@ def value_diff(bigger: Amount, smaller: Amount) -> Amount:
 test_context_verbose_logging = False
 
 
+def set_test_context_verbose_logging(new_val: bool) -> None:
+    global test_context_verbose_logging
+    test_context_verbose_logging = new_val
+
+
 @contextmanager
-def test_context(mc_app, sc_app, verbose_logging: Optional[bool] = None):
+def tst_context(mc_app, sc_app, verbose_logging: Optional[bool] = None):
     """Write extra context info to the log on test failure"""
     global test_context_verbose_logging
     if verbose_logging is None:
