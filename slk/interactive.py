@@ -132,11 +132,6 @@ class SidechainRepl(cmd.Cmd):
     ##################
     # addressbook
     def do_addressbook(self, line):
-        def print_addressbook(chain: App, chain_name: str, nickname: Optional[str]):
-            if nickname and not chain.is_alias(nickname):
-                print(f"{nickname} is not part of {chain_name}'s address book.")
-            print(f"{chain_name}:\n{chain.key_manager.to_string(nickname)}")
-
         args = line.split()
         if len(args) > 2:
             print(
@@ -160,8 +155,10 @@ class SidechainRepl(cmd.Cmd):
         if args:
             nickname = args[0]
 
-        for chain, name in zip(chains, chain_names):
-            print_addressbook(chain, name, nickname)
+        for chain, chain_name in zip(chains, chain_names):
+            if nickname and not chain.is_alias(nickname):
+                print(f"{nickname} is not part of {chain_name}'s address book.")
+            print(f"{chain_name}:\n{chain.key_manager.to_string(nickname)}")
             print("\n")
 
     def complete_addressbook(self, text, line, begidx, endidx):
@@ -206,16 +203,6 @@ class SidechainRepl(cmd.Cmd):
             print('Error: Too many arguments to balance command. Type "help" for help.')
             return
 
-        # whether XRP is measured in drops or XRP
-        in_drops = False
-        if args and args[-1] in ["xrp", "drops"]:
-            unit = args[-1]
-            args.pop()
-            if unit == "xrp":
-                in_drops = False
-            elif unit == "drops":
-                in_drops = True
-
         # which chain
         chains = [self.mc_app, self.sc_app]
         chain_names = ["mainchain", "sidechain"]
@@ -242,15 +229,21 @@ class SidechainRepl(cmd.Cmd):
 
         # currency
         assets = [["0"]] * len(chains)
+        in_drops = False
         if len(args) > arg_index:
             asset_alias = args[arg_index]
             arg_index += 1
-            if len(chains) != 1:
+            if asset_alias in ["xrp", "drops"]:
+                if asset_alias == "xrp":
+                    in_drops = False
+                elif asset_alias == "drops":
+                    in_drops = True
+            elif len(chains) != 1:
                 print(
                     "Error: iou assets can only be shown for a single chain at a time"
                 )
                 return
-            if not chains[0].is_asset_alias(asset_alias):
+            elif not chains[0].is_asset_alias(asset_alias):
                 print(f"Error: {asset_alias} is not a valid asset alias")
                 return
             assets = [[chains[0].asset_from_alias(asset_alias)]]
