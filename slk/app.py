@@ -9,7 +9,6 @@ from xrpl.models import (
     AccountInfo,
     AccountLines,
     Amount,
-    BookOffers,
     FederatorInfo,
     IssuedCurrency,
     IssuedCurrencyAmount,
@@ -450,41 +449,6 @@ class App:
             d["peer"] = d["account"]
             d["account"] = account
         return pd.DataFrame(lines)
-
-    def get_offers(self, taker_pays: Amount, taker_gets: Amount) -> pd.DataFrame:
-        """Return a pandas dataframe of offers"""
-        result = self.request(BookOffers(taker_pays=taker_pays, taker_gets=taker_gets))
-        if "offers" not in result:
-            raise ValueError("Bad result from book_offers command")
-
-        offers = result["offers"]
-        delete_keys = [
-            "BookDirectory",
-            "BookNode",
-            "LedgerEntryType",
-            "OwnerNode",
-            "PreviousTxnID",
-            "PreviousTxnLgrSeq",
-            "Sequence",
-            "index",
-        ]
-        for d in offers:
-            for dk in delete_keys:
-                del d[dk]
-            for t in ["TakerPays", "TakerGets", "owner_funds"]:
-                if "value" in d[t]:
-                    d[t] = d[t]["value"]
-        df = pd.DataFrame(offers)
-        df.rename(
-            columns={
-                "Account": "account",
-                "Flags": "flags",
-                "TakerGets": "taker_gets",
-                "TakerPays": "taker_pays",
-            },
-            inplace=True,
-        )
-        return df
 
     def substitute_nicknames(
         self, df: pd.DataFrame, cols: List[str] = ["account", "peer"]
