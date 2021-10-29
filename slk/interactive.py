@@ -797,50 +797,32 @@ class SidechainRepl(cmd.Cmd):
         except:
             f'Error: federator_info bad arguments: {args}. Type "help" for help.'
 
-        def global_df(info_dict: dict) -> pd.DataFrame:
-            indexes = []
-            keys = []
-            mc_last_sent_seq = []
-            mc_seq = []
-            mc_num_pending = []
-            mc_sync_state = []
-            sc_last_sent_seq = []
-            sc_seq = []
-            sc_num_pending = []
-            sc_sync_state = []
+        def global_df(info_dict: dict) -> List[dict]:
+            data = []
             for (k, v) in info_dict.items():
-                indexes.append(k)
+                new_dict = {}
                 info = v["info"]
-                keys.append(info["public_key"])
+                new_dict["public_key"] = info["public_key"]
                 mc = info["mainchain"]
                 sc = info["sidechain"]
-                mc_last_sent_seq.append(mc["last_transaction_sent_seq"])
-                sc_last_sent_seq.append(sc["last_transaction_sent_seq"])
-                mc_seq.append(mc["sequence"])
-                sc_seq.append(sc["sequence"])
-                mc_num_pending.append(len(mc["pending_transactions"]))
-                sc_num_pending.append(len(sc["pending_transactions"]))
-                if "state" in mc["listener_info"]:
-                    mc_sync_state.append(mc["listener_info"]["state"])
-                else:
-                    mc_sync_state.append(None)
-                if "state" in sc["listener_info"]:
-                    sc_sync_state.append(sc["listener_info"]["state"])
-                else:
-                    sc_sync_state.append(None)
-
-                data = {
-                    ("key", ""): keys,
-                    ("mainchain", "last_sent_seq"): mc_last_sent_seq,
-                    ("mainchain", "seq"): mc_seq,
-                    ("mainchain", "num_pending"): mc_num_pending,
-                    ("mainchain", "sync_state"): mc_sync_state,
-                    ("sidechain", "last_sent_seq"): sc_last_sent_seq,
-                    ("sidechain", "seq"): sc_seq,
-                    ("sidechain", "num_pending"): sc_num_pending,
-                    ("sidechain", "sync_state"): sc_sync_state,
-                }
-            return pd.DataFrame(data=data, index=indexes)
+                new_dict["main last_sent_seq"] = mc["last_transaction_sent_seq"]
+                new_dict["side last_sent_seq"] = sc["last_transaction_sent_seq"]
+                new_dict["main seq"] = mc["sequence"]
+                new_dict["side seq"] = sc["sequence"]
+                new_dict["main num_pending"] = len(mc["pending_transactions"])
+                new_dict["side num_pending"] = len(sc["pending_transactions"])
+                new_dict["main sync_state"] = (
+                    mc["listener_info"]["state"]
+                    if "state" in mc["listener_info"]
+                    else None
+                )
+                new_dict["side sync_state"] = (
+                    sc["listener_info"]["state"]
+                    if "state" in sc["listener_info"]
+                    else None
+                )
+                data.append(new_dict)
+            return data
 
         def pending_df(info_dict: dict, verbose=False) -> pd.DataFrame:
             indexes = [[], []]
@@ -896,8 +878,13 @@ class SidechainRepl(cmd.Cmd):
             pprint.pprint(info_dict)
             return
 
-        gdf = global_df(info_dict)
-        print(gdf)
+        print(
+            tabulate(
+                global_df(info_dict),
+                headers="keys",
+                tablefmt="presto",
+            )
+        )
         # pending
         print()
         pdf = pending_df(info_dict, verbose)
