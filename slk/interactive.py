@@ -23,6 +23,7 @@ from xrpl.models import (
 )
 
 from slk.app import App, balances_data
+from slk.common import same_amount_new_value
 
 
 def clear_screen():
@@ -328,10 +329,12 @@ class SidechainRepl(cmd.Cmd):
         results = []
         for chain, chain_name, acc in zip(chains, chain_names, account_ids):
             result = chain.get_account_info(acc)
+            # TODO: figure out how to get this to work for both lists and individual
+            # accounts
             # TODO: refactor substitute_nicknames to handle the chain name too
-            chain.substitute_nicknames(result)
             chain_short_name = "main" if chain_name == "mainchain" else "side"
             for res in result:
+                chain.substitute_nicknames(result)
                 res["account"] = chain_short_name + " " + res["account"]
             results += result
         print(
@@ -462,11 +465,12 @@ class SidechainRepl(cmd.Cmd):
 
         if asset is not None:
             amt = IssuedCurrencyAmount(
-                value=amt_value, issuer=asset.issuer, currency=asset.currency
+                value=str(amt_value), issuer=asset.issuer, currency=asset.currency
             )
         else:
             amt = str(amt_value)
 
+        # TODO: print error if something wrong with payment (e.g. no trustline)
         chain(
             Payment(
                 account=src_account.account_id,
@@ -1002,7 +1006,9 @@ class SidechainRepl(cmd.Cmd):
             return
 
         asset = IssuedCurrencyAmount(
-            value=0, currency=currency, issuer=chain.account_from_alias(issuer)
+            value=0,
+            currency=currency,
+            issuer=chain.account_from_alias(issuer).account_id,
         )
         chain.add_asset_alias(asset, alias)
 
@@ -1087,6 +1093,7 @@ class SidechainRepl(cmd.Cmd):
     ##################
     # set_trust
     def do_set_trust(self, line):
+        # TODO: fix bug where REPL crashes if account isn't funded yet
         args = line.split()
         if len(args) != 4:
             print(
@@ -1132,7 +1139,8 @@ class SidechainRepl(cmd.Cmd):
             print(f"Error: Invalid amount {amountStr}")
             return
 
-        asset = chain.asset_from_alias(alias)(amount)
+        asset = same_amount_new_value(chain.asset_from_alias(alias), amount)
+        # TODO: resolve error where repl crashes if account doesn't exist
         chain(TrustSet(account=account.account_id, limit_amount=asset))
         chain.maybe_ledger_accept()
 
