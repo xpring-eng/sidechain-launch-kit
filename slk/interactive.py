@@ -5,7 +5,7 @@ import os
 import pprint
 import time
 from pathlib import Path
-from typing import Optional
+from typing import List, Optional
 
 import pandas as pd
 from tabulate import tabulate
@@ -686,41 +686,41 @@ class SidechainRepl(cmd.Cmd):
     # server_info
     def do_server_info(self, line):
         def data_dict(chain: App, chain_name: str):
-            file_names = [c.get_file_name() for c in chain.get_configs()]
-            data = {
-                "pid": chain.get_pids(),
-                "config": file_names,
-                "running": chain.get_running_status(),
-            }
+            # get the server_info data for a specific chain
+            # TODO: refactor get_brief_server_info to make this method less clunky
+            filenames = [c.get_file_name() for c in chain.get_configs()]
+            chains = []
+            for i in range(len(filenames)):
+                chains.append(f"{chain_name} {i}")
+            data = {"node": chains}
+            data.update(
+                {
+                    "pid": chain.get_pids(),
+                    "config": filenames,
+                    "running": chain.get_running_status(),
+                }
+            )
             bsi = chain.get_brief_server_info()
             data.update(bsi)
-            indexes = [[], []]
-            for i in range(len(file_names)):
-                indexes[0].append(chain_name)
-                indexes[1].append(i)
-            data["indexes"] = indexes
             return data
 
-        def df_from_dicts(d1: dict, d2: Optional[dict] = None) -> pd.DataFrame:
-            indexes = [[], []]
-            for i in range(2):
-                if d2:
-                    indexes[i] = d1["indexes"][i] + d2["indexes"][i]
-                else:
-                    indexes[i] = d1["indexes"][i]
-            data = {}
-            for k in d1.keys():
-                if k == "indexes":
-                    continue
-                if d2:
-                    data[k] = d1[k] + d2[k]
-                else:
-                    data[k] = d1[k]
-                if k == "config":
-                    # save space by omitting the common prefix on the configs
-                    cp = os.path.commonprefix(data[k])
-                    data[k] = [os.path.relpath(f, cp) for f in data[k]]
-            return pd.DataFrame(data=data, index=indexes)
+        def result_from_dicts(d1: dict, d2: Optional[dict] = None) -> List[dict]:
+            # combine the info from the chains, refactor dict for tabulate
+            data = []
+            for i in range(len(d1["node"])):
+                new_dict = {key: d1[key][i] for key in d1}
+                data.append(new_dict)
+            if d2 is not None:
+                for i in range(len(d2["node"])):
+                    new_dict = {key: d2[key][i] for key in d2}
+                    data.append(new_dict)
+            # shorten config filenames for space
+            all_filenames = [d["config"] for d in data]
+            cp = os.path.commonprefix(all_filenames)
+            short_filenames = [os.path.relpath(f, cp) for f in all_filenames]
+            for i in range(len(data)):
+                data[i]["config"] = short_filenames[i]
+            return data
 
         args = line.split()
         if len(args) > 1:
@@ -745,8 +745,14 @@ class SidechainRepl(cmd.Cmd):
             data_dict(chain, _removesuffix(name, "chain"))
             for chain, name in zip(chains, chain_names)
         ]
-        df = df_from_dicts(*data_dicts)
-        print(f"{df.to_string(index=True)}")
+        result = result_from_dicts(*data_dicts)
+        print(
+            tabulate(
+                result,
+                headers="keys",
+                tablefmt="presto",
+            )
+        )
 
     def complete_server_info(self, text, line, begidx, endidx):
         arg_num = len(line.split())
@@ -777,6 +783,7 @@ class SidechainRepl(cmd.Cmd):
         indexes = set()
         verbose = False
         raw = False
+        # TODO: do this processing better
         while args and (args[-1] == "verbose" or args[-1] == "raw"):
             if args[-1] == "verbose":
                 verbose = True
@@ -884,6 +891,7 @@ class SidechainRepl(cmd.Cmd):
             return pd.DataFrame(data=data, index=indexes)
 
         info_dict = self.sc_app.federator_info(indexes)
+        pprint.pprint(info_dict)
         if raw:
             pprint.pprint(info_dict)
             return
