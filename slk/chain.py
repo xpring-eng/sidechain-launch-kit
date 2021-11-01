@@ -21,7 +21,6 @@ from xrpl.models import (
 from xrpl.models.transactions.transaction import Transaction
 from xrpl.utils import drops_to_xrp
 
-import slk.testnet as testnet
 from slk.common import Account
 from slk.config_file import ConfigFile
 from slk.node import Node
@@ -156,23 +155,11 @@ class Chain:
 
     def __init__(
         self,
-        *,
+        node: Node,
         standalone: bool,
-        network: Optional[testnet.Network] = None,
-        node: Optional[Node] = None,
     ):
-        if network and node:
-            raise ValueError("Cannot specify both a testnet and node in Chain")
-        if not network and not node:
-            raise ValueError("Must specify a testnet or a node in Chain")
-
         self.standalone = standalone
-        self.network = network
-
-        if node:
-            self.node = node
-        else:
-            self.node = self.network.get_node(0)
+        self.node = node
 
         self.key_manager = KeyManager()
         self.asset_aliases = AssetAliases()
@@ -184,10 +171,7 @@ class Chain:
         self.key_manager.add(root_account)
 
     def shutdown(self):
-        if self.network:
-            self.network.shutdown()
-        else:
-            self.node.shutdown()
+        self.node.shutdown()
 
     def send_signed(self, txn: Transaction) -> dict:
         """Sign then send the given transaction"""
@@ -214,14 +198,10 @@ class Chain:
         return self.node.request(req)
 
     def get_pids(self) -> List[int]:
-        if self.network:
-            return self.network.get_pids()
         if pid := self.node.get_pid():
             return [pid]
 
     def get_running_status(self) -> List[bool]:
-        if self.network:
-            return self.network.get_running_status()
         if self.node.get_pid():
             return [True]
         else:
@@ -229,13 +209,10 @@ class Chain:
 
     # Get a dict of the server_state, validated_ledger_seq, and complete_ledgers
     def get_brief_server_info(self) -> dict:
-        if self.network:
-            return self.network.get_brief_server_info()
-        else:
-            ret = {}
-            for (k, v) in self.node.get_brief_server_info().items():
-                ret[k] = [v]
-            return ret
+        ret = {}
+        for (k, v) in self.node.get_brief_server_info().items():
+            ret[k] = [v]
+        return ret
 
     def servers_start(
         self,
@@ -243,35 +220,18 @@ class Chain:
         *,
         extra_args: Optional[List[List[str]]] = None,
     ):
-        if self.network:
-            return self.network.servers_start(server_indexes, extra_args=extra_args)
-        else:
-            raise ValueError("Cannot start stand alone server")
+        raise ValueError("Cannot start stand alone server")
 
     def servers_stop(self, server_indexes: Optional[Union[Set[int], List[int]]] = None):
-        if self.network:
-            return self.network.servers_stop(server_indexes)
-        else:
-            raise ValueError("Cannot stop stand alone server")
+        raise ValueError("Cannot stop stand alone server")
 
     def federator_info(
         self, server_indexes: Optional[Union[Set[int], List[int]]] = None
     ):
         # key is server index. value is federator_info result
         result_dict = {}
-        if self.network:
-            if not server_indexes:
-                server_indexes = [
-                    i
-                    for i in range(self.network.num_nodes())
-                    if self.network.is_running(i)
-                ]
-            for i in server_indexes:
-                if self.network.is_running(i):
-                    result_dict[i] = self.network.get_node(i).request(FederatorInfo())
-        else:
-            if 0 in server_indexes:
-                result_dict[0] = self.node.request(FederatorInfo())
+        if 0 in server_indexes:
+            result_dict[0] = self.node.request(FederatorInfo())
         return result_dict
 
     def __call__(
@@ -298,8 +258,6 @@ class Chain:
         )
 
     def get_configs(self) -> List[str]:
-        if self.network:
-            return self.network.get_configs()
         return [self.node.config]
 
     def create_account(self, name: str) -> Account:
@@ -583,32 +541,3 @@ def configs_for_testnet(config_file_prefix: str) -> List[ConfigFile]:
             file_names.append(cfg)
     file_names.sort()
     return [ConfigFile(file_name=f) for f in file_names]
-
-
-# Start a chain for a network with the config files matched by
-# `config_file_prefix*/rippled.cfg`
-@contextmanager
-def testnet_chain(
-    *,
-    exe: str,
-    configs: List[ConfigFile],
-    command_logs: Optional[List[str]] = None,
-    run_server: Optional[List[bool]] = None,
-    extra_args: Optional[List[List[str]]] = None,
-):
-    """Start a ripple testnet and return a chain"""
-    try:
-        chain = None
-        network = testnet.Network(
-            exe,
-            configs,
-            command_logs=command_logs,
-            run_server=run_server,
-            extra_args=extra_args,
-        )
-        network.wait_for_validated_ledger()
-        chain = Chain(network=network, standalone=False)
-        yield chain
-    finally:
-        if chain:
-            chain.shutdown()

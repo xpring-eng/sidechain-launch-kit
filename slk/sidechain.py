@@ -34,10 +34,11 @@ from xrpl.models import (
 from xrpl.utils import xrp_to_drops
 
 import slk.interactive as interactive
-from slk.chain import Chain, configs_for_testnet, single_node_chain, testnet_chain
+from slk.chain import Chain, configs_for_testnet, single_node_chain
 from slk.common import Account, disable_eprint, eprint
 from slk.config_file import ConfigFile
 from slk.log_analyzer import convert_log
+from slk.testnet import sidechain_network
 
 load_dotenv()
 
@@ -587,19 +588,19 @@ def _multinode_with_callback(
                 "enter to continue: "
             )
 
-        with testnet_chain(
+        with sidechain_network(
             exe=params.sidechain_exe,
             configs=testnet_configs,
             run_server=run_server_list,
-        ) as n_chain:
+        ) as sc_chain:
 
             if params.with_pauses:
                 input("Pausing after testnet start (press enter to continue)")
 
-            setup_sidechain(n_chain, params, setup_user_accounts)
+            setup_sidechain(sc_chain, params, setup_user_accounts)
             if params.with_pauses:
                 input("Pausing after sidechain setup (press enter to continue)")
-            callback(mc_chain, n_chain)
+            callback(mc_chain, sc_chain)
 
 
 def standalone_test(params: Params):
