@@ -4,7 +4,7 @@ import glob
 import os
 import time
 from contextlib import contextmanager
-from typing import List, Optional, Set, Union
+from typing import Any, Dict, List, Optional, Set, Union
 
 from xrpl.models import FederatorInfo
 
@@ -21,7 +21,7 @@ class Sidechain(Chain):
         exe: str,
         configs: List[ConfigFile],
         *,
-        command_logs: Optional[List[str]] = None,
+        command_logs: Optional[List[Optional[str]]] = None,
         run_server: Optional[List[bool]] = None,
         extra_args: Optional[List[List[str]]] = None,
     ):
@@ -35,8 +35,8 @@ class Sidechain(Chain):
             )
 
         configs = configs
-        self.nodes = []
-        self.running_server_indexes = set()
+        self.nodes: List[Node] = []
+        self.running_server_indexes: Set[int] = set()
 
         if run_server is None:
             run_server = []
@@ -47,6 +47,7 @@ class Sidechain(Chain):
         if command_logs is None:
             command_logs = []
         command_logs += [None] * (len(configs) - len(command_logs))
+        # TODO: figure out what all these Nones do
 
         # remove the old database directories.
         # we want tests to start from the same empty state every time
@@ -84,21 +85,23 @@ class Sidechain(Chain):
     def num_nodes(self) -> int:
         return len(self.nodes)
 
-    def get_node(self, i: int) -> Node:
+    # TODO: type this better
+    def get_node(self, i: Optional[int] = None) -> Node:
+        assert i is not None
         return self.nodes[i]
 
     def get_configs(self) -> List[ConfigFile]:
         return [c.config for c in self.nodes]
 
     def get_pids(self) -> List[int]:
-        return [c.get_pid() for c in self.nodes if c.get_pid() is not None]
+        return [pid for c in self.nodes if (pid := c.get_pid()) is not None]
 
     def federator_info(
-        self, server_indexes: Optional[Union[Set[int], List[int]]] = None
+        self, server_indexes: Optional[Union[Dict[int, dict], List[int]]] = None
     ):
         # key is server index. value is federator_info result
         result_dict = {}
-        if not server_indexes:
+        if server_indexes is None:
             server_indexes = [i for i in range(self.num_nodes()) if self.is_running(i)]
         for i in server_indexes:
             if self.is_running(i):
@@ -107,7 +110,11 @@ class Sidechain(Chain):
 
     # Get a dict of the server_state, validated_ledger_seq, and complete_ledgers
     def get_brief_server_info(self) -> dict:
-        ret = {"server_state": [], "ledger_seq": [], "complete_ledgers": []}
+        ret: Dict[str, List[Dict[str, Any]]] = {
+            "server_state": [],
+            "ledger_seq": [],
+            "complete_ledgers": [],
+        }
         for n in self.nodes:
             r = n.get_brief_server_info()
             for (k, v) in r.items():
@@ -180,7 +187,7 @@ def sidechain_network(
     *,
     exe: str,
     configs: List[ConfigFile],
-    command_logs: Optional[List[str]] = None,
+    command_logs: Optional[List[Optional[str]]] = None,
     run_server: Optional[List[bool]] = None,
     extra_args: Optional[List[List[str]]] = None,
 ):

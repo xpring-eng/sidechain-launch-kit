@@ -469,7 +469,8 @@ class Chain:
     def asset_from_alias(self, name: str) -> IssuedCurrency:
         return self.asset_aliases.asset_from_alias(name)
 
-    def get_node(self) -> Node:
+    def get_node(self, i: Optional[int] = None) -> Node:
+        assert i is None
         return self.node
 
 
