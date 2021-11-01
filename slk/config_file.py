@@ -1,8 +1,11 @@
-from typing import Optional
+from __future__ import annotations
+
+from typing import Dict, Optional, Type
 
 
 class Section:
-    def section_header(line: str) -> Optional[str]:
+    @classmethod
+    def section_header(cls: Type[Section], line: str) -> Optional[str]:
         """
         If the line is a section header, return the section name
         otherwise return None
@@ -11,43 +14,43 @@ class Section:
             return line[1:-1]
         return None
 
-    def __init__(self, name: str):
+    def __init__(self: Section, name: str) -> None:
         super().__setattr__("_name", name)
         # lines contains all non key-value pairs
         super().__setattr__("_lines", [])
         super().__setattr__("_kv_pairs", {})
 
-    def get_name(self):
+    def get_name(self: Section):
         return self._name
 
-    def add_line(self, line):
+    def add_line(self: Section, line):
         s = line.split("=")
         if len(s) == 2:
             self._kv_pairs[s[0].strip()] = s[1].strip()
         else:
             self._lines.append(line)
 
-    def get_lines(self):
+    def get_lines(self: Section):
         return self._lines
 
-    def get_line(self) -> Optional[str]:
+    def get_line(self: Section) -> Optional[str]:
         if len(self._lines) > 0:
             return self._lines[0]
         return None
 
-    def __getstate__(self):
+    def __getstate__(self: Section):
         return vars(self)
 
-    def __setstate__(self, state):
+    def __setstate__(self: Section, state):
         vars(self).update(state)
 
-    def __getattr__(self, name):
+    def __getattr__(self: Section, name):
         try:
             return self._kv_pairs[name]
         except KeyError:
             raise AttributeError(name)
 
-    def __setattr__(self, name, value):
+    def __setattr__(self: Section, name, value):
         if name in self.__dict__:
             super().__setattr__(name, value)
         else:
@@ -55,10 +58,10 @@ class Section:
 
 
 class ConfigFile:
-    def __init__(self, *, file_name: Optional[str] = None):
+    def __init__(self: ConfigFile, *, file_name: Optional[str] = None) -> None:
         # parse the file
         self._file_name = file_name
-        self._sections = {}
+        self._sections: Dict[str, Section] = {}
         if not file_name:
             return
 
