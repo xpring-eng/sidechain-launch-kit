@@ -34,10 +34,11 @@ from xrpl.models import (
 from xrpl.utils import xrp_to_drops
 
 import slk.interactive as interactive
-from slk.chain import Chain, configs_for_testnet, single_node_chain, testnet_chain
+from slk.chain import Chain, configs_for_testnet, single_node_chain
 from slk.common import Account, disable_eprint, eprint
 from slk.config_file import ConfigFile
 from slk.log_analyzer import convert_log
+from slk.testnet import sidechain_network
 
 load_dotenv()
 
@@ -509,7 +510,6 @@ def _standalone_with_callback(
     with single_node_chain(
         config=params.mainchain_config,
         exe=params.mainchain_exe,
-        standalone=True,
         run_server=not params.debug_mainchain,
     ) as mc_chain:
 
@@ -522,7 +522,6 @@ def _standalone_with_callback(
         with single_node_chain(
             config=params.sidechain_config,
             exe=params.sidechain_exe,
-            standalone=True,
             run_server=not params.debug_sidechain,
         ) as sc_chain:
 
@@ -562,7 +561,6 @@ def _multinode_with_callback(
     with single_node_chain(
         config=mainchain_cfg,
         exe=params.mainchain_exe,
-        standalone=True,
         run_server=not params.debug_mainchain,
     ) as mc_chain:
         mc_chain("open")
@@ -587,19 +585,19 @@ def _multinode_with_callback(
                 "enter to continue: "
             )
 
-        with testnet_chain(
+        with sidechain_network(
             exe=params.sidechain_exe,
             configs=testnet_configs,
             run_server=run_server_list,
-        ) as n_chain:
+        ) as sc_chain:
 
             if params.with_pauses:
                 input("Pausing after testnet start (press enter to continue)")
 
-            setup_sidechain(n_chain, params, setup_user_accounts)
+            setup_sidechain(sc_chain, params, setup_user_accounts)
             if params.with_pauses:
                 input("Pausing after sidechain setup (press enter to continue)")
-            callback(mc_chain, n_chain)
+            callback(mc_chain, sc_chain)
 
 
 def standalone_test(params: Params):
@@ -623,7 +621,6 @@ def close_mainchain_ledgers(stop_token: Value, params: Params, sleep_time=4):
     with single_node_chain(
         config=params.mainchain_config,
         exe=params.mainchain_exe,
-        standalone=True,
         run_server=False,
     ) as mc_chain:
         mc_chain("open")

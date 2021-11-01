@@ -1,17 +1,19 @@
-"""Bring up a rippled testnetwork from a set of config files with fixed ips."""
+"""Bring up a rippled sidechain network from a set of config files with fixed ips."""
 
 import glob
 import os
 import time
+from contextlib import contextmanager
 from typing import List, Optional, Set, Union
 
-from xrpl.models import ServerInfo
+from xrpl.models import FederatorInfo, ServerInfo
 
+from slk.chain import Chain
 from slk.config_file import ConfigFile
 from slk.node import Node
 
 
-class Network:
+class Sidechain(Chain):
     # If run_server is None, run all the servers.
     # This is useful to help debugging
     def __init__(
@@ -36,13 +38,13 @@ class Network:
         self.nodes = []
         self.running_server_indexes = set()
 
-        if not run_server:
+        if run_server is None:
             run_server = []
         run_server += [True] * (len(configs) - len(run_server))
 
         self.run_server = run_server
 
-        if not command_logs:
+        if command_logs is None:
             command_logs = []
         command_logs += [None] * (len(configs) - len(command_logs))
 
@@ -61,6 +63,8 @@ class Network:
             node = Node(config=config, command_log=log, exe=exe)
             self.nodes.append(node)
 
+        super().__init__(node=self.nodes[0])
+
         self.servers_start(extra_args=extra_args)
 
     def shutdown(self):
@@ -68,6 +72,10 @@ class Network:
             a.shutdown()
 
         self.servers_stop()
+
+    @property
+    def standalone(self):
+        return False
 
     def num_nodes(self) -> int:
         return len(self.nodes)
@@ -80,6 +88,18 @@ class Network:
 
     def get_pids(self) -> List[int]:
         return [c.get_pid() for c in self.nodes if c.get_pid() is not None]
+
+    def federator_info(
+        self, server_indexes: Optional[Union[Set[int], List[int]]] = None
+    ):
+        # key is server index. value is federator_info result
+        result_dict = {}
+        if not server_indexes:
+            server_indexes = [i for i in range(self.num_nodes()) if self.is_running(i)]
+        for i in server_indexes:
+            if self.is_running(i):
+                result_dict[i] = self.get_node(i).request(FederatorInfo())
+        return result_dict
 
     # Get a dict of the server_state, validated_ledger_seq, and complete_ledgers
     def get_brief_server_info(self) -> dict:
@@ -181,3 +201,32 @@ class Network:
             node = self.nodes[i]
             node.stop_server()
             self.running_server_indexes.discard(i)
+
+
+# TODO: rename this method to better represent what it does
+# Start a chain for a network with the config files matched by
+# `config_file_prefix*/rippled.cfg`
+@contextmanager
+def sidechain_network(
+    *,
+    exe: str,
+    configs: List[ConfigFile],
+    command_logs: Optional[List[str]] = None,
+    run_server: Optional[List[bool]] = None,
+    extra_args: Optional[List[List[str]]] = None,
+):
+    """Start a ripple testnet and return a chain"""
+    try:
+        chain = None
+        chain = Sidechain(
+            exe,
+            configs,
+            command_logs=command_logs,
+            run_server=run_server,
+            extra_args=extra_args,
+        )
+        chain.wait_for_validated_ledger()
+        yield chain
+    finally:
+        if chain:
+            chain.shutdown()
