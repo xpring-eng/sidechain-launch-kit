@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import binascii
 import sys
-from typing import Any, Optional
+from typing import Type
 
 from xrpl.models import IssuedCurrencyAmount
 from xrpl.wallet import Wallet
@@ -29,30 +29,20 @@ def eprint(*args, **kwargs):
 class Account:
     """Account in the XRPL"""
 
-    def __init__(
-        self,
-        *,
-        account_id: Optional[str] = None,
-        nickname: Optional[str] = None,
-        public_key: Optional[str] = None,
-        public_key_hex: Optional[str] = None,
-        secret_key: Optional[str] = None
-    ):
+    def __init__(self, *, account_id: str, nickname: str, seed: str):
         self.account_id = account_id
         self.nickname = nickname
-        self.secret_key = secret_key
+        self.seed = seed
 
-        self.wallet = Wallet(secret_key, 0)
+        self.wallet = Wallet(seed, 0)
 
-    # TODO: fix type here
     @classmethod
-    def create(cls: Any, name: str) -> Account:
+    def create(cls: Type[Account], name: str) -> Account:
         wallet = Wallet.create()
         return Account(
             account_id=wallet.classic_address,
             nickname=name,
-            public_key=wallet.public_key,
-            secret_key=wallet.seed,
+            seed=wallet.seed,
         )
 
     # Accounts are equal if they represent the same account on the ledger
@@ -70,23 +60,8 @@ class Account:
             return self.nickname
         return self.account_id
 
-    def alias_or_account_id(self) -> str:
-        """return the alias if it exists, otherwise return the id"""
-        if self.nickname is not None:
-            return self.nickname
-        return self.account_id
-
     def account_id_str_as_hex(self) -> str:
         return binascii.hexlify(self.account_id.encode()).decode("utf-8")
-
-    def to_cmd_obj(self) -> dict:
-        return {
-            "account_id": self.account_id,
-            "nickname": self.nickname,
-            "public_key": self.public_key,
-            "public_key_hex": self.public_key_hex,
-            "secret_key": self.secret_key,
-        }
 
 
 def same_amount_new_value(prev_asset, new_value):
