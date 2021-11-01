@@ -1,4 +1,4 @@
-"""Bring up a rippled testnetwork from a set of config files with fixed ips."""
+"""Bring up a rippled sidechain network from a set of config files with fixed ips."""
 
 import glob
 import os
@@ -38,13 +38,13 @@ class Sidechain(Chain):
         self.nodes = []
         self.running_server_indexes = set()
 
-        if not run_server:
+        if run_server is None:
             run_server = []
         run_server += [True] * (len(configs) - len(run_server))
 
         self.run_server = run_server
 
-        if not command_logs:
+        if command_logs is None:
             command_logs = []
         command_logs += [None] * (len(configs) - len(command_logs))
 
@@ -95,12 +95,10 @@ class Sidechain(Chain):
         # key is server index. value is federator_info result
         result_dict = {}
         if not server_indexes:
-            server_indexes = [
-                i for i in range(self.network.num_nodes()) if self.network.is_running(i)
-            ]
+            server_indexes = [i for i in range(self.num_nodes()) if self.is_running(i)]
         for i in server_indexes:
-            if self.network.is_running(i):
-                result_dict[i] = self.network.get_node(i).request(FederatorInfo())
+            if self.is_running(i):
+                result_dict[i] = self.get_node(i).request(FederatorInfo())
         return result_dict
 
     # Get a dict of the server_state, validated_ledger_seq, and complete_ledgers
@@ -205,6 +203,7 @@ class Sidechain(Chain):
             self.running_server_indexes.discard(i)
 
 
+# TODO: rename this method to better represent what it does
 # Start a chain for a network with the config files matched by
 # `config_file_prefix*/rippled.cfg`
 @contextmanager
