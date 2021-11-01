@@ -7,7 +7,6 @@ import time
 from pathlib import Path
 from typing import List, Optional
 
-import pandas as pd
 from tabulate import tabulate
 
 # from slk.transaction import SetHook, Payment, Trust
@@ -798,7 +797,7 @@ class SidechainRepl(cmd.Cmd):
         except:
             f'Error: federator_info bad arguments: {args}. Type "help" for help.'
 
-        def global_df(info_dict: dict) -> List[dict]:
+        def get_fed_info_table(info_dict: dict) -> List[dict]:
             data = []
             for (k, v) in info_dict.items():
                 new_dict = {}
@@ -825,7 +824,7 @@ class SidechainRepl(cmd.Cmd):
                 data.append(new_dict)
             return data
 
-        def pending_df(info_dict: dict, verbose=False) -> pd.DataFrame:
+        def get_pending_tx_info(info_dict: dict, verbose=False) -> List[dict]:
             data = []
             for (k, v) in info_dict.items():
                 for chain in ["mainchain", "sidechain"]:
@@ -857,21 +856,20 @@ class SidechainRepl(cmd.Cmd):
             return data
 
         info_dict = self.sc_app.federator_info(indexes)
-        pprint.pprint(info_dict)
         if raw:
             pprint.pprint(info_dict)
             return
 
         print(
             tabulate(
-                global_df(info_dict),
+                get_fed_info_table(info_dict),
                 headers="keys",
                 tablefmt="presto",
             )
         )
         # pending
         print()
-        pdf = pending_df(info_dict, verbose)
+        pdf = get_pending_tx_info(info_dict, verbose)
         if len(pdf) > 0:
             print(pdf)
         else:
