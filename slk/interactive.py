@@ -5,7 +5,7 @@ import os
 import pprint
 import time
 from pathlib import Path
-from typing import List, Optional
+from typing import Any, Dict, List, Optional
 
 from tabulate import tabulate
 
@@ -692,7 +692,7 @@ class SidechainRepl(cmd.Cmd):
             chains = []
             for i in range(len(filenames)):
                 chains.append(f"{chain_name} {i}")
-            data = {"node": chains}
+            data: Dict[str, Any] = {"node": chains}
             data.update(
                 {
                     "pid": chain.get_pids(),
