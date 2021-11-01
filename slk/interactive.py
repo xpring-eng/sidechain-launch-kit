@@ -868,10 +868,14 @@ class SidechainRepl(cmd.Cmd):
             )
         )
         # pending
-        print()
-        pdf = get_pending_tx_info(info_dict, verbose)
-        if len(pdf) > 0:
-            print(pdf)
+        print("")  # newline separation
+        pending_tx_data = get_pending_tx_info(info_dict, verbose)
+        if len(pending_tx_data) > 0:
+            tabulate(
+                pending_tx_data,
+                headers="keys",
+                tablefmt="presto",
+            )
         else:
             print("No pending transactions.")
 
