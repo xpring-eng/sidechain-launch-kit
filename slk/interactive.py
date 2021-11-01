@@ -22,7 +22,7 @@ from xrpl.models import (
 )
 from xrpl.utils import drops_to_xrp
 
-from slk.app import App, balances_data
+from slk.chain import Chain, balances_data
 from slk.common import same_amount_new_value
 
 
@@ -71,11 +71,11 @@ class SidechainRepl(cmd.Cmd):
     def preloop(self):
         clear_screen()
 
-    def __init__(self, mc_app: App, sc_app: App):
+    def __init__(self, mc_chain: Chain, sc_chain: Chain):
         super().__init__()
-        assert mc_app.is_alias("door") and sc_app.is_alias("door")
-        self.mc_app = mc_app
-        self.sc_app = sc_app
+        assert mc_chain.is_alias("door") and sc_chain.is_alias("door")
+        self.mc_chain = mc_chain
+        self.sc_chain = sc_chain
 
     def _complete_chain(self, text, line):
         if not text:
@@ -91,11 +91,11 @@ class SidechainRepl(cmd.Cmd):
 
     def _complete_account(self, text, line, chain_name=None):
         known_accounts = set()
-        chains = [self.mc_app, self.sc_app]
+        chains = [self.mc_chain, self.sc_chain]
         if chain_name == "mainchain":
-            chains = [self.mc_app]
+            chains = [self.mc_chain]
         elif chain_name == "sidechain":
-            chains = [self.sc_app]
+            chains = [self.sc_chain]
         for chain in chains:
             known_accounts = known_accounts | set(
                 [a.nickname for a in chain.known_accounts()]
@@ -107,11 +107,11 @@ class SidechainRepl(cmd.Cmd):
 
     def _complete_asset(self, text, line, chain_name=None):
         known_assets = set()
-        chains = [self.mc_app, self.sc_app]
+        chains = [self.mc_chain, self.sc_chain]
         if chain_name == "mainchain":
-            chains = [self.mc_app]
+            chains = [self.mc_chain]
         elif chain_name == "sidechain":
-            chains = [self.sc_app]
+            chains = [self.sc_chain]
         for chain in chains:
             known_assets = known_assets | set(chain.known_asset_aliases())
         if not text:
@@ -130,16 +130,16 @@ class SidechainRepl(cmd.Cmd):
             )
             return
 
-        chains = [self.mc_app, self.sc_app]
+        chains = [self.mc_chain, self.sc_chain]
         chain_names = ["mainchain", "sidechain"]
         nickname = None
 
         if args and args[0] in ["mainchain", "sidechain"]:
             chain_names = [args[0]]
             if args[0] == "mainchain":
-                chains = [self.mc_app]
+                chains = [self.mc_chain]
             else:
-                chains = [self.sc_app]
+                chains = [self.sc_chain]
             args.pop(0)
 
         if args:
@@ -194,15 +194,15 @@ class SidechainRepl(cmd.Cmd):
             return
 
         # which chain
-        chains = [self.mc_app, self.sc_app]
+        chains = [self.mc_chain, self.sc_chain]
         chain_names = ["mainchain", "sidechain"]
         if args and args[arg_index] in ["mainchain", "sidechain"]:
             chain_names = [args[0]]
             arg_index += 1
             if chain_names[0] == "mainchain":
-                chains = [self.mc_app]
+                chains = [self.mc_chain]
             else:
-                chains = [self.sc_app]
+                chains = [self.sc_chain]
 
         # account
         account_ids = [None] * len(chains)
@@ -303,15 +303,15 @@ class SidechainRepl(cmd.Cmd):
                 "help."
             )
             return
-        chains = [self.mc_app, self.sc_app]
+        chains = [self.mc_chain, self.sc_chain]
         chain_names = ["mainchain", "sidechain"]
         if args and args[0] in ["mainchain", "sidechain"]:
             chain_names = [args[0]]
             args.pop(0)
             if chain_names[0] == "mainchain":
-                chains = [self.mc_app]
+                chains = [self.mc_chain]
             else:
-                chains = [self.sc_app]
+                chains = [self.sc_chain]
 
         account_ids = [None] * len(chains)
         if args:
@@ -408,9 +408,9 @@ class SidechainRepl(cmd.Cmd):
             return
 
         if args[0] == "mainchain":
-            chain = self.mc_app
+            chain = self.mc_chain
         else:
-            chain = self.sc_app
+            chain = self.sc_chain
 
         src_nickname = args[1]
         if src_nickname == "door":
@@ -554,11 +554,11 @@ class SidechainRepl(cmd.Cmd):
             return
 
         if args[0] == "mainchain":
-            chain = self.mc_app
-            other_chain = self.sc_app
+            chain = self.mc_chain
+            other_chain = self.sc_chain
         else:
-            chain = self.sc_app
-            other_chain = self.mc_app
+            chain = self.sc_chain
+            other_chain = self.mc_chain
         args.pop(0)
 
         nickname = args[0]
@@ -685,7 +685,7 @@ class SidechainRepl(cmd.Cmd):
     ##################
     # server_info
     def do_server_info(self, line):
-        def data_dict(chain: App, chain_name: str):
+        def data_dict(chain: Chain, chain_name: str):
             # get the server_info data for a specific chain
             # TODO: refactor get_brief_server_info to make this method less clunky
             filenames = [c.get_file_name() for c in chain.get_configs()]
@@ -730,15 +730,15 @@ class SidechainRepl(cmd.Cmd):
             )
             return
 
-        chains = [self.mc_app, self.sc_app]
+        chains = [self.mc_chain, self.sc_chain]
         chain_names = ["mainchain", "sidechain"]
 
         if args and args[0] in ["mainchain", "sidechain"]:
             chain_names = [args[0]]
             if args[0] == "mainchain":
-                chains = [self.mc_app]
+                chains = [self.mc_chain]
             else:
-                chains = [self.sc_app]
+                chains = [self.sc_chain]
             args.pop(0)
 
         data_dicts = [
@@ -855,7 +855,7 @@ class SidechainRepl(cmd.Cmd):
                                 }
             return data
 
-        info_dict = self.sc_app.federator_info(indexes)
+        info_dict = self.sc_chain.federator_info(indexes)
         if raw:
             pprint.pprint(info_dict)
             return
@@ -885,10 +885,10 @@ class SidechainRepl(cmd.Cmd):
             return ["verbose"]
         if "raw".startswith(args[-1]):
             return ["raw"]
-        running_status = self.sc_app.get_running_status()
+        running_status = self.sc_chain.get_running_status()
         return [
             str(i)
-            for i in range(0, len(self.sc_app.get_running_status()))
+            for i in range(0, len(self.sc_chain.get_running_status()))
             if running_status[i]
         ]
 
@@ -926,9 +926,9 @@ class SidechainRepl(cmd.Cmd):
             return
 
         if args[0] == "mainchain":
-            chain = self.mc_app
+            chain = self.mc_chain
         else:
-            chain = self.sc_app
+            chain = self.sc_chain
         args.pop(0)
 
         for alias in args:
@@ -974,9 +974,9 @@ class SidechainRepl(cmd.Cmd):
             return
 
         if args[0] == "mainchain":
-            chain = self.mc_app
+            chain = self.mc_chain
         else:
-            chain = self.sc_app
+            chain = self.sc_chain
         args.pop(0)
 
         (alias, currency, issuer) = args
@@ -1020,7 +1020,7 @@ class SidechainRepl(cmd.Cmd):
     ##################
     # ious
     def do_ious(self, line):
-        def print_ious(chain: App, chain_name: str, nickname: Optional[str]):
+        def print_ious(chain: Chain, chain_name: str, nickname: Optional[str]):
             if nickname and not chain.is_asset_alias(nickname):
                 print(f"{nickname} is not part of {chain_name}'s asset aliases.")
             print(f"{chain_name}:\n{chain.asset_aliases.to_string(nickname)}")
@@ -1030,16 +1030,16 @@ class SidechainRepl(cmd.Cmd):
             print('Error: Too many arguments to ious command. Type "help" for help.')
             return
 
-        chains = [self.mc_app, self.sc_app]
+        chains = [self.mc_chain, self.sc_chain]
         chain_names = ["mainchain", "sidechain"]
         nickname = None
 
         if args and args[0] in ["mainchain", "sidechain"]:
             chain_names = [args[0]]
             if args[0] == "mainchain":
-                chains = [self.mc_app]
+                chains = [self.mc_chain]
             else:
-                chains = [self.sc_app]
+                chains = [self.sc_chain]
             args.pop(0)
 
         if args:
@@ -1093,9 +1093,9 @@ class SidechainRepl(cmd.Cmd):
             return
 
         if args[0] == "mainchain":
-            chain = self.mc_app
+            chain = self.mc_chain
         else:
-            chain = self.sc_app
+            chain = self.sc_chain
         args.pop(0)
 
         (alias, accountStr, amountStr) = args
@@ -1171,9 +1171,9 @@ class SidechainRepl(cmd.Cmd):
             return
 
         if args[0] == "mainchain":
-            chain = self.mc_app
+            chain = self.mc_chain
         else:
-            chain = self.sc_app
+            chain = self.sc_chain
         args.pop(0)
 
         assert not args
@@ -1213,7 +1213,7 @@ class SidechainRepl(cmd.Cmd):
         indexes = set()
         if len(args) == 1 and args[0] == "all":
             # re-start all stopped servers
-            running_status = self.sc_app.get_running_status()
+            running_status = self.sc_chain.get_running_status()
             for (i, running) in enumerate(running_status):
                 if not running:
                     indexes.add(i)
@@ -1223,10 +1223,10 @@ class SidechainRepl(cmd.Cmd):
                     indexes.add(int(i))
             except:
                 f'Error: server_start bad arguments: {args}. Type "help" for help.'
-        self.sc_app.servers_start(indexes)
+        self.sc_chain.servers_start(indexes)
 
     def complete_server_start(self, text, line, begidx, endidx):
-        running_status = self.sc_app.get_running_status()
+        running_status = self.sc_chain.get_running_status()
         if "all".startswith(text):
             return ["all"]
         return [
@@ -1262,7 +1262,7 @@ class SidechainRepl(cmd.Cmd):
         indexes = set()
         if len(args) == 1 and args[0] == "all":
             # stop all running servers
-            running_status = self.sc_app.get_running_status()
+            running_status = self.sc_chain.get_running_status()
             for (i, running) in enumerate(running_status):
                 if running:
                     indexes.add(i)
@@ -1272,10 +1272,10 @@ class SidechainRepl(cmd.Cmd):
                     indexes.add(int(i))
             except:
                 f'Error: server_stop bad arguments: {args}. Type "help" for help.'
-        self.sc_app.servers_stop(indexes)
+        self.sc_chain.servers_stop(indexes)
 
     def complete_server_stop(self, text, line, begidx, endidx):
-        running_status = self.sc_app.get_running_status()
+        running_status = self.sc_chain.get_running_status()
         if "all".startswith(text):
             return ["all"]
         return [
@@ -1318,11 +1318,11 @@ class SidechainRepl(cmd.Cmd):
     #         print(f'Error: Cannot set hooks on the "door" account.')
     #         return
 
-    #     if not self.sc_app.is_alias(nickname):
+    #     if not self.sc_chain.is_alias(nickname):
     #         print(f'Error: {nickname} is not in the address book')
     #         return
 
-    #     src_account = self.sc_app.account_from_alias(nickname)
+    #     src_account = self.sc_chain.account_from_alias(nickname)
 
     #     if hook_name not in _valid_hook_names:
     #         print(
@@ -1336,8 +1336,10 @@ class SidechainRepl(cmd.Cmd):
     #         print(f'Error: The hook file {hook_file} does not exist.')
     #         return
     #     create_code = _file_to_hex(hook_file)
-    #     self.sc_app(SetHook(account=src_account.account_id, create_code=create_code))
-    #     self.sc_app.maybe_ledger_accept()
+    #     self.sc_chain(
+    #         SetHook(account=src_account.account_id, create_code=create_code)
+    #     )
+    #     self.sc_chain.maybe_ledger_accept()
 
     # def complete_hook(self, text, line, begidx, endidx):
     #     args = line.split()
@@ -1378,16 +1380,16 @@ class SidechainRepl(cmd.Cmd):
 
     def do_setup_accounts(self, arg):
         for a in ["alice", "bob"]:
-            self.mc_app.create_account(a)
+            self.mc_chain.create_account(a)
         for a in ["brad", "carol"]:
-            self.sc_app.create_account(a)
+            self.sc_chain.create_account(a)
         amt = str(5000 * 1_000_000)
-        src = self.mc_app.account_from_alias("root")
-        dst = self.mc_app.account_from_alias("alice")
-        self.mc_app(
+        src = self.mc_chain.account_from_alias("root")
+        dst = self.mc_chain.account_from_alias("alice")
+        self.mc_chain(
             Payment(account=src.account_id, destination=dst.account_id, amount=amt)
         )
-        self.mc_app.maybe_ledger_accept()
+        self.mc_chain.maybe_ledger_accept()
 
     # setup_accounts
     ##################
@@ -1396,19 +1398,19 @@ class SidechainRepl(cmd.Cmd):
     # setup_ious
 
     def do_setup_ious(self, arg):
-        mc_app = self.mc_app
-        sc_app = self.sc_app
+        mc_chain = self.mc_chain
+        sc_chain = self.sc_chain
         mc_asset = IssuedCurrency(
-            currency="USD", issuer=mc_app.account_from_alias("root")
+            currency="USD", issuer=mc_chain.account_from_alias("root")
         )
         sc_asset = IssuedCurrency(
-            currency="USD", issuer=sc_app.account_from_alias("door")
+            currency="USD", issuer=sc_chain.account_from_alias("door")
         )
-        mc_app.add_asset_alias(mc_asset, "rrr")
-        sc_app.add_asset_alias(sc_asset, "ddd")
-        mc_app(
+        mc_chain.add_asset_alias(mc_asset, "rrr")
+        sc_chain.add_asset_alias(sc_asset, "ddd")
+        mc_chain(
             TrustSet(
-                account=mc_app.account_from_alias("alice").account_id,
+                account=mc_chain.account_from_alias("alice").account_id,
                 limit_amount=mc_asset(1_000_000),
             )
         )
@@ -1416,42 +1418,46 @@ class SidechainRepl(cmd.Cmd):
         # create brad account on the side chain and set the trust line
         memos = [
             Memo.from_dict(
-                {"MemoData": sc_app.account_from_alias("brad").account_id_str_as_hex()}
+                {
+                    "MemoData": sc_chain.account_from_alias(
+                        "brad"
+                    ).account_id_str_as_hex()
+                }
             )
         ]
-        mc_app(
+        mc_chain(
             Payment(
-                account=mc_app.account_from_alias("alice").account_id,
-                destination=mc_app.account_from_alias("door").account_id,
+                account=mc_chain.account_from_alias("alice").account_id,
+                destination=mc_chain.account_from_alias("door").account_id,
                 amount=str(3000 * 1_000_000),
                 memos=memos,
             )
         )
-        mc_app.maybe_ledger_accept()
+        mc_chain.maybe_ledger_accept()
 
         # create a trust line to alice and pay her USD/rrr
-        mc_app(
+        mc_chain(
             TrustSet(
-                account=mc_app.account_from_alias("alice").account_id,
+                account=mc_chain.account_from_alias("alice").account_id,
                 limit_amount=mc_asset(1_000_000),
             )
         )
-        mc_app.maybe_ledger_accept()
-        mc_app(
+        mc_chain.maybe_ledger_accept()
+        mc_chain(
             Payment(
-                account=mc_app.account_from_alias("root").account_id,
-                destination=mc_app.account_from_alias("alice").account_id,
+                account=mc_chain.account_from_alias("root").account_id,
+                destination=mc_chain.account_from_alias("alice").account_id,
                 amount=mc_asset(10_000),
             )
         )
-        mc_app.maybe_ledger_accept()
+        mc_chain.maybe_ledger_accept()
 
         time.sleep(2)
 
         # create a trust line for brad
-        sc_app(
+        sc_chain(
             TrustSet(
-                account=sc_app.account_from_alias("brad").account_id,
+                account=sc_chain.account_from_alias("brad").account_id,
                 limit_amount=sc_asset(1_000_000),
             )
         )
@@ -1490,9 +1496,9 @@ class SidechainRepl(cmd.Cmd):
             return
 
         if args[0] == "mainchain":
-            chain = self.mc_app
+            chain = self.mc_chain
         else:
-            chain = self.sc_app
+            chain = self.sc_chain
         args.pop(0)
 
         accountStr = args[0]
@@ -1564,9 +1570,9 @@ class SidechainRepl(cmd.Cmd):
             return
 
         if args[0] == "mainchain":
-            chain = self.mc_app
+            chain = self.mc_chain
         else:
-            chain = self.sc_app
+            chain = self.sc_chain
         args.pop(0)
 
         accountStr = args[0]
@@ -1627,5 +1633,5 @@ class SidechainRepl(cmd.Cmd):
     ##################
 
 
-def repl(mc_app: App, sc_app: App):
-    SidechainRepl(mc_app, sc_app).cmdloop()
+def repl(mc_chain: Chain, sc_chain: Chain):
+    SidechainRepl(mc_chain, sc_chain).cmdloop()

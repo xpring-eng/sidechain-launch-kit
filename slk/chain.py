@@ -151,8 +151,8 @@ class AssetAliases:
         )
 
 
-class App:
-    """App to to interact with rippled servers"""
+class Chain:
+    """Representation of one chain (mainchain/sidechain)"""
 
     def __init__(
         self,
@@ -162,9 +162,9 @@ class App:
         node: Optional[Node] = None,
     ):
         if network and node:
-            raise ValueError("Cannot specify both a testnet and node in App")
+            raise ValueError("Cannot specify both a testnet and node in Chain")
         if not network and not node:
-            raise ValueError("Must specify a testnet or a node in App")
+            raise ValueError("Must specify a testnet or a node in Chain")
 
         self.standalone = standalone
         self.network = network
@@ -511,7 +511,7 @@ class App:
 
 
 def balances_data(
-    chains: List[App],
+    chains: List[Chain],
     chain_names: List[str],
     account_ids: Optional[List[Account]] = None,
     assets: List[Amount] = None,
@@ -539,9 +539,9 @@ def balances_data(
     return result
 
 
-# Start an app with a single node
+# Start a chain with a single node
 @contextmanager
-def single_node_app(
+def single_node_chain(
     *,
     config: ConfigFile,
     command_log: Optional[str] = None,
@@ -551,11 +551,11 @@ def single_node_app(
     extra_args: Optional[List[str]] = None,
     standalone=False,
 ):
-    """Start a ripple server and return an app"""
+    """Start a ripple server and return a chain"""
     if extra_args is None:
         extra_args = []
     server_running = False
-    app = None
+    chain = None
     node = Node(config=config, command_log=command_log, exe=exe)
     try:
         if run_server:
@@ -563,11 +563,11 @@ def single_node_app(
             server_running = True
             time.sleep(1.5)  # give process time to startup
 
-        app = App(node=node, standalone=standalone)
-        yield app
+        chain = Chain(node=node, standalone=standalone)
+        yield chain
     finally:
-        if app:
-            app.shutdown()
+        if chain:
+            chain.shutdown()
         if run_server and server_running:
             node.stop_server()
 
@@ -585,10 +585,10 @@ def configs_for_testnet(config_file_prefix: str) -> List[ConfigFile]:
     return [ConfigFile(file_name=f) for f in file_names]
 
 
-# Start an app for a network with the config files matched by
+# Start a chain for a network with the config files matched by
 # `config_file_prefix*/rippled.cfg`
 @contextmanager
-def testnet_app(
+def testnet_chain(
     *,
     exe: str,
     configs: List[ConfigFile],
@@ -596,9 +596,9 @@ def testnet_app(
     run_server: Optional[List[bool]] = None,
     extra_args: Optional[List[List[str]]] = None,
 ):
-    """Start a ripple testnet and return an app"""
+    """Start a ripple testnet and return a chain"""
     try:
-        app = None
+        chain = None
         network = testnet.Network(
             exe,
             configs,
@@ -607,8 +607,8 @@ def testnet_app(
             extra_args=extra_args,
         )
         network.wait_for_validated_ledger()
-        app = App(network=network, standalone=False)
-        yield app
+        chain = Chain(network=network, standalone=False)
+        yield chain
     finally:
-        if app:
-            app.shutdown()
+        if chain:
+            chain.shutdown()
