@@ -28,11 +28,9 @@ class Node:
         self.config = config
         self.exe = exe
         self.command_log = command_log
-        self.subscription_websockets = []
-        self.tasks = []
-        self.pid = None
-        self.process = None
-        if command_log:
+        self.pid: Optional[int] = None
+        self.process: Optional[subprocess.Popen[bytes]] = None
+        if self.command_log is not None:
             with open(self.command_log, "w") as f:
                 f.write("# Start \n")
 
@@ -81,6 +79,7 @@ class Node:
         fout = open(os.devnull, "w")
         subprocess.Popen(to_run + ["stop"], stdout=fout, stderr=subprocess.STDOUT)
 
+        assert self.process is not None
         self.process.wait()
         self.pid = -1
 
