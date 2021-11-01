@@ -21,6 +21,7 @@ from xrpl.models import (
     TrustSet,
     is_xrp,
 )
+from xrpl.utils import drops_to_xrp
 
 from slk.app import App, balances_data
 from slk.common import same_amount_new_value
@@ -825,52 +826,35 @@ class SidechainRepl(cmd.Cmd):
             return data
 
         def pending_df(info_dict: dict, verbose=False) -> pd.DataFrame:
-            indexes = [[], []]
-            amounts = []
-            dsts = []
-            num_sigs = []
-            hashes = []
-            signatures = []
+            data = []
             for (k, v) in info_dict.items():
                 for chain in ["mainchain", "sidechain"]:
-                    info = v["info"][chain]
-                    pending = info["pending_transactions"]
-                    idx = (k, chain)
+                    short_chain_name = chain[:4] + " " + str(k)
+                    pending = v["info"][chain]["pending_transactions"]
                     for t in pending:
                         amt = t["amount"]
-                        try:
-                            amt = int(amt) / 1_000_000.0
-                        except:
-                            pass
-                        dst = t["destination_account"]
-                        h = t["hash"]
-                        ns = len(t["signatures"])
+                        if is_xrp(amt):
+                            amt = drops_to_xrp(amt)
                         if not verbose:
-                            indexes[0].append(idx[0])
-                            indexes[1].append(idx[1])
-                            amounts.append(amt)
-                            dsts.append(dst)
-                            hashes.append(h)
-                            num_sigs.append(ns)
+                            pending_info = {
+                                "chain": short_chain_name,
+                                "amount": amt,
+                                "dest_acct": t["destination_account"],
+                                "hash": t["hash"],
+                                "num_sigs": len(t["signatures"]),
+                            }
+                            data.append(pending_info)
                         else:
                             for sig in t["signatures"]:
-                                indexes[0].append(idx[0])
-                                indexes[1].append(idx[1])
-                                amounts.append(amt)
-                                dsts.append(dst)
-                                hashes.append(h)
-                                num_sigs.append(ns)
-                                signatures.append(sig["public_key"])
-
-            data = {
-                "amount": amounts,
-                "dest_account": dsts,
-                "num_sigs": num_sigs,
-                "hash": hashes,
-            }
-            if verbose:
-                data["sigs"] = signatures
-            return pd.DataFrame(data=data, index=indexes)
+                                pending_info = {
+                                    "chain": short_chain_name,
+                                    "amount": amt,
+                                    "dest_acct": t["destination_account"],
+                                    "hash": t["hash"],
+                                    "num_sigs": len(t["signatures"]),
+                                    "sigs": sig["public_key"],
+                                }
+            return data
 
         info_dict = self.sc_app.federator_info(indexes)
         pprint.pprint(info_dict)
@@ -888,7 +872,10 @@ class SidechainRepl(cmd.Cmd):
         # pending
         print()
         pdf = pending_df(info_dict, verbose)
-        print(pdf)
+        if len(pdf) > 0:
+            print(pdf)
+        else:
+            print("No pending transactions.")
 
     def complete_federator_info(self, text, line, begidx, endidx):
         args = line.split()
