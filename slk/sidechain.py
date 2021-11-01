@@ -34,7 +34,7 @@ from xrpl.models import (
 from xrpl.utils import xrp_to_drops
 
 import slk.interactive as interactive
-from slk.app import App, configs_for_testnet, single_node_app, testnet_app
+from slk.app import Chain, configs_for_testnet, single_node_app, testnet_app
 from slk.common import Account, disable_eprint, eprint
 from slk.config_file import ConfigFile
 from slk.log_analyzer import convert_log
@@ -252,7 +252,7 @@ sideDoorKeeper = 1
 updateSignerList = 2
 
 
-def setup_mainchain(mc_app: App, params: Params, setup_user_accounts: bool = True):
+def setup_mainchain(mc_app: Chain, params: Params, setup_user_accounts: bool = True):
     mc_app.add_to_keymanager(params.mc_door_account)
     if setup_user_accounts:
         mc_app.add_to_keymanager(params.user_account)
@@ -340,7 +340,7 @@ def setup_mainchain(mc_app: App, params: Params, setup_user_accounts: bool = Tru
         mc_app.maybe_ledger_accept()
 
 
-def setup_sidechain(sc_app: App, params: Params, setup_user_accounts: bool = True):
+def setup_sidechain(sc_app: Chain, params: Params, setup_user_accounts: bool = True):
     sc_app.add_to_keymanager(params.sc_door_account)
     if setup_user_accounts:
         sc_app.add_to_keymanager(params.user_account)
@@ -394,8 +394,8 @@ def setup_sidechain(sc_app: App, params: Params, setup_user_accounts: bool = Tru
 
 
 def _xchain_transfer(
-    from_chain: App,
-    to_chain: App,
+    from_chain: Chain,
+    to_chain: Chain,
     src: Account,
     dst: Account,
     amt: Amount,
@@ -420,7 +420,12 @@ def _xchain_transfer(
 
 
 def main_to_side_transfer(
-    mc_app: App, sc_app: App, src: Account, dst: Account, amt: Amount, params: Params
+    mc_app: Chain,
+    sc_app: Chain,
+    src: Account,
+    dst: Account,
+    amt: Amount,
+    params: Params,
 ):
     _xchain_transfer(
         mc_app, sc_app, src, dst, amt, params.mc_door_account, params.sc_door_account
@@ -428,14 +433,19 @@ def main_to_side_transfer(
 
 
 def side_to_main_transfer(
-    mc_app: App, sc_app: App, src: Account, dst: Account, amt: Amount, params: Params
+    mc_app: Chain,
+    sc_app: Chain,
+    src: Account,
+    dst: Account,
+    amt: Amount,
+    params: Params,
 ):
     _xchain_transfer(
         sc_app, mc_app, src, dst, amt, params.sc_door_account, params.mc_door_account
     )
 
 
-def simple_test(mc_app: App, sc_app: App, params: Params):
+def simple_test(mc_app: Chain, sc_app: Chain, params: Params):
     try:
         bob = sc_app.create_account("bob")
         main_to_side_transfer(mc_app, sc_app, params.user_account, bob, "200", params)
@@ -470,7 +480,7 @@ def _rm_debug_log(config: ConfigFile):
 
 def _standalone_with_callback(
     params: Params,
-    callback: Callable[[App, App], None],
+    callback: Callable[[Chain, Chain], None],
     setup_user_accounts: bool = True,
 ):
 
@@ -520,7 +530,7 @@ def _convert_log_files_to_json(to_convert: List[ConfigFile], suffix: str):
 
 def _multinode_with_callback(
     params: Params,
-    callback: Callable[[App, App], None],
+    callback: Callable[[Chain, Chain], None],
     setup_user_accounts: bool = True,
 ):
 
@@ -575,14 +585,14 @@ def _multinode_with_callback(
 
 
 def standalone_test(params: Params):
-    def callback(mc_app: App, sc_app: App):
+    def callback(mc_app: Chain, sc_app: Chain):
         simple_test(mc_app, sc_app, params)
 
     _standalone_with_callback(params, callback)
 
 
 def multinode_test(params: Params):
-    def callback(mc_app: App, sc_app: App):
+    def callback(mc_app: Chain, sc_app: Chain):
         simple_test(mc_app, sc_app, params)
 
     _multinode_with_callback(params, callback)
@@ -605,7 +615,7 @@ def close_mainchain_ledgers(stop_token: Value, params: Params, sleep_time=4):
 
 
 def standalone_interactive_repl(params: Params):
-    def callback(mc_app: App, sc_app: App):
+    def callback(mc_app: Chain, sc_app: Chain):
         # process will run while stop token is non-zero
         stop_token = Value("i", 1)
         p = None
@@ -623,7 +633,7 @@ def standalone_interactive_repl(params: Params):
 
 
 def multinode_interactive_repl(params: Params):
-    def callback(mc_app: App, sc_app: App):
+    def callback(mc_app: Chain, sc_app: Chain):
         # process will run while stop token is non-zero
         stop_token = Value("i", 1)
         p = None

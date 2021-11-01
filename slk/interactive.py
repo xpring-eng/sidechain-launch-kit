@@ -22,7 +22,7 @@ from xrpl.models import (
 )
 from xrpl.utils import drops_to_xrp
 
-from slk.app import App, balances_data
+from slk.app import Chain, balances_data
 from slk.common import same_amount_new_value
 
 
@@ -71,7 +71,7 @@ class SidechainRepl(cmd.Cmd):
     def preloop(self):
         clear_screen()
 
-    def __init__(self, mc_app: App, sc_app: App):
+    def __init__(self, mc_app: Chain, sc_app: Chain):
         super().__init__()
         assert mc_app.is_alias("door") and sc_app.is_alias("door")
         self.mc_app = mc_app
@@ -685,7 +685,7 @@ class SidechainRepl(cmd.Cmd):
     ##################
     # server_info
     def do_server_info(self, line):
-        def data_dict(chain: App, chain_name: str):
+        def data_dict(chain: Chain, chain_name: str):
             # get the server_info data for a specific chain
             # TODO: refactor get_brief_server_info to make this method less clunky
             filenames = [c.get_file_name() for c in chain.get_configs()]
@@ -1020,7 +1020,7 @@ class SidechainRepl(cmd.Cmd):
     ##################
     # ious
     def do_ious(self, line):
-        def print_ious(chain: App, chain_name: str, nickname: Optional[str]):
+        def print_ious(chain: Chain, chain_name: str, nickname: Optional[str]):
             if nickname and not chain.is_asset_alias(nickname):
                 print(f"{nickname} is not part of {chain_name}'s asset aliases.")
             print(f"{chain_name}:\n{chain.asset_aliases.to_string(nickname)}")
@@ -1627,5 +1627,5 @@ class SidechainRepl(cmd.Cmd):
     ##################
 
 
-def repl(mc_app: App, sc_app: App):
+def repl(mc_app: Chain, sc_app: Chain):
     SidechainRepl(mc_app, sc_app).cmdloop()

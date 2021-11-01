@@ -33,7 +33,7 @@ from xrpl.core.addresscodec.codec import _FAMILY_SEED_PREFIX, SEED_LENGTH, _enco
 from xrpl.models import Amount, IssuedCurrencyAmount
 from xrpl.wallet import Wallet
 
-from slk.app import App, single_node_app
+from slk.app import Chain, single_node_app
 from slk.common import eprint, same_amount_new_value
 from slk.config_file import ConfigFile
 
@@ -66,7 +66,7 @@ class Keypair:
     account_id: Optional[str]
 
 
-def generate_node_keypairs(n: int, rip: App) -> List[Keypair]:
+def generate_node_keypairs(n: int, rip: Chain) -> List[Keypair]:
     """generate keypairs suitable for validator keys"""
     result = []
     rip.node.client.open()
@@ -87,7 +87,7 @@ def generate_node_keypairs(n: int, rip: App) -> List[Keypair]:
     return result
 
 
-def generate_federator_keypairs(n: int, rip: App) -> List[Keypair]:
+def generate_federator_keypairs(n: int, rip: Chain) -> List[Keypair]:
     """generate keypairs suitable for federator keys"""
     result = []
     for i in range(n):
@@ -125,7 +125,7 @@ class Ports:
 
 class Network:
     def __init__(
-        self, num_nodes: int, num_validators: int, start_cfg_index: int, rip: App
+        self, num_nodes: int, num_validators: int, start_cfg_index: int, rip: Chain
     ):
         self.validator_keypairs = generate_node_keypairs(num_validators, rip)
         self.ports = [Ports(start_cfg_index + i) for i in range(num_nodes)]
@@ -138,7 +138,7 @@ class SidechainNetwork(Network):
         num_federators: int,
         num_validators: int,
         start_cfg_index: int,
-        rip: App,
+        rip: Chain,
     ):
         super().__init__(num_nodes, num_validators, start_cfg_index, rip)
         self.federator_keypairs = generate_federator_keypairs(num_federators, rip)

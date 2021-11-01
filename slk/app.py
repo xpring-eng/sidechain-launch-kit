@@ -151,8 +151,8 @@ class AssetAliases:
         )
 
 
-class App:
-    """App to to interact with rippled servers"""
+class Chain:
+    """Representation of one chain (mainchain/sidechain)"""
 
     def __init__(
         self,
@@ -162,9 +162,9 @@ class App:
         node: Optional[Node] = None,
     ):
         if network and node:
-            raise ValueError("Cannot specify both a testnet and node in App")
+            raise ValueError("Cannot specify both a testnet and node in Chain")
         if not network and not node:
-            raise ValueError("Must specify a testnet or a node in App")
+            raise ValueError("Must specify a testnet or a node in Chain")
 
         self.standalone = standalone
         self.network = network
@@ -511,7 +511,7 @@ class App:
 
 
 def balances_data(
-    chains: List[App],
+    chains: List[Chain],
     chain_names: List[str],
     account_ids: Optional[List[Account]] = None,
     assets: List[Amount] = None,
@@ -563,7 +563,7 @@ def single_node_app(
             server_running = True
             time.sleep(1.5)  # give process time to startup
 
-        app = App(node=node, standalone=standalone)
+        app = Chain(node=node, standalone=standalone)
         yield app
     finally:
         if app:
@@ -607,7 +607,7 @@ def testnet_app(
             extra_args=extra_args,
         )
         network.wait_for_validated_ledger()
-        app = App(network=network, standalone=False)
+        app = Chain(network=network, standalone=False)
         yield app
     finally:
         if app:

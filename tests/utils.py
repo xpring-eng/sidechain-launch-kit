@@ -8,7 +8,7 @@ from typing import Optional
 from tabulate import tabulate
 from xrpl.models import Amount, IssuedCurrencyAmount, Subscribe
 
-from slk.app import App, balances_data
+from slk.app import Chain, balances_data
 from slk.common import Account, same_amount_new_value
 
 MC_SUBSCRIBE_QUEUE = []
@@ -25,16 +25,16 @@ def _sc_subscribe_callback(v: dict):
     logging.info(f"sc subscribe_callback:\n{json.dumps(v, indent=1)}")
 
 
-def mc_connect_subscription(app: App, door_account: Account):
+def mc_connect_subscription(app: Chain, door_account: Account):
     app(Subscribe(accounts=[door_account.account_id]), _mc_subscribe_callback)
 
 
-def sc_connect_subscription(app: App, door_account: Account):
+def sc_connect_subscription(app: Chain, door_account: Account):
     app(Subscribe(accounts=[door_account.account_id]), _sc_subscribe_callback)
 
 
 def wait_for_balance_change(
-    app: App, acc: Account, pre_balance: Amount, final_diff: Optional[Amount] = None
+    app: Chain, acc: Account, pre_balance: Amount, final_diff: Optional[Amount] = None
 ):
     logging.info(
         f"waiting for balance change {acc.account_id = } {pre_balance = } "
