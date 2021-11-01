@@ -448,10 +448,12 @@ class App:
                 del info[key]
         return info
 
-    def get_trust_lines(self, account: Account, peer: Optional[Account] = None) -> dict:
+    def get_trust_lines(
+        self, account: Account, peer: Optional[Account] = None
+    ) -> List[dict]:
         """
-        Return a pandas dataframe account trust lines. If peer account is None, treat
-        as a wildcard
+        Return a list of dictionaries representing account trust lines. If peer account
+        is None, treat as a wildcard.
         """
         if peer is None:
             result = self.request(AccountLines(account=account.account_id))
