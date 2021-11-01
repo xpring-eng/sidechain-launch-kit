@@ -73,6 +73,10 @@ class Sidechain(Chain):
 
         self.servers_stop()
 
+    @property
+    def standalone(self):
+        return False
+
     def num_nodes(self) -> int:
         return len(self.nodes)
 

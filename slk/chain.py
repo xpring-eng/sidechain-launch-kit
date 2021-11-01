@@ -156,9 +156,7 @@ class Chain:
     def __init__(
         self,
         node: Node,
-        standalone: bool,
     ):
-        self.standalone = standalone
         self.node = node
 
         self.key_manager = KeyManager()
@@ -169,6 +167,10 @@ class Chain:
             secret_key="snoPBrXtMeMyMHUVTgbuqAfg1SUTb",
         )
         self.key_manager.add(root_account)
+
+    @property
+    def standalone(self):
+        return True
 
     def shutdown(self):
         self.node.shutdown()
@@ -507,7 +509,6 @@ def single_node_chain(
     run_server: bool = True,
     exe: Optional[str] = None,
     extra_args: Optional[List[str]] = None,
-    standalone=False,
 ):
     """Start a ripple server and return a chain"""
     if extra_args is None:
@@ -517,11 +518,11 @@ def single_node_chain(
     node = Node(config=config, command_log=command_log, exe=exe)
     try:
         if run_server:
-            node.start_server(extra_args, standalone=standalone, server_out=server_out)
+            node.start_server(extra_args, standalone=True, server_out=server_out)
             server_running = True
             time.sleep(1.5)  # give process time to startup
 
-        chain = Chain(node=node, standalone=standalone)
+        chain = Chain(node=node)
         yield chain
     finally:
         if chain:

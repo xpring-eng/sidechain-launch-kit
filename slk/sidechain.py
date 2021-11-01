@@ -510,7 +510,6 @@ def _standalone_with_callback(
     with single_node_chain(
         config=params.mainchain_config,
         exe=params.mainchain_exe,
-        standalone=True,
         run_server=not params.debug_mainchain,
     ) as mc_chain:
 
@@ -523,7 +522,6 @@ def _standalone_with_callback(
         with single_node_chain(
             config=params.sidechain_config,
             exe=params.sidechain_exe,
-            standalone=True,
             run_server=not params.debug_sidechain,
         ) as sc_chain:
 
@@ -563,7 +561,6 @@ def _multinode_with_callback(
     with single_node_chain(
         config=mainchain_cfg,
         exe=params.mainchain_exe,
-        standalone=True,
         run_server=not params.debug_mainchain,
     ) as mc_chain:
         mc_chain("open")
@@ -624,7 +621,6 @@ def close_mainchain_ledgers(stop_token: Value, params: Params, sleep_time=4):
     with single_node_chain(
         config=params.mainchain_config,
         exe=params.mainchain_exe,
-        standalone=True,
         run_server=False,
     ) as mc_chain:
         mc_chain("open")

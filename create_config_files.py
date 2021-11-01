@@ -600,9 +600,7 @@ def main(params: Params, xchain_assets: Optional[Dict[str, XChainAsset]] = None)
     index = index + 1
 
     nonvalidator_config = ConfigFile(file_name=nonvalidator_cfg_file_name)
-    with single_node_chain(
-        exe=params.exe, config=nonvalidator_config, standalone=True
-    ) as rip:
+    with single_node_chain(exe=params.exe, config=nonvalidator_config) as rip:
         mainnet = Network(num_nodes=1, num_validators=1, start_cfg_index=index, rip=rip)
         sidenet = SidechainNetwork(
             num_nodes=5,
