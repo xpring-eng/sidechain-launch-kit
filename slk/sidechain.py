@@ -34,7 +34,7 @@ from xrpl.models import (
 from xrpl.utils import xrp_to_drops
 
 import slk.interactive as interactive
-from slk.app import Chain, configs_for_testnet, single_node_app, testnet_app
+from slk.app import Chain, configs_for_testnet, single_node_chain, testnet_chain
 from slk.common import Account, disable_eprint, eprint
 from slk.config_file import ConfigFile
 from slk.log_analyzer import convert_log
@@ -488,7 +488,7 @@ def _standalone_with_callback(
         input("Start mainchain server and press enter to continue: ")
     else:
         _rm_debug_log(params.mainchain_config)
-    with single_node_app(
+    with single_node_chain(
         config=params.mainchain_config,
         exe=params.mainchain_exe,
         standalone=True,
@@ -501,7 +501,7 @@ def _standalone_with_callback(
             input("Start sidechain server and press enter to continue: ")
         else:
             _rm_debug_log(params.sidechain_config)
-        with single_node_app(
+        with single_node_chain(
             config=params.sidechain_config,
             exe=params.sidechain_exe,
             standalone=True,
@@ -541,7 +541,7 @@ def _multinode_with_callback(
     _rm_debug_log(mainchain_cfg)
     if params.debug_mainchain:
         input("Start mainchain server and press enter to continue: ")
-    with single_node_app(
+    with single_node_chain(
         config=mainchain_cfg,
         exe=params.mainchain_exe,
         standalone=True,
@@ -569,7 +569,7 @@ def _multinode_with_callback(
                 "enter to continue: "
             )
 
-        with testnet_app(
+        with testnet_chain(
             exe=params.sidechain_exe,
             configs=testnet_configs,
             run_server=run_server_list,
@@ -602,7 +602,7 @@ def multinode_test(params: Params):
 # payments - will automatically close ledgers. However, some operations, like
 # refunds, need an extra close. This loop automatically closes ledgers.
 def close_mainchain_ledgers(stop_token: Value, params: Params, sleep_time=4):
-    with single_node_app(
+    with single_node_chain(
         config=params.mainchain_config,
         exe=params.mainchain_exe,
         standalone=True,

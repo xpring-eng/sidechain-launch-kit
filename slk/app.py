@@ -541,7 +541,7 @@ def balances_data(
 
 # Start an app with a single node
 @contextmanager
-def single_node_app(
+def single_node_chain(
     *,
     config: ConfigFile,
     command_log: Optional[str] = None,
@@ -588,7 +588,7 @@ def configs_for_testnet(config_file_prefix: str) -> List[ConfigFile]:
 # Start an app for a network with the config files matched by
 # `config_file_prefix*/rippled.cfg`
 @contextmanager
-def testnet_app(
+def testnet_chain(
     *,
     exe: str,
     configs: List[ConfigFile],
