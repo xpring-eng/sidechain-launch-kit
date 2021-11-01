@@ -33,7 +33,7 @@ from xrpl.core.addresscodec.codec import _FAMILY_SEED_PREFIX, SEED_LENGTH, _enco
 from xrpl.models import Amount, IssuedCurrencyAmount
 from xrpl.wallet import Wallet
 
-from slk.app import Chain, single_node_chain
+from slk.chain import Chain, single_node_chain
 from slk.common import eprint, same_amount_new_value
 from slk.config_file import ConfigFile
 

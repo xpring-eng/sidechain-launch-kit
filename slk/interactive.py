@@ -22,7 +22,7 @@ from xrpl.models import (
 )
 from xrpl.utils import drops_to_xrp
 
-from slk.app import Chain, balances_data
+from slk.chain import Chain, balances_data
 from slk.common import same_amount_new_value
 
 

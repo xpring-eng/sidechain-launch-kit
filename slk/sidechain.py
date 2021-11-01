@@ -34,7 +34,7 @@ from xrpl.models import (
 from xrpl.utils import xrp_to_drops
 
 import slk.interactive as interactive
-from slk.app import Chain, configs_for_testnet, single_node_chain, testnet_chain
+from slk.chain import Chain, configs_for_testnet, single_node_chain, testnet_chain
 from slk.common import Account, disable_eprint, eprint
 from slk.config_file import ConfigFile
 from slk.log_analyzer import convert_log
