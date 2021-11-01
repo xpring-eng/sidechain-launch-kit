@@ -5,9 +5,9 @@ import os
 import pprint
 import time
 from pathlib import Path
-from typing import Optional
+from typing import List, Optional
 
-import pandas as pd
+from tabulate import tabulate
 
 # from slk.transaction import SetHook, Payment, Trust
 from xrpl.models import (
@@ -20,9 +20,10 @@ from xrpl.models import (
     TrustSet,
     is_xrp,
 )
+from xrpl.utils import drops_to_xrp
 
-from slk.app import App, balances_dataframe
-from slk.common import Account
+from slk.app import App, balances_data
+from slk.common import same_amount_new_value
 
 
 def clear_screen():
@@ -121,11 +122,6 @@ class SidechainRepl(cmd.Cmd):
     ##################
     # addressbook
     def do_addressbook(self, line):
-        def print_addressbook(chain: App, chain_name: str, nickname: Optional[str]):
-            if nickname and not chain.is_alias(nickname):
-                print(f"{nickname} is not part of {chain_name}'s address book.")
-            print(f"{chain_name}:\n{chain.key_manager.to_string(nickname)}")
-
         args = line.split()
         if len(args) > 2:
             print(
@@ -149,8 +145,10 @@ class SidechainRepl(cmd.Cmd):
         if args:
             nickname = args[0]
 
-        for chain, name in zip(chains, chain_names):
-            print_addressbook(chain, name, nickname)
+        for chain, chain_name in zip(chains, chain_names):
+            if nickname and not chain.is_alias(nickname):
+                print(f"{nickname} is not part of {chain_name}'s address book.")
+            print(f"{chain_name}:\n{chain.key_manager.to_string(nickname)}")
             print("\n")
 
     def complete_addressbook(self, text, line, begidx, endidx):
@@ -182,33 +180,36 @@ class SidechainRepl(cmd.Cmd):
     # balance
     def do_balance(self, line):
         args = line.split()
+        arg_index = 0
+
+        """
+        Args:
+            args[0] (optional): mainchain/sidechain
+            args[1] (optional): account name
+            args[2] (optional): currency
+        """
+
         if len(args) > 3:
             print('Error: Too many arguments to balance command. Type "help" for help.')
             return
 
-        in_drops = False
-        if args and args[-1] in ["xrp", "drops"]:
-            unit = args[-1]
-            args.pop()
-            if unit == "xrp":
-                in_drops = False
-            elif unit == "drops":
-                in_drops = True
-
+        # which chain
         chains = [self.mc_app, self.sc_app]
         chain_names = ["mainchain", "sidechain"]
-        if args and args[0] in ["mainchain", "sidechain"]:
+        if args and args[arg_index] in ["mainchain", "sidechain"]:
             chain_names = [args[0]]
-            args.pop(0)
+            arg_index += 1
             if chain_names[0] == "mainchain":
                 chains = [self.mc_app]
             else:
                 chains = [self.sc_app]
 
+        # account
         account_ids = [None] * len(chains)
-        if args:
-            nickname = args[0]
-            args.pop()
+        if len(args) > arg_index:
+            nickname = args[arg_index]
+            # TODO: fix bug where "balance sidechain root" prints out "side door"
+            arg_index += 1
             account_ids = []
             for c in chains:
                 if not c.is_alias(nickname):
@@ -216,16 +217,23 @@ class SidechainRepl(cmd.Cmd):
                     return
                 account_ids.append(c.account_from_alias(nickname))
 
+        # currency
         assets = [["0"]] * len(chains)
-        if args:
-            asset_alias = args[0]
-            args.pop()
-            if len(chains) != 1:
+        in_drops = False
+        if len(args) > arg_index:
+            asset_alias = args[arg_index]
+            arg_index += 1
+            if asset_alias in ["xrp", "drops"]:
+                if asset_alias == "xrp":
+                    in_drops = False
+                elif asset_alias == "drops":
+                    in_drops = True
+            elif len(chains) != 1:
                 print(
                     "Error: iou assets can only be shown for a single chain at a time"
                 )
                 return
-            if not chains[0].is_asset_alias(asset_alias):
+            elif not chains[0].is_asset_alias(asset_alias):
                 print(f"Error: {asset_alias} is not a valid asset alias")
                 return
             assets = [[chains[0].asset_from_alias(asset_alias)]]
@@ -233,11 +241,19 @@ class SidechainRepl(cmd.Cmd):
             # XRP and all assets in the assets alias list
             assets = [["0"] + c.known_iou_assets() for c in chains]
 
-        assert not args
+        # should be done analyzing all the params
+        assert arg_index == len(args)
 
-        df = balances_dataframe(chains, chain_names, account_ids, assets, in_drops)
-        df_as_str = df.to_string(float_format=lambda x: f"{x:,.6f}")
-        print(f"{df_as_str}\n")
+        result = balances_data(chains, chain_names, account_ids, assets, in_drops)
+        print(
+            tabulate(
+                result,
+                headers="keys",
+                tablefmt="presto",
+                floatfmt=",.6f",
+                numalign="right",
+            )
+        )
 
     def complete_balance(self, text, line, begidx, endidx):
         args = line.split()
@@ -278,11 +294,6 @@ class SidechainRepl(cmd.Cmd):
 
     ##################
     # account_info
-    def _account_info_df(self, chain: App, acc: Optional[Account]):
-        b = chain.get_account_info(acc)
-        b = chain.substitute_nicknames(b)
-        b = b.set_index("account")
-        return b
 
     def do_account_info(self, line):
         args = line.split()
@@ -315,14 +326,26 @@ class SidechainRepl(cmd.Cmd):
 
         assert not args
 
-        dfs = []
-        keys = []
+        results = []
         for chain, chain_name, acc in zip(chains, chain_names, account_ids):
-            dfs.append(self._account_info_df(chain, acc))
-            keys.append(_removesuffix(chain_name, "chain"))
-        df = pd.concat(dfs, keys=keys)
-        df_as_str = df.to_string(float_format=lambda x: f"{x:,.6f}")
-        print(f"{df_as_str}\n")
+            result = chain.get_account_info(acc)
+            # TODO: figure out how to get this to work for both lists and individual
+            # accounts
+            # TODO: refactor substitute_nicknames to handle the chain name too
+            chain_short_name = "main" if chain_name == "mainchain" else "side"
+            for res in result:
+                chain.substitute_nicknames(result)
+                res["account"] = chain_short_name + " " + res["account"]
+            results += result
+        print(
+            tabulate(
+                results,
+                headers="keys",
+                tablefmt="presto",
+                floatfmt=",.6f",
+                numalign="right",
+            )
+        )
 
     def complete_account_info(self, text, line, begidx, endidx):
         args = line.split()
@@ -442,11 +465,12 @@ class SidechainRepl(cmd.Cmd):
 
         if asset is not None:
             amt = IssuedCurrencyAmount(
-                value=amt_value, issuer=asset.issuer, currency=asset.currency
+                value=str(amt_value), issuer=asset.issuer, currency=asset.currency
             )
         else:
             amt = str(amt_value)
 
+        # TODO: print error if something wrong with payment (e.g. no trustline)
         chain(
             Payment(
                 account=src_account.account_id,
@@ -662,41 +686,41 @@ class SidechainRepl(cmd.Cmd):
     # server_info
     def do_server_info(self, line):
         def data_dict(chain: App, chain_name: str):
-            file_names = [c.get_file_name() for c in chain.get_configs()]
-            data = {
-                "pid": chain.get_pids(),
-                "config": file_names,
-                "running": chain.get_running_status(),
-            }
+            # get the server_info data for a specific chain
+            # TODO: refactor get_brief_server_info to make this method less clunky
+            filenames = [c.get_file_name() for c in chain.get_configs()]
+            chains = []
+            for i in range(len(filenames)):
+                chains.append(f"{chain_name} {i}")
+            data = {"node": chains}
+            data.update(
+                {
+                    "pid": chain.get_pids(),
+                    "config": filenames,
+                    "running": chain.get_running_status(),
+                }
+            )
             bsi = chain.get_brief_server_info()
             data.update(bsi)
-            indexes = [[], []]
-            for i in range(len(file_names)):
-                indexes[0].append(chain_name)
-                indexes[1].append(i)
-            data["indexes"] = indexes
             return data
 
-        def df_from_dicts(d1: dict, d2: Optional[dict] = None) -> pd.DataFrame:
-            indexes = [[], []]
-            for i in range(2):
-                if d2:
-                    indexes[i] = d1["indexes"][i] + d2["indexes"][i]
-                else:
-                    indexes[i] = d1["indexes"][i]
-            data = {}
-            for k in d1.keys():
-                if k == "indexes":
-                    continue
-                if d2:
-                    data[k] = d1[k] + d2[k]
-                else:
-                    data[k] = d1[k]
-                if k == "config":
-                    # save space by omitting the common prefix on the configs
-                    cp = os.path.commonprefix(data[k])
-                    data[k] = [os.path.relpath(f, cp) for f in data[k]]
-            return pd.DataFrame(data=data, index=indexes)
+        def result_from_dicts(d1: dict, d2: Optional[dict] = None) -> List[dict]:
+            # combine the info from the chains, refactor dict for tabulate
+            data = []
+            for i in range(len(d1["node"])):
+                new_dict = {key: d1[key][i] for key in d1}
+                data.append(new_dict)
+            if d2 is not None:
+                for i in range(len(d2["node"])):
+                    new_dict = {key: d2[key][i] for key in d2}
+                    data.append(new_dict)
+            # shorten config filenames for space
+            all_filenames = [d["config"] for d in data]
+            cp = os.path.commonprefix(all_filenames)
+            short_filenames = [os.path.relpath(f, cp) for f in all_filenames]
+            for i in range(len(data)):
+                data[i]["config"] = short_filenames[i]
+            return data
 
         args = line.split()
         if len(args) > 1:
@@ -721,8 +745,14 @@ class SidechainRepl(cmd.Cmd):
             data_dict(chain, _removesuffix(name, "chain"))
             for chain, name in zip(chains, chain_names)
         ]
-        df = df_from_dicts(*data_dicts)
-        print(f"{df.to_string(index=True)}")
+        result = result_from_dicts(*data_dicts)
+        print(
+            tabulate(
+                result,
+                headers="keys",
+                tablefmt="presto",
+            )
+        )
 
     def complete_server_info(self, text, line, begidx, endidx):
         arg_num = len(line.split())
@@ -753,6 +783,7 @@ class SidechainRepl(cmd.Cmd):
         indexes = set()
         verbose = False
         raw = False
+        # TODO: do this processing better
         while args and (args[-1] == "verbose" or args[-1] == "raw"):
             if args[-1] == "verbose":
                 verbose = True
@@ -766,110 +797,87 @@ class SidechainRepl(cmd.Cmd):
         except:
             f'Error: federator_info bad arguments: {args}. Type "help" for help.'
 
-        def global_df(info_dict: dict) -> pd.DataFrame:
-            indexes = []
-            keys = []
-            mc_last_sent_seq = []
-            mc_seq = []
-            mc_num_pending = []
-            mc_sync_state = []
-            sc_last_sent_seq = []
-            sc_seq = []
-            sc_num_pending = []
-            sc_sync_state = []
+        def get_fed_info_table(info_dict: dict) -> List[dict]:
+            data = []
             for (k, v) in info_dict.items():
-                indexes.append(k)
+                new_dict = {}
                 info = v["info"]
-                keys.append(info["public_key"])
+                new_dict["public_key"] = info["public_key"]
                 mc = info["mainchain"]
                 sc = info["sidechain"]
-                mc_last_sent_seq.append(mc["last_transaction_sent_seq"])
-                sc_last_sent_seq.append(sc["last_transaction_sent_seq"])
-                mc_seq.append(mc["sequence"])
-                sc_seq.append(sc["sequence"])
-                mc_num_pending.append(len(mc["pending_transactions"]))
-                sc_num_pending.append(len(sc["pending_transactions"]))
-                if "state" in mc["listener_info"]:
-                    mc_sync_state.append(mc["listener_info"]["state"])
-                else:
-                    mc_sync_state.append(None)
-                if "state" in sc["listener_info"]:
-                    sc_sync_state.append(sc["listener_info"]["state"])
-                else:
-                    sc_sync_state.append(None)
+                new_dict["main last_sent_seq"] = mc["last_transaction_sent_seq"]
+                new_dict["side last_sent_seq"] = sc["last_transaction_sent_seq"]
+                new_dict["main seq"] = mc["sequence"]
+                new_dict["side seq"] = sc["sequence"]
+                new_dict["main num_pending"] = len(mc["pending_transactions"])
+                new_dict["side num_pending"] = len(sc["pending_transactions"])
+                new_dict["main sync_state"] = (
+                    mc["listener_info"]["state"]
+                    if "state" in mc["listener_info"]
+                    else None
+                )
+                new_dict["side sync_state"] = (
+                    sc["listener_info"]["state"]
+                    if "state" in sc["listener_info"]
+                    else None
+                )
+                data.append(new_dict)
+            return data
 
-                data = {
-                    ("key", ""): keys,
-                    ("mainchain", "last_sent_seq"): mc_last_sent_seq,
-                    ("mainchain", "seq"): mc_seq,
-                    ("mainchain", "num_pending"): mc_num_pending,
-                    ("mainchain", "sync_state"): mc_sync_state,
-                    ("sidechain", "last_sent_seq"): sc_last_sent_seq,
-                    ("sidechain", "seq"): sc_seq,
-                    ("sidechain", "num_pending"): sc_num_pending,
-                    ("sidechain", "sync_state"): sc_sync_state,
-                }
-            return pd.DataFrame(data=data, index=indexes)
-
-        def pending_df(info_dict: dict, verbose=False) -> pd.DataFrame:
-            indexes = [[], []]
-            amounts = []
-            dsts = []
-            num_sigs = []
-            hashes = []
-            signatures = []
+        def get_pending_tx_info(info_dict: dict, verbose=False) -> List[dict]:
+            data = []
             for (k, v) in info_dict.items():
                 for chain in ["mainchain", "sidechain"]:
-                    info = v["info"][chain]
-                    pending = info["pending_transactions"]
-                    idx = (k, chain)
+                    short_chain_name = chain[:4] + " " + str(k)
+                    pending = v["info"][chain]["pending_transactions"]
                     for t in pending:
                         amt = t["amount"]
-                        try:
-                            amt = int(amt) / 1_000_000.0
-                        except:
-                            pass
-                        dst = t["destination_account"]
-                        h = t["hash"]
-                        ns = len(t["signatures"])
+                        if is_xrp(amt):
+                            amt = drops_to_xrp(amt)
                         if not verbose:
-                            indexes[0].append(idx[0])
-                            indexes[1].append(idx[1])
-                            amounts.append(amt)
-                            dsts.append(dst)
-                            hashes.append(h)
-                            num_sigs.append(ns)
+                            pending_info = {
+                                "chain": short_chain_name,
+                                "amount": amt,
+                                "dest_acct": t["destination_account"],
+                                "hash": t["hash"],
+                                "num_sigs": len(t["signatures"]),
+                            }
+                            data.append(pending_info)
                         else:
                             for sig in t["signatures"]:
-                                indexes[0].append(idx[0])
-                                indexes[1].append(idx[1])
-                                amounts.append(amt)
-                                dsts.append(dst)
-                                hashes.append(h)
-                                num_sigs.append(ns)
-                                signatures.append(sig["public_key"])
-
-            data = {
-                "amount": amounts,
-                "dest_account": dsts,
-                "num_sigs": num_sigs,
-                "hash": hashes,
-            }
-            if verbose:
-                data["sigs"] = signatures
-            return pd.DataFrame(data=data, index=indexes)
+                                pending_info = {
+                                    "chain": short_chain_name,
+                                    "amount": amt,
+                                    "dest_acct": t["destination_account"],
+                                    "hash": t["hash"],
+                                    "num_sigs": len(t["signatures"]),
+                                    "sigs": sig["public_key"],
+                                }
+            return data
 
         info_dict = self.sc_app.federator_info(indexes)
         if raw:
             pprint.pprint(info_dict)
             return
 
-        gdf = global_df(info_dict)
-        print(gdf)
+        print(
+            tabulate(
+                get_fed_info_table(info_dict),
+                headers="keys",
+                tablefmt="presto",
+            )
+        )
         # pending
-        print()
-        pdf = pending_df(info_dict, verbose)
-        print(pdf)
+        print("")  # newline separation
+        pending_tx_data = get_pending_tx_info(info_dict, verbose)
+        if len(pending_tx_data) > 0:
+            tabulate(
+                pending_tx_data,
+                headers="keys",
+                tablefmt="presto",
+            )
+        else:
+            print("No pending transactions.")
 
     def complete_federator_info(self, text, line, begidx, endidx):
         args = line.split()
@@ -982,7 +990,9 @@ class SidechainRepl(cmd.Cmd):
             return
 
         asset = IssuedCurrencyAmount(
-            value=0, currency=currency, issuer=chain.account_from_alias(issuer)
+            value=0,
+            currency=currency,
+            issuer=chain.account_from_alias(issuer).account_id,
         )
         chain.add_asset_alias(asset, alias)
 
@@ -1067,6 +1077,7 @@ class SidechainRepl(cmd.Cmd):
     ##################
     # set_trust
     def do_set_trust(self, line):
+        # TODO: fix bug where REPL crashes if account isn't funded yet
         args = line.split()
         if len(args) != 4:
             print(
@@ -1112,7 +1123,8 @@ class SidechainRepl(cmd.Cmd):
             print(f"Error: Invalid amount {amountStr}")
             return
 
-        asset = chain.asset_from_alias(alias)(amount)
+        asset = same_amount_new_value(chain.asset_from_alias(alias), amount)
+        # TODO: resolve error where repl crashes if account doesn't exist
         chain(TrustSet(account=account.account_id, limit_amount=asset))
         chain.maybe_ledger_accept()
 

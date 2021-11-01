@@ -1,16 +1,14 @@
 import os
 import time
-import traceback
 from contextlib import contextmanager
 from pathlib import Path
 from typing import Callable, Dict, List, Optional, Set, Union
 
-import pandas as pd
+from tabulate import tabulate
 from xrpl.models import (
     AccountInfo,
     AccountLines,
     Amount,
-    BookOffers,
     FederatorInfo,
     IssuedCurrency,
     IssuedCurrencyAmount,
@@ -21,6 +19,7 @@ from xrpl.models import (
     is_xrp,
 )
 from xrpl.models.transactions.transaction import Transaction
+from xrpl.utils import drops_to_xrp
 
 import slk.testnet as testnet
 from slk.common import Account
@@ -72,21 +71,31 @@ class KeyManager:
         return None
 
     def to_string(self, nickname: Optional[str] = None):
-        names = []
-        account_ids = []
-        if nickname:
-            names = [nickname]
+        data = []
+        if nickname is not None:
             if nickname in self._aliases:
-                account_ids = [self._aliases[nickname].account_id]
+                account_id = self._aliases[nickname].account_id
             else:
-                account_ids = ["NA"]
+                account_id = "NA"
+            data.append(
+                {
+                    "name": nickname,
+                    "address": account_id,
+                }
+            )
         else:
             for (k, v) in self._aliases.items():
-                names.append(k)
-                account_ids.append(v.account_id)
-        # use a dataframe to get a nice table output
-        df = pd.DataFrame(data={"name": names, "id": account_ids})
-        return f"{df.to_string(index=False)}"
+                data.append(
+                    {
+                        "name": k,
+                        "address": v.account_id,
+                    }
+                )
+        return tabulate(
+            data,
+            headers="keys",
+            tablefmt="presto",
+        )
 
 
 class AssetAliases:
@@ -110,28 +119,36 @@ class AssetAliases:
         return list(self._aliases.values())
 
     def to_string(self, nickname: Optional[str] = None):
-        names = []
-        currencies = []
-        issuers = []
+        data = []
         if nickname:
-            names = [nickname]
             if nickname in self._aliases:
                 v = self._aliases[nickname]
-                currencies = [v.currency]
-                issuers = [v.issuer if v.issuer else ""]
+                currency = v.currency
+                issuer = v.issuer if v.issuer else ""
             else:
-                currencies = ["NA"]
-                issuers = ["NA"]
+                currency = "NA"
+                issuer = "NA"
+            data.append(
+                {
+                    "name": nickname,
+                    "currency": currency,
+                    "issuer": issuer,
+                }
+            )
         else:
             for (k, v) in self._aliases.items():
-                names.append(k)
-                currencies.append(v.currency)
-                issuers.append(v.issuer if v.issuer else "")
-        # use a dataframe to get a nice table output
-        df = pd.DataFrame(
-            data={"name": names, "currency": currencies, "issuer": issuers}
+                data.append(
+                    {
+                        "name": k,
+                        "currency": v.currency,
+                        "issuer": v.issuer if v.issuer else "",
+                    }
+                )
+        return tabulate(
+            data,
+            headers="keys",
+            tablefmt="presto",
         )
-        return f"{df.to_string(index=False)}"
 
 
 class App:
@@ -326,121 +343,117 @@ class App:
     def get_balances(
         self,
         account: Union[Account, List[Account], None] = None,
-        asset: Union[Amount, List[Amount]] = "0",
-    ) -> pd.DataFrame:
+        token: Union[Amount, List[Amount]] = "0",
+    ) -> List[dict]:
         """
-        Return a pandas dataframe of account balances. If account is None, treat as a
+        Return a list of dicts of account balances. If account is None, treat as a
         wildcard (use address book)
         """
         if account is None:
             account = self.key_manager.known_accounts()
         if isinstance(account, list):
-            result = [self.get_balances(acc, asset) for acc in account]
-            return pd.concat(result, ignore_index=True)
-        if isinstance(asset, list):
-            result = [self.get_balances(account, ass) for ass in asset]
-            return pd.concat(result, ignore_index=True)
-        if is_xrp(asset):
+            return [d for acc in account for d in self.get_balances(acc, token)]
+        if isinstance(token, list):
+            return [d for ass in token for d in self.get_balances(account, ass)]
+        if is_xrp(token):
             try:
-                df = self.get_account_info(account)
+                account_info = self.get_account_info(account)
+                needed_data = ["account", "balance"]
+                account_info = {
+                    "account": account_info["account"],
+                    "balance": account_info["balance"],
+                }
+                account_info.update({"currency": "XRP", "peer": "", "limit": ""})
+                return [account_info]
             except:
+                # TODO: better error handling
                 # Most likely the account does not exist on the ledger. Give a balance
                 # of zero.
-                df = pd.DataFrame(
+                return [
                     {
-                        "account": [account],
-                        "balance": [0],
-                        "flags": [0],
-                        "owner_count": [0],
-                        "previous_txn_id": ["NA"],
-                        "previous_txn_lgr_seq": [-1],
-                        "sequence": [-1],
+                        "account": account,
+                        "balance": 0,
+                        "currency": "XRP",
+                        "peer": "",
+                        "limit": "",
                     }
-                )
-            df = df.assign(currency="XRP", peer="", limit="")
-            return df.loc[:, ["account", "balance", "currency", "peer", "limit"]]
+                ]
         else:
             try:
-                df = self.get_trust_lines(account)
-                if df.empty:
-                    return df
-                df = df[
-                    (df["peer"] == asset.issuer) & (df["currency"] == asset.currency)
+                trustlines = self.get_trust_lines(account)
+                trustlines = [
+                    tl
+                    for tl in trustlines
+                    if (tl["peer"] == token.issuer and tl["currency"] == token.currency)
+                ]
+                needed_data = ["account", "balance", "currency", "peer", "limit"]
+                return [
+                    {k: trustline[k] for k in trustline if k in needed_data}
+                    for trustline in trustlines
                 ]
             except:
+                # TODO: better error handling
                 # Most likely the account does not exist on the ledger. Return an empty
                 # data frame
-                df = pd.DataFrame(
-                    {
-                        "account": [],
-                        "balance": [],
-                        "currency": [],
-                        "peer": [],
-                        "limit": [],
-                    }
-                )
-            return df.loc[:, ["account", "balance", "currency", "peer", "limit"]]
+                return []
 
-    def get_balance(self, account: Account, asset: IssuedCurrency) -> str:
-        """Get a balance from a single account in a single asset"""
+    def get_balance(self, account: Account, token: IssuedCurrency) -> str:
+        """Get a balance from a single account in a single token"""
         try:
-            df = self.get_balances(account, asset)
-            return str(df.iloc[0]["balance"])
+            result = self.get_balances(account, token)
+            return result[0]["balance"]
         except:
             return "0"
 
-    def get_account_info(self, account: Optional[Account] = None) -> pd.DataFrame:
+    def get_account_info(self, account: Optional[Account] = None) -> Union[dict, list]:
         """
-        Return a pandas dataframe of account info. If account is None, treat as a
+        Return a dictionary of account info. If account is None, treat as a
         wildcard (use address book)
         """
         if account is None:
             known_accounts = self.key_manager.known_accounts()
-            result = [self.get_account_info(acc) for acc in known_accounts]
-            return pd.concat(result, ignore_index=True)
+            return [self.get_account_info(acc) for acc in known_accounts]
         try:
             result = self.node.request(AccountInfo(account=account.account_id))
         except:
-            traceback.print_exc()
+            # TODO: better error checking
             # Most likely the account does not exist on the ledger. Give a balance of 0.
-            return pd.DataFrame(
-                {
-                    "account": [account],
-                    "balance": [0],
-                    "flags": [0],
-                    "owner_count": [0],
-                    "previous_txn_id": ["NA"],
-                    "previous_txn_lgr_seq": [-1],
-                    "sequence": [-1],
-                }
-            )
+            return {
+                "account": account.account_id,
+                "balance": "0",
+                "flags": 0,
+                "owner_count": 0,
+                "previous_txn_id": "NA",
+                "previous_txn_lgr_seq": -1,
+                "sequence": -1,
+            }
         if "account_data" not in result:
             raise ValueError("Bad result from account_info command")
         info = result["account_data"]
         for dk in ["LedgerEntryType", "index"]:
             del info[dk]
-        df = pd.DataFrame([info])
-        df.rename(
-            columns={
-                "Account": "account",
-                "Balance": "balance",
-                "Flags": "flags",
-                "OwnerCount": "owner_count",
-                "PreviousTxnID": "previous_txn_id",
-                "PreviousTxnLgrSeq": "previous_txn_lgr_seq",
-                "Sequence": "sequence",
-            },
-            inplace=True,
-        )
-        df["balance"] = df["balance"].astype(int)
-        return df
+        rename_dict = {
+            "Account": "account",
+            "Balance": "balance",
+            "Flags": "flags",
+            "OwnerCount": "owner_count",
+            "PreviousTxnID": "previous_txn_id",
+            "PreviousTxnLgrSeq": "previous_txn_lgr_seq",
+            "Sequence": "sequence",
+        }
+        for key in rename_dict:
+            if key in info:
+                new_key = rename_dict[key]
+                info[new_key] = info[key]
+                del info[key]
+        return info
 
     def get_trust_lines(
         self, account: Account, peer: Optional[Account] = None
-    ) -> pd.DataFrame:
+    ) -> List[dict]:
         """
-        Return a pandas dataframe account trust lines. If peer account is None, treat
-        as a wildcard
+        Return a list of dictionaries representing account trust lines. If peer account
+        is None, treat as a wildcard.
         """
         if peer is None:
             result = self.request(AccountLines(account=account.account_id))
@@ -450,57 +463,21 @@ class App:
             )
         if "lines" not in result or "account" not in result:
             raise ValueError("Bad result from account_lines command")
-        account = result["account"]
-        lines = result["lines"]
-        for d in lines:
-            d["peer"] = d["account"]
-            d["account"] = account
-        return pd.DataFrame(lines)
-
-    def get_offers(self, taker_pays: Amount, taker_gets: Amount) -> pd.DataFrame:
-        """Return a pandas dataframe of offers"""
-        result = self.request(BookOffers(taker_pays=taker_pays, taker_gets=taker_gets))
-        if "offers" not in result:
-            raise ValueError("Bad result from book_offers command")
-
-        offers = result["offers"]
-        delete_keys = [
-            "BookDirectory",
-            "BookNode",
-            "LedgerEntryType",
-            "OwnerNode",
-            "PreviousTxnID",
-            "PreviousTxnLgrSeq",
-            "Sequence",
-            "index",
-        ]
-        for d in offers:
-            for dk in delete_keys:
-                del d[dk]
-            for t in ["TakerPays", "TakerGets", "owner_funds"]:
-                if "value" in d[t]:
-                    d[t] = d[t]["value"]
-        df = pd.DataFrame(offers)
-        df.rename(
-            columns={
-                "Account": "account",
-                "Flags": "flags",
-                "TakerGets": "taker_gets",
-                "TakerPays": "taker_pays",
-            },
-            inplace=True,
-        )
-        return df
+        address = result["account"]
+        account_lines = result["lines"]
+        for account_line in account_lines:
+            account_line["peer"] = account_line["account"]
+            account_line["account"] = address
+        return account_lines
 
     def substitute_nicknames(
-        self, df: pd.DataFrame, cols: List[str] = ["account", "peer"]
-    ) -> pd.DataFrame:
-        result = df.copy(deep=True)
+        self, items: dict, cols: List[str] = ["account", "peer"]
+    ) -> list:
         for c in cols:
-            if c not in result:
+            if c not in items:
                 continue
-            result[c] = result[c].map(lambda x: self.key_manager.alias_or_account_id(x))
-        return result
+            items[c] = self.key_manager.alias_or_account_id(items[c])
+        return
 
     def add_to_keymanager(self, account: Account):
         self.key_manager.add(account)
@@ -533,32 +510,13 @@ class App:
         return self.node
 
 
-def balances_dataframe(
+def balances_data(
     chains: List[App],
     chain_names: List[str],
     account_ids: Optional[List[Account]] = None,
     assets: List[Amount] = None,
     in_drops: bool = False,
 ):
-    def _removesuffix(self: str, suffix: str) -> str:
-        if suffix and self.endswith(suffix):
-            return self[: -len(suffix)]
-        else:
-            return self[:]
-
-    def _balance_df(
-        chain: App,
-        acc: Optional[Account],
-        asset: Union[Amount, List[Amount]],
-        in_drops: bool,
-    ):
-        b = chain.get_balances(acc, asset)
-        if not in_drops:
-            b.loc[b["currency"] == "XRP", "balance"] /= 1_000_000
-            b = chain.substitute_nicknames(b)
-            b = b.set_index("account")
-            return b
-
     if account_ids is None:
         account_ids = [None] * len(chains)
 
@@ -566,13 +524,19 @@ def balances_dataframe(
         # XRP and all assets in the assets alias list
         assets = [["0"] + c.known_iou_assets() for c in chains]
 
-    dfs = []
-    keys = []
+    result = []
     for chain, chain_name, acc, asset in zip(chains, chain_names, account_ids, assets):
-        dfs.append(_balance_df(chain, acc, asset, in_drops))
-        keys.append(_removesuffix(chain_name, "chain"))
-    df = pd.concat(dfs, keys=keys)
-    return df
+        chain_result = chain.get_balances(acc, asset)
+        for chain_res in chain_result:
+            chain.substitute_nicknames(chain_res)
+            if not in_drops and chain_res["currency"] == "XRP":
+                chain_res["balance"] = drops_to_xrp(chain_res["balance"])
+            else:
+                chain_res["balance"] = int(chain_res["balance"])
+            chain_short_name = "main" if chain_name == "mainchain" else "side"
+            chain_res["account"] = chain_short_name + " " + chain_res["account"]
+        result += chain_result
+    return result
 
 
 # Start an app with a single node
