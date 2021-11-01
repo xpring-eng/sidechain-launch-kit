@@ -539,7 +539,7 @@ def balances_data(
     return result
 
 
-# Start an app with a single node
+# Start a chain with a single node
 @contextmanager
 def single_node_chain(
     *,
@@ -551,11 +551,11 @@ def single_node_chain(
     extra_args: Optional[List[str]] = None,
     standalone=False,
 ):
-    """Start a ripple server and return an app"""
+    """Start a ripple server and return a chain"""
     if extra_args is None:
         extra_args = []
     server_running = False
-    app = None
+    chain = None
     node = Node(config=config, command_log=command_log, exe=exe)
     try:
         if run_server:
@@ -563,11 +563,11 @@ def single_node_chain(
             server_running = True
             time.sleep(1.5)  # give process time to startup
 
-        app = Chain(node=node, standalone=standalone)
-        yield app
+        chain = Chain(node=node, standalone=standalone)
+        yield chain
     finally:
-        if app:
-            app.shutdown()
+        if chain:
+            chain.shutdown()
         if run_server and server_running:
             node.stop_server()
 
@@ -585,7 +585,7 @@ def configs_for_testnet(config_file_prefix: str) -> List[ConfigFile]:
     return [ConfigFile(file_name=f) for f in file_names]
 
 
-# Start an app for a network with the config files matched by
+# Start a chain for a network with the config files matched by
 # `config_file_prefix*/rippled.cfg`
 @contextmanager
 def testnet_chain(
@@ -596,9 +596,9 @@ def testnet_chain(
     run_server: Optional[List[bool]] = None,
     extra_args: Optional[List[List[str]]] = None,
 ):
-    """Start a ripple testnet and return an app"""
+    """Start a ripple testnet and return a chain"""
     try:
-        app = None
+        chain = None
         network = testnet.Network(
             exe,
             configs,
@@ -607,8 +607,8 @@ def testnet_chain(
             extra_args=extra_args,
         )
         network.wait_for_validated_ledger()
-        app = Chain(network=network, standalone=False)
-        yield app
+        chain = Chain(network=network, standalone=False)
+        yield chain
     finally:
-        if app:
-            app.shutdown()
+        if chain:
+            chain.shutdown()

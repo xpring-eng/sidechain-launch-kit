@@ -25,16 +25,16 @@ def _sc_subscribe_callback(v: dict):
     logging.info(f"sc subscribe_callback:\n{json.dumps(v, indent=1)}")
 
 
-def mc_connect_subscription(app: Chain, door_account: Account):
-    app(Subscribe(accounts=[door_account.account_id]), _mc_subscribe_callback)
+def mc_connect_subscription(chain: Chain, door_account: Account):
+    chain(Subscribe(accounts=[door_account.account_id]), _mc_subscribe_callback)
 
 
-def sc_connect_subscription(app: Chain, door_account: Account):
-    app(Subscribe(accounts=[door_account.account_id]), _sc_subscribe_callback)
+def sc_connect_subscription(chain: Chain, door_account: Account):
+    chain(Subscribe(accounts=[door_account.account_id]), _sc_subscribe_callback)
 
 
 def wait_for_balance_change(
-    app: Chain, acc: Account, pre_balance: Amount, final_diff: Optional[Amount] = None
+    chain: Chain, acc: Account, pre_balance: Amount, final_diff: Optional[Amount] = None
 ):
     logging.info(
         f"waiting for balance change {acc.account_id = } {pre_balance = } "
@@ -42,7 +42,7 @@ def wait_for_balance_change(
     )
     for i in range(30):
         new_bal = same_amount_new_value(
-            pre_balance, app.get_balance(acc, same_amount_new_value(pre_balance, 0))
+            pre_balance, chain.get_balance(acc, same_amount_new_value(pre_balance, 0))
         )
         diff = value_diff(new_bal, pre_balance)
         if new_bal != pre_balance:
@@ -52,7 +52,7 @@ def wait_for_balance_change(
             )
             if final_diff is None or diff == final_diff:
                 return
-        app.maybe_ledger_accept()
+        chain.maybe_ledger_accept()
         time.sleep(2)
         if i > 0 and not (i % 5):
             logging.warning(
@@ -68,8 +68,8 @@ def wait_for_balance_change(
     )
 
 
-def log_chain_state(mc_app, sc_app, log, msg="Chain State"):
-    chains = [mc_app, sc_app]
+def log_chain_state(mc_chain, sc_chain, log, msg="Chain State"):
+    chains = [mc_chain, sc_chain]
     chain_names = ["mainchain", "sidechain"]
     balances = balances_data(chains, chain_names)
     data_as_str = tabulate(
@@ -80,7 +80,7 @@ def log_chain_state(mc_app, sc_app, log, msg="Chain State"):
         numalign="right",
     )
     log(f"{msg} Balances: \n{data_as_str}")
-    federator_info = sc_app.federator_info()
+    federator_info = sc_chain.federator_info()
     log(f"{msg} Federator Info: \n{pprint.pformat(federator_info)}")
 
 
@@ -109,21 +109,21 @@ def set_test_context_verbose_logging(new_val: bool) -> None:
 
 
 @contextmanager
-def tst_context(mc_app, sc_app, verbose_logging: Optional[bool] = None):
+def tst_context(mc_chain, sc_chain, verbose_logging: Optional[bool] = None):
     """Write extra context info to the log on test failure"""
     global test_context_verbose_logging
     if verbose_logging is None:
         verbose_logging = test_context_verbose_logging
     try:
         if verbose_logging:
-            log_chain_state(mc_app, sc_app, logging.info)
+            log_chain_state(mc_chain, sc_chain, logging.info)
         start_time = time.monotonic()
         yield
     except:
-        log_chain_state(mc_app, sc_app, logging.error)
+        log_chain_state(mc_chain, sc_chain, logging.error)
         raise
     finally:
         elapased_time = time.monotonic() - start_time
         logging.info(f"Test elapsed time: {elapased_time}")
     if verbose_logging:
-        log_chain_state(mc_app, sc_app, logging.info)
+        log_chain_state(mc_chain, sc_chain, logging.info)

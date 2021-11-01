@@ -252,30 +252,30 @@ sideDoorKeeper = 1
 updateSignerList = 2
 
 
-def setup_mainchain(mc_app: Chain, params: Params, setup_user_accounts: bool = True):
-    mc_app.add_to_keymanager(params.mc_door_account)
+def setup_mainchain(mc_chain: Chain, params: Params, setup_user_accounts: bool = True):
+    mc_chain.add_to_keymanager(params.mc_door_account)
     if setup_user_accounts:
-        mc_app.add_to_keymanager(params.user_account)
+        mc_chain.add_to_keymanager(params.user_account)
 
-    # mc_app(LogLevel('fatal'))
-    mc_app("open")
+    # mc_chain(LogLevel('fatal'))
+    mc_chain("open")
 
     # Allow rippling through the genesis account
-    mc_app(AccountSet(account=params.genesis_account.account_id, set_flag=8))
-    mc_app.maybe_ledger_accept()
+    mc_chain(AccountSet(account=params.genesis_account.account_id, set_flag=8))
+    mc_chain.maybe_ledger_accept()
 
     # Create and fund the mc door account
-    mc_app(
+    mc_chain(
         Payment(
             account=params.genesis_account.account_id,
             destination=params.mc_door_account.account_id,
             amount=xrp_to_drops(1_000),
         )
     )
-    mc_app.maybe_ledger_accept()
+    mc_chain.maybe_ledger_accept()
 
     # Create a trust line so USD/root account ious can be sent cross chain
-    mc_app(
+    mc_chain(
         TrustSet(
             account=params.mc_door_account.account_id,
             limit_amount=IssuedCurrencyAmount(
@@ -290,7 +290,7 @@ def setup_mainchain(mc_app: Chain, params: Params, setup_user_accounts: bool = T
     divide = 4 * len(params.federators)
     by = 5
     quorum = (divide + by - 1) // by
-    mc_app(
+    mc_chain(
         SignerListSet(
             account=params.mc_door_account.account_id,
             signer_quorum=quorum,
@@ -300,61 +300,61 @@ def setup_mainchain(mc_app: Chain, params: Params, setup_user_accounts: bool = T
             ],
         )
     )
-    mc_app.maybe_ledger_accept()
-    mc_app(
+    mc_chain.maybe_ledger_accept()
+    mc_chain(
         TicketCreate(
             account=params.mc_door_account.account_id,
             source_tag=mainDoorKeeper,
             ticket_count=1,
         )
     )
-    mc_app.maybe_ledger_accept()
-    mc_app(
+    mc_chain.maybe_ledger_accept()
+    mc_chain(
         TicketCreate(
             account=params.mc_door_account.account_id,
             source_tag=sideDoorKeeper,
             ticket_count=1,
         )
     )
-    mc_app.maybe_ledger_accept()
-    mc_app(
+    mc_chain.maybe_ledger_accept()
+    mc_chain(
         TicketCreate(
             account=params.mc_door_account.account_id,
             source_tag=updateSignerList,
             ticket_count=1,
         )
     )
-    mc_app.maybe_ledger_accept()
-    mc_app(AccountSet(account=params.mc_door_account.account_id, set_flag=4))
-    mc_app.maybe_ledger_accept()
+    mc_chain.maybe_ledger_accept()
+    mc_chain(AccountSet(account=params.mc_door_account.account_id, set_flag=4))
+    mc_chain.maybe_ledger_accept()
 
     if setup_user_accounts:
         # Create and fund a regular user account
-        mc_app(
+        mc_chain(
             Payment(
                 account=params.genesis_account.account_id,
                 destination=params.user_account,
                 amount=str(2_000),
             )
         )
-        mc_app.maybe_ledger_accept()
+        mc_chain.maybe_ledger_accept()
 
 
-def setup_sidechain(sc_app: Chain, params: Params, setup_user_accounts: bool = True):
-    sc_app.add_to_keymanager(params.sc_door_account)
+def setup_sidechain(sc_chain: Chain, params: Params, setup_user_accounts: bool = True):
+    sc_chain.add_to_keymanager(params.sc_door_account)
     if setup_user_accounts:
-        sc_app.add_to_keymanager(params.user_account)
+        sc_chain.add_to_keymanager(params.user_account)
 
-    sc_app("open")
+    sc_chain("open")
 
-    # sc_app(LogLevel('fatal'))
-    # sc_app(LogLevel('trace', partition='SidechainFederator'))
+    # sc_chain(LogLevel('fatal'))
+    # sc_chain(LogLevel('trace', partition='SidechainFederator'))
 
     # set the chain's signer list and disable the master key
     divide = 4 * len(params.federators)
     by = 5
     quorum = (divide + by - 1) // by
-    sc_app(
+    sc_chain(
         SignerListSet(
             account=params.genesis_account.account_id,
             signer_quorum=quorum,
@@ -364,33 +364,33 @@ def setup_sidechain(sc_app: Chain, params: Params, setup_user_accounts: bool = T
             ],
         )
     )
-    sc_app.maybe_ledger_accept()
-    sc_app(
+    sc_chain.maybe_ledger_accept()
+    sc_chain(
         TicketCreate(
             account=params.genesis_account.account_id,
             source_tag=mainDoorKeeper,
             ticket_count=1,
         )
     )
-    sc_app.maybe_ledger_accept()
-    sc_app(
+    sc_chain.maybe_ledger_accept()
+    sc_chain(
         TicketCreate(
             account=params.genesis_account.account_id,
             source_tag=sideDoorKeeper,
             ticket_count=1,
         )
     )
-    sc_app.maybe_ledger_accept()
-    sc_app(
+    sc_chain.maybe_ledger_accept()
+    sc_chain(
         TicketCreate(
             account=params.genesis_account.account_id,
             source_tag=updateSignerList,
             ticket_count=1,
         )
     )
-    sc_app.maybe_ledger_accept()
-    sc_app(AccountSet(account=params.genesis_account.account_id, set_flag=4))
-    sc_app.maybe_ledger_accept()
+    sc_chain.maybe_ledger_accept()
+    sc_chain(AccountSet(account=params.genesis_account.account_id, set_flag=4))
+    sc_chain.maybe_ledger_accept()
 
 
 def _xchain_transfer(
@@ -420,51 +420,69 @@ def _xchain_transfer(
 
 
 def main_to_side_transfer(
-    mc_app: Chain,
-    sc_app: Chain,
+    mc_chain: Chain,
+    sc_chain: Chain,
     src: Account,
     dst: Account,
     amt: Amount,
     params: Params,
 ):
     _xchain_transfer(
-        mc_app, sc_app, src, dst, amt, params.mc_door_account, params.sc_door_account
+        mc_chain,
+        sc_chain,
+        src,
+        dst,
+        amt,
+        params.mc_door_account,
+        params.sc_door_account,
     )
 
 
 def side_to_main_transfer(
-    mc_app: Chain,
-    sc_app: Chain,
+    mc_chain: Chain,
+    sc_chain: Chain,
     src: Account,
     dst: Account,
     amt: Amount,
     params: Params,
 ):
     _xchain_transfer(
-        sc_app, mc_app, src, dst, amt, params.sc_door_account, params.mc_door_account
+        sc_chain,
+        mc_chain,
+        src,
+        dst,
+        amt,
+        params.sc_door_account,
+        params.mc_door_account,
     )
 
 
-def simple_test(mc_app: Chain, sc_app: Chain, params: Params):
+def simple_test(mc_chain: Chain, sc_chain: Chain, params: Params):
     try:
-        bob = sc_app.create_account("bob")
-        main_to_side_transfer(mc_app, sc_app, params.user_account, bob, "200", params)
-        main_to_side_transfer(mc_app, sc_app, params.user_account, bob, "60", params)
+        bob = sc_chain.create_account("bob")
+        main_to_side_transfer(
+            mc_chain, sc_chain, params.user_account, bob, "200", params
+        )
+        main_to_side_transfer(
+            mc_chain, sc_chain, params.user_account, bob, "60", params
+        )
 
         if params.with_pauses:
             _convert_log_files_to_json(
-                mc_app.get_configs() + sc_app.get_configs(), "checkpoint1.json"
+                mc_chain.get_configs() + sc_chain.get_configs(), "checkpoint1.json"
             )
             input("Pausing to check for main -> side txns (press enter to continue)")
 
-        side_to_main_transfer(mc_app, sc_app, bob, params.user_account, "9", params)
-        side_to_main_transfer(mc_app, sc_app, bob, params.user_account, "11", params)
+        side_to_main_transfer(mc_chain, sc_chain, bob, params.user_account, "9", params)
+        side_to_main_transfer(
+            mc_chain, sc_chain, bob, params.user_account, "11", params
+        )
 
         if params.with_pauses:
             input("Pausing to check for side -> main txns (press enter to continue)")
     finally:
         _convert_log_files_to_json(
-            mc_app.get_configs() + sc_app.get_configs(), "final.json"
+            mc_chain.get_configs() + sc_chain.get_configs(), "final.json"
         )
 
 
@@ -493,9 +511,9 @@ def _standalone_with_callback(
         exe=params.mainchain_exe,
         standalone=True,
         run_server=not params.debug_mainchain,
-    ) as mc_app:
+    ) as mc_chain:
 
-        setup_mainchain(mc_app, params, setup_user_accounts)
+        setup_mainchain(mc_chain, params, setup_user_accounts)
 
         if params.debug_sidechain:
             input("Start sidechain server and press enter to continue: ")
@@ -506,10 +524,10 @@ def _standalone_with_callback(
             exe=params.sidechain_exe,
             standalone=True,
             run_server=not params.debug_sidechain,
-        ) as sc_app:
+        ) as sc_chain:
 
-            setup_sidechain(sc_app, params, setup_user_accounts)
-            callback(mc_app, sc_app)
+            setup_sidechain(sc_chain, params, setup_user_accounts)
+            callback(mc_chain, sc_chain)
 
 
 def _convert_log_files_to_json(to_convert: List[ConfigFile], suffix: str):
@@ -546,12 +564,12 @@ def _multinode_with_callback(
         exe=params.mainchain_exe,
         standalone=True,
         run_server=not params.debug_mainchain,
-    ) as mc_app:
-        mc_app("open")
+    ) as mc_chain:
+        mc_chain("open")
         if params.with_pauses:
             input("Pausing after mainchain start (press enter to continue)")
 
-        setup_mainchain(mc_app, params, setup_user_accounts)
+        setup_mainchain(mc_chain, params, setup_user_accounts)
         if params.with_pauses:
             input("Pausing after mainchain setup (press enter to continue)")
 
@@ -573,27 +591,27 @@ def _multinode_with_callback(
             exe=params.sidechain_exe,
             configs=testnet_configs,
             run_server=run_server_list,
-        ) as n_app:
+        ) as n_chain:
 
             if params.with_pauses:
                 input("Pausing after testnet start (press enter to continue)")
 
-            setup_sidechain(n_app, params, setup_user_accounts)
+            setup_sidechain(n_chain, params, setup_user_accounts)
             if params.with_pauses:
                 input("Pausing after sidechain setup (press enter to continue)")
-            callback(mc_app, n_app)
+            callback(mc_chain, n_chain)
 
 
 def standalone_test(params: Params):
-    def callback(mc_app: Chain, sc_app: Chain):
-        simple_test(mc_app, sc_app, params)
+    def callback(mc_chain: Chain, sc_chain: Chain):
+        simple_test(mc_chain, sc_chain, params)
 
     _standalone_with_callback(params, callback)
 
 
 def multinode_test(params: Params):
-    def callback(mc_app: Chain, sc_app: Chain):
-        simple_test(mc_app, sc_app, params)
+    def callback(mc_chain: Chain, sc_chain: Chain):
+        simple_test(mc_chain, sc_chain, params)
 
     _multinode_with_callback(params, callback)
 
@@ -607,23 +625,23 @@ def close_mainchain_ledgers(stop_token: Value, params: Params, sleep_time=4):
         exe=params.mainchain_exe,
         standalone=True,
         run_server=False,
-    ) as mc_app:
-        mc_app("open")
+    ) as mc_chain:
+        mc_chain("open")
         while stop_token.value != 0:
-            mc_app.maybe_ledger_accept()
+            mc_chain.maybe_ledger_accept()
             time.sleep(sleep_time)
 
 
 def standalone_interactive_repl(params: Params):
-    def callback(mc_app: Chain, sc_app: Chain):
+    def callback(mc_chain: Chain, sc_chain: Chain):
         # process will run while stop token is non-zero
         stop_token = Value("i", 1)
         p = None
-        if mc_app.standalone:
+        if mc_chain.standalone:
             p = Process(target=close_mainchain_ledgers, args=(stop_token, params))
             p.start()
         try:
-            interactive.repl(mc_app, sc_app)
+            interactive.repl(mc_chain, sc_chain)
         finally:
             if p:
                 stop_token.value = 0
@@ -633,15 +651,15 @@ def standalone_interactive_repl(params: Params):
 
 
 def multinode_interactive_repl(params: Params):
-    def callback(mc_app: Chain, sc_app: Chain):
+    def callback(mc_chain: Chain, sc_chain: Chain):
         # process will run while stop token is non-zero
         stop_token = Value("i", 1)
         p = None
-        if mc_app.standalone:
+        if mc_chain.standalone:
             p = Process(target=close_mainchain_ledgers, args=(stop_token, params))
             p.start()
         try:
-            interactive.repl(mc_app, sc_app)
+            interactive.repl(mc_chain, sc_chain)
         finally:
             if p:
                 stop_token.value = 0
