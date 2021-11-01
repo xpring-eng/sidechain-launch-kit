@@ -4,7 +4,7 @@ from contextlib import contextmanager
 from pathlib import Path
 from typing import Callable, Dict, List, Optional, Set, Union
 
-import pandas as pd
+from tabulate import tabulate
 from xrpl.models import (
     AccountInfo,
     AccountLines,
@@ -71,21 +71,31 @@ class KeyManager:
         return None
 
     def to_string(self, nickname: Optional[str] = None):
-        names = []
-        account_ids = []
-        if nickname:
-            names = [nickname]
+        data = []
+        if nickname is not None:
             if nickname in self._aliases:
-                account_ids = [self._aliases[nickname].account_id]
+                account_id = self._aliases[nickname].account_id
             else:
-                account_ids = ["NA"]
+                account_id = "NA"
+            data.append(
+                {
+                    "name": nickname,
+                    "address": account_id,
+                }
+            )
         else:
             for (k, v) in self._aliases.items():
-                names.append(k)
-                account_ids.append(v.account_id)
-        # use a dataframe to get a nice table output
-        df = pd.DataFrame(data={"name": names, "id": account_ids})
-        return f"{df.to_string(index=False)}"
+                data.append(
+                    {
+                        "name": k,
+                        "address": v.account_id,
+                    }
+                )
+        return tabulate(
+            data,
+            headers="keys",
+            tablefmt="presto",
+        )
 
 
 class AssetAliases:
@@ -109,28 +119,36 @@ class AssetAliases:
         return list(self._aliases.values())
 
     def to_string(self, nickname: Optional[str] = None):
-        names = []
-        currencies = []
-        issuers = []
+        data = []
         if nickname:
-            names = [nickname]
             if nickname in self._aliases:
                 v = self._aliases[nickname]
-                currencies = [v.currency]
-                issuers = [v.issuer if v.issuer else ""]
+                currency = v.currency
+                issuer = v.issuer if v.issuer else ""
             else:
-                currencies = ["NA"]
-                issuers = ["NA"]
+                currency = "NA"
+                issuer = "NA"
+            data.append(
+                {
+                    "name": nickname,
+                    "currency": currency,
+                    "issuer": issuer,
+                }
+            )
         else:
             for (k, v) in self._aliases.items():
-                names.append(k)
-                currencies.append(v.currency)
-                issuers.append(v.issuer if v.issuer else "")
-        # use a dataframe to get a nice table output
-        df = pd.DataFrame(
-            data={"name": names, "currency": currencies, "issuer": issuers}
+                data.append(
+                    {
+                        "name": k,
+                        "currency": v.currency,
+                        "issuer": v.issuer if v.issuer else "",
+                    }
+                )
+        return tabulate(
+            data,
+            headers="keys",
+            tablefmt="presto",
         )
-        return f"{df.to_string(index=False)}"
 
 
 class App:
