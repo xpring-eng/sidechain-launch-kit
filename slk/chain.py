@@ -2,7 +2,7 @@ import os
 import time
 from contextlib import contextmanager
 from pathlib import Path
-from typing import Callable, Dict, List, Optional, Set, Union
+from typing import Any, Callable, Dict, List, Optional, Set, Union
 
 from tabulate import tabulate
 from xrpl.models import (
@@ -31,9 +31,8 @@ class KeyManager:
         self._aliases = {}  # alias -> account
         self._accounts = {}  # account id -> account
 
-    def add(self, account: Account) -> bool:
-        if account.nickname:
-            self._aliases[account.nickname] = account
+    def add(self, account: Account) -> None:
+        self._aliases[account.nickname] = account
         self._accounts[account.account_id] = account
 
     def is_alias(self, name: str) -> bool:
@@ -161,10 +160,11 @@ class Chain:
 
         self.key_manager = KeyManager()
         self.asset_aliases = AssetAliases()
+
         root_account = Account(
             nickname="root",
             account_id="rHb9CJAWyB4rj91VRWn96DkukG4bwdtyTh",
-            secret_key="snoPBrXtMeMyMHUVTgbuqAfg1SUTb",
+            seed="snoPBrXtMeMyMHUVTgbuqAfg1SUTb",
         )
         self.key_manager.add(root_account)
 
@@ -202,6 +202,8 @@ class Chain:
     def get_pids(self) -> List[int]:
         if pid := self.node.get_pid():
             return [pid]
+        else:
+            return []
 
     def get_running_status(self) -> List[bool]:
         if self.node.get_pid():
@@ -228,11 +230,12 @@ class Chain:
         raise ValueError("Cannot stop stand alone server")
 
     def federator_info(
-        self, server_indexes: Optional[Union[Set[int], List[int]]] = None
+        self, server_indexes: Optional[Union[Dict[int, dict], List[int]]] = None
     ):
         # key is server index. value is federator_info result
         result_dict = {}
-        if 0 in server_indexes:
+        # TODO: do this more elegantly
+        if server_indexes is not None and 0 in server_indexes:
             result_dict[0] = self.node.request(FederatorInfo())
         return result_dict
 
@@ -240,7 +243,7 @@ class Chain:
         self,
         to_send: Union[Transaction, Request, str],
         callback: Optional[Callable[[dict], None]] = None,
-    ) -> dict:
+    ) -> Optional[dict]:
         """Call `send_signed` for transactions or `request` for requests"""
         if to_send == "open":
             self.node.client.open()
@@ -259,13 +262,11 @@ class Chain:
             "SubscriptionCommand"
         )
 
-    def get_configs(self) -> List[str]:
+    def get_configs(self) -> List[ConfigFile]:
         return [self.node.config]
 
     def create_account(self, name: str) -> Account:
         """Create an account. Use the name as the alias."""
-        if name == "root":
-            return
         assert not self.key_manager.is_alias(name)
 
         account = Account.create(name)
@@ -365,7 +366,9 @@ class Chain:
         except:
             return "0"
 
-    def get_account_info(self, account: Optional[Account] = None) -> Union[dict, list]:
+    def get_account_info(
+        self, account: Optional[Account] = None
+    ) -> Union[Dict[str, Any], List[Dict[str, Any]]]:
         """
         Return a dictionary of account info. If account is None, treat as a
         wildcard (use address book)
@@ -432,12 +435,12 @@ class Chain:
 
     def substitute_nicknames(
         self, items: dict, cols: List[str] = ["account", "peer"]
-    ) -> list:
+    ) -> None:
+        """Substitutes in-place account IDs for nicknames"""
         for c in cols:
             if c not in items:
                 continue
             items[c] = self.key_manager.alias_or_account_id(items[c])
-        return
 
     def add_to_keymanager(self, account: Account):
         self.key_manager.add(account)
@@ -473,7 +476,7 @@ class Chain:
 def balances_data(
     chains: List[Chain],
     chain_names: List[str],
-    account_ids: Optional[List[Account]] = None,
+    account_ids: Optional[List[Optional[Account]]] = None,
     assets: List[Amount] = None,
     in_drops: bool = False,
 ):
@@ -507,7 +510,7 @@ def single_node_chain(
     command_log: Optional[str] = None,
     server_out=os.devnull,
     run_server: bool = True,
-    exe: Optional[str] = None,
+    exe: str,
     extra_args: Optional[List[str]] = None,
 ):
     """Start a ripple server and return a chain"""
