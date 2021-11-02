@@ -150,6 +150,7 @@ class SidechainParams:
                 "Cannot specify both verbose and quiet options at the same time"
             )
 
+        # identify mainchain rippled exe file location (for standalone)
         self.mainchain_exe = None
         if "RIPPLED_MAINCHAIN_EXE" in os.environ:
             self.mainchain_exe = os.environ["RIPPLED_MAINCHAIN_EXE"]
@@ -161,6 +162,7 @@ class SidechainParams:
                 "RIPPLED_MAINCHAIN_EXE or use the --exe_mainchain command line switch"
             )
 
+        # identify sidechain rippled exe file location
         self.sidechain_exe = None
         if "RIPPLED_SIDECHAIN_EXE" in os.environ:
             self.sidechain_exe = os.environ["RIPPLED_SIDECHAIN_EXE"]
@@ -172,6 +174,7 @@ class SidechainParams:
                 "RIPPLED_SIDECHAIN_EXE or use the --exe_sidechain command line switch"
             )
 
+        # identify where all the config files are located
         self.configs_dir = None
         if "RIPPLED_SIDECHAIN_CFG_DIR" in os.environ:
             self.configs_dir = os.environ["RIPPLED_SIDECHAIN_CFG_DIR"]
@@ -185,12 +188,14 @@ class SidechainParams:
                 "RIPPLED_SIDECHAIN_CFG_DIR or use the --cfgs_dir command line switch"
             )
 
+        # identify directory where hooks files are
         self.hooks_dir = None
         if "RIPPLED_SIDECHAIN_HOOKS_DIR" in os.environ:
             self.hooks_dir = os.environ["RIPPLED_SIDECHAIN_HOOKS_DIR"]
         if args.hooks_dir:
             self.hooks_dir = args.hooks_dir
 
+        # set up config files
         if self.standalone:
             self.mainchain_config = ConfigFile(
                 file_name=f"{self.configs_dir}/main.no_shards.dog/rippled.cfg"
@@ -216,6 +221,7 @@ class SidechainParams:
                 "sidechain_bootstrap.cfg"
             )
 
+        # set up root/door accounts
         self.genesis_account = Account(
             account_id="rHb9CJAWyB4rj91VRWn96DkukG4bwdtyTh",
             secret_key="snoPBrXtMeMyMHUVTgbuqAfg1SUTb",
@@ -237,6 +243,8 @@ class SidechainParams:
             secret_key="snoPBrXtMeMyMHUVTgbuqAfg1SUTb",
             nickname="door",
         )
+
+        # set up federators
         self.federators = [
             line.split()[1].strip()
             for line in self.sidechain_bootstrap_config.sidechain_federators.get_lines()
