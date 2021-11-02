@@ -9,14 +9,15 @@ from slk.common import disable_eprint, eprint
 
 
 def main():
-    params = sidechain.SidechainParams()
+    try:
+        params = sidechain.SidechainParams()
+    except Exception as e:
+        eprint(str(e))
+        sys.exit(1)
+
     params.interactive = True
 
     interactive.set_hooks_dir(params.hooks_dir)
-
-    if err_str := params.check_error():
-        eprint(err_str)
-        sys.exit(1)
 
     if params.verbose:
         print("eprint enabled")

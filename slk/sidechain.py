@@ -168,6 +168,9 @@ class SidechainParams:
         if args.hooks_dir:
             self.hooks_dir = args.hooks_dir
 
+        if err_str := self._check_error():
+            raise Exception(err_str)
+
         if not self.configs_dir:
             self.mainchain_config = None
             self.sidechain_config = None
@@ -230,7 +233,7 @@ class SidechainParams:
             for line in self.sidechain_bootstrap_config.sidechain_federators.get_lines()
         ]
 
-    def check_error(self) -> str:
+    def _check_error(self) -> str:
         """
         Check for errors. Return `None` if no errors,
         otherwise return a string describing the error
@@ -670,12 +673,13 @@ def multinode_interactive_repl(params: SidechainParams):
 
 
 def main():
-    params = SidechainParams()
-    interactive.set_hooks_dir(params.hooks_dir)
-
-    if err_str := params.check_error():
-        eprint(err_str)
+    try:
+        params = SidechainParams()
+    except Exception as e:
+        eprint(str(e))
         sys.exit(1)
+
+    interactive.set_hooks_dir(params.hooks_dir)
 
     if params.quiet:
         print("Disabling eprint")

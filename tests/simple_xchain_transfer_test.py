@@ -9,7 +9,7 @@ from xrpl.utils import xrp_to_drops
 import slk.sidechain as sidechain
 from slk.chain import Chain
 from slk.common import disable_eprint, eprint, same_amount_new_value
-from slk.sidechain import Params
+from slk.sidechain import SidechainParams
 from tests.utils import (
     mc_connect_subscription,
     sc_connect_subscription,
@@ -19,7 +19,7 @@ from tests.utils import (
 )
 
 
-def simple_xrp_test(mc_chain: Chain, sc_chain: Chain, params: Params):
+def simple_xrp_test(mc_chain: Chain, sc_chain: Chain, params: SidechainParams):
     alice = mc_chain.account_from_alias("alice")
     adam = sc_chain.account_from_alias("adam")
 
@@ -56,7 +56,7 @@ def simple_xrp_test(mc_chain: Chain, sc_chain: Chain, params: Params):
                 wait_for_balance_change(mc_chain, alice, pre_bal, to_send_asset)
 
 
-def simple_iou_test(mc_chain: Chain, sc_chain: Chain, params: Params):
+def simple_iou_test(mc_chain: Chain, sc_chain: Chain, params: SidechainParams):
     alice = mc_chain.account_from_alias("alice")
     adam = sc_chain.account_from_alias("adam")
 
@@ -136,7 +136,7 @@ def simple_iou_test(mc_chain: Chain, sc_chain: Chain, params: Params):
                 wait_for_balance_change(mc_chain, alice, pre_bal, rcv_asset)
 
 
-def run(mc_chain: Chain, sc_chain: Chain, params: Params):
+def run(mc_chain: Chain, sc_chain: Chain, params: SidechainParams):
     # process will run while stop token is non-zero
     stop_token = Value("i", 1)
     p = None
@@ -158,7 +158,7 @@ def run(mc_chain: Chain, sc_chain: Chain, params: Params):
         )
 
 
-def standalone_test(params: Params):
+def standalone_test(params: SidechainParams):
     def callback(mc_chain: Chain, sc_chain: Chain):
         mc_connect_subscription(mc_chain, params.mc_door_account)
         sc_connect_subscription(sc_chain, params.sc_door_account)
@@ -167,7 +167,7 @@ def standalone_test(params: Params):
     sidechain._standalone_with_callback(params, callback, setup_user_accounts=False)
 
 
-def setup_accounts(mc_chain: Chain, sc_chain: Chain, params: Params):
+def setup_accounts(mc_chain: Chain, sc_chain: Chain, params: SidechainParams):
     # Setup a funded user account on the main chain, and add an unfunded account.
     # Setup address book and add a funded account on the mainchain.
     # Typical female names are addresses on the mainchain.
@@ -195,7 +195,7 @@ def setup_accounts(mc_chain: Chain, sc_chain: Chain, params: Params):
     sc_chain.create_account("ed")
 
 
-def multinode_test(params: Params):
+def multinode_test(params: SidechainParams):
     def callback(mc_chain: Chain, sc_chain: Chain):
         mc_connect_subscription(mc_chain, params.mc_door_account)
         sc_connect_subscription(sc_chain, params.sc_door_account)
@@ -205,10 +205,10 @@ def multinode_test(params: Params):
 
 
 def test_simple_xchain(configs_dirs_dict: Dict[int, str]):
-    params = sidechain.Params(configs_dir=configs_dirs_dict[1])
-
-    if err_str := params.check_error():
-        eprint(err_str)
+    try:
+        params = sidechain.SidechainParams(configs_dir=configs_dirs_dict[1])
+    except Exception as e:
+        eprint(str(e))
         sys.exit(1)
 
     if params.verbose:
