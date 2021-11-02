@@ -57,7 +57,7 @@ _config_dirs = None
 def configs_dirs_dict(tmp_path):
     global _config_dirs
     if not _config_dirs:
-        params = create_config_files.Params()
+        params = create_config_files.ConfigParams()
         _config_dirs = {}
         for ratio in (1, 2):
             params.configs_dir = str(tmp_path / f"test_config_files_{ratio}")

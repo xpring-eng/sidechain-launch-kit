@@ -125,7 +125,7 @@ def parse_args():
     return parser.parse_known_args()[0]
 
 
-class Params:
+class SidechainParams:
     def __init__(self, *, configs_dir: Optional[str] = None):
         args = parse_args()
 
@@ -253,7 +253,9 @@ sideDoorKeeper = 1
 updateSignerList = 2
 
 
-def setup_mainchain(mc_chain: Chain, params: Params, setup_user_accounts: bool = True):
+def setup_mainchain(
+    mc_chain: Chain, params: SidechainParams, setup_user_accounts: bool = True
+):
     mc_chain.add_to_keymanager(params.mc_door_account)
     if setup_user_accounts:
         mc_chain.add_to_keymanager(params.user_account)
@@ -341,7 +343,9 @@ def setup_mainchain(mc_chain: Chain, params: Params, setup_user_accounts: bool =
         mc_chain.maybe_ledger_accept()
 
 
-def setup_sidechain(sc_chain: Chain, params: Params, setup_user_accounts: bool = True):
+def setup_sidechain(
+    sc_chain: Chain, params: SidechainParams, setup_user_accounts: bool = True
+):
     sc_chain.add_to_keymanager(params.sc_door_account)
     if setup_user_accounts:
         sc_chain.add_to_keymanager(params.user_account)
@@ -426,7 +430,7 @@ def main_to_side_transfer(
     src: Account,
     dst: Account,
     amt: Amount,
-    params: Params,
+    params: SidechainParams,
 ):
     _xchain_transfer(
         mc_chain,
@@ -445,7 +449,7 @@ def side_to_main_transfer(
     src: Account,
     dst: Account,
     amt: Amount,
-    params: Params,
+    params: SidechainParams,
 ):
     _xchain_transfer(
         sc_chain,
@@ -458,7 +462,7 @@ def side_to_main_transfer(
     )
 
 
-def simple_test(mc_chain: Chain, sc_chain: Chain, params: Params):
+def simple_test(mc_chain: Chain, sc_chain: Chain, params: SidechainParams):
     try:
         bob = sc_chain.create_account("bob")
         main_to_side_transfer(
@@ -498,7 +502,7 @@ def _rm_debug_log(config: ConfigFile):
 
 
 def _standalone_with_callback(
-    params: Params,
+    params: SidechainParams,
     callback: Callable[[Chain, Chain], None],
     setup_user_accounts: bool = True,
 ):
@@ -546,7 +550,7 @@ def _convert_log_files_to_json(to_convert: List[ConfigFile], suffix: str):
 
 
 def _multinode_with_callback(
-    params: Params,
+    params: SidechainParams,
     callback: Callable[[Chain, Chain], None],
     setup_user_accounts: bool = True,
 ):
@@ -600,14 +604,14 @@ def _multinode_with_callback(
             callback(mc_chain, sc_chain)
 
 
-def standalone_test(params: Params):
+def standalone_test(params: SidechainParams):
     def callback(mc_chain: Chain, sc_chain: Chain):
         simple_test(mc_chain, sc_chain, params)
 
     _standalone_with_callback(params, callback)
 
 
-def multinode_test(params: Params):
+def multinode_test(params: SidechainParams):
     def callback(mc_chain: Chain, sc_chain: Chain):
         simple_test(mc_chain, sc_chain, params)
 
@@ -617,7 +621,7 @@ def multinode_test(params: Params):
 # The mainchain runs in standalone mode. Most operations - like cross chain
 # payments - will automatically close ledgers. However, some operations, like
 # refunds, need an extra close. This loop automatically closes ledgers.
-def close_mainchain_ledgers(stop_token: Value, params: Params, sleep_time=4):
+def close_mainchain_ledgers(stop_token: Value, params: SidechainParams, sleep_time=4):
     with single_node_chain(
         config=params.mainchain_config,
         exe=params.mainchain_exe,
@@ -629,7 +633,7 @@ def close_mainchain_ledgers(stop_token: Value, params: Params, sleep_time=4):
             time.sleep(sleep_time)
 
 
-def standalone_interactive_repl(params: Params):
+def standalone_interactive_repl(params: SidechainParams):
     def callback(mc_chain: Chain, sc_chain: Chain):
         # process will run while stop token is non-zero
         stop_token = Value("i", 1)
@@ -647,7 +651,7 @@ def standalone_interactive_repl(params: Params):
     _standalone_with_callback(params, callback, setup_user_accounts=False)
 
 
-def multinode_interactive_repl(params: Params):
+def multinode_interactive_repl(params: SidechainParams):
     def callback(mc_chain: Chain, sc_chain: Chain):
         # process will run while stop token is non-zero
         stop_token = Value("i", 1)
@@ -666,7 +670,7 @@ def multinode_interactive_repl(params: Params):
 
 
 def main():
-    params = Params()
+    params = SidechainParams()
     interactive.set_hooks_dir(params.hooks_dir)
 
     if err_str := params.check_error():

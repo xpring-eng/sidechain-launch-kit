@@ -9,7 +9,7 @@ from slk.common import disable_eprint, eprint
 
 
 def main():
-    params = sidechain.Params()
+    params = sidechain.SidechainParams()
     params.interactive = True
 
     interactive.set_hooks_dir(params.hooks_dir)

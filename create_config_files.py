@@ -548,7 +548,7 @@ def parse_args():
     return parser.parse_known_args()[0]
 
 
-class Params:
+class ConfigParams:
     def __init__(self):
         args = parse_args()
 
@@ -581,7 +581,7 @@ class Params:
             "RIPPLED_SIDECHAIN_CFG_DIR or use the --cfgs_dir command line switch"
 
 
-def main(params: Params, xchain_assets: Optional[Dict[str, XChainAsset]] = None):
+def main(params: ConfigParams, xchain_assets: Optional[Dict[str, XChainAsset]] = None):
 
     if err_str := params.check_error():
         eprint(err_str)
@@ -674,7 +674,7 @@ def main(params: Params, xchain_assets: Optional[Dict[str, XChainAsset]] = None)
 
 
 if __name__ == "__main__":
-    params = Params()
+    params = ConfigParams()
 
     xchain_assets = None
     if params.usd:
