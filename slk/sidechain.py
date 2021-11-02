@@ -106,7 +106,7 @@ def parse_args_helper(parser: argparse.ArgumentParser) -> None:
         help=("Enable printing errors (eprint enabled)"),
     )
 
-    # Pauses are use for attaching debuggers and looking at logs are know checkpoints
+    # Pauses are used for attaching debuggers and looking at logs are know checkpoints
     parser.add_argument(
         "--with_pauses",
         "-p",
@@ -127,7 +127,7 @@ def parse_args():
 
 
 class SidechainParams:
-    def __init__(self, *, configs_dir: Optional[str] = None):
+    def __init__(self, *, configs_dir: Optional[str] = None, interactive: bool = False):
         args = parse_args()
 
         # set up debug params
@@ -141,7 +141,7 @@ class SidechainParams:
         # set up other params
         self.standalone = args.standalone
         self.with_pauses = args.with_pauses
-        self.interactive = args.interactive
+        self.interactive = args.interactive or interactive
         self.quiet = args.quiet
         self.verbose = args.verbose
 

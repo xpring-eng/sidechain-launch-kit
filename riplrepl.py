@@ -10,12 +10,10 @@ from slk.common import disable_eprint, eprint
 
 def main():
     try:
-        params = sidechain.SidechainParams()
+        params = sidechain.SidechainParams(interactive=True)
     except Exception as e:
         eprint("ERROR: " + str(e))
         sys.exit(1)
-
-    params.interactive = True
 
     interactive.set_hooks_dir(params.hooks_dir)
 
