@@ -129,6 +129,7 @@ class SidechainParams:
     def __init__(self, *, configs_dir: Optional[str] = None):
         args = parse_args()
 
+        # set up debug params
         self.debug_sidechain = False
         if args.debug_sidechain:
             self.debug_sidechain = args.debug_sidechain
@@ -136,23 +137,39 @@ class SidechainParams:
         if args.debug_mainchain:
             self.debug_mainchain = args.debug_mainchain
 
+        # set up other params
         self.standalone = args.standalone
         self.with_pauses = args.with_pauses
         self.interactive = args.interactive
         self.quiet = args.quiet
         self.verbose = args.verbose
 
+        if self.verbose and self.quiet:
+            raise Exception(
+                "Cannot specify both verbose and quiet options at the same time"
+            )
+
         self.mainchain_exe = None
         if "RIPPLED_MAINCHAIN_EXE" in os.environ:
             self.mainchain_exe = os.environ["RIPPLED_MAINCHAIN_EXE"]
         if args.exe_mainchain:
             self.mainchain_exe = args.exe_mainchain
+        if self.mainchain is None:
+            raise Exception(
+                "Missing mainchain_exe location. Either set the env variable "
+                "RIPPLED_MAINCHAIN_EXE or use the --exe_mainchain command line switch"
+            )
 
         self.sidechain_exe = None
         if "RIPPLED_SIDECHAIN_EXE" in os.environ:
             self.sidechain_exe = os.environ["RIPPLED_SIDECHAIN_EXE"]
         if args.exe_sidechain:
             self.sidechain_exe = args.exe_sidechain
+        if self.sidechain is None:
+            raise Exception(
+                "Missing sidechain_exe location. Either set the env variable "
+                "RIPPLED_SIDECHAIN_EXE or use the --exe_sidechain command line switch"
+            )
 
         self.configs_dir = None
         if "RIPPLED_SIDECHAIN_CFG_DIR" in os.environ:
@@ -161,26 +178,17 @@ class SidechainParams:
             self.configs_dir = args.cfgs_dir
         if configs_dir is not None:
             self.configs_dir = configs_dir
+        if self.configs_dir is None:
+            raise Exception(
+                "Missing configs directory location. Either set the env variable "
+                "RIPPLED_SIDECHAIN_CFG_DIR or use the --cfgs_dir command line switch"
+            )
 
         self.hooks_dir = None
         if "RIPPLED_SIDECHAIN_HOOKS_DIR" in os.environ:
             self.hooks_dir = os.environ["RIPPLED_SIDECHAIN_HOOKS_DIR"]
         if args.hooks_dir:
             self.hooks_dir = args.hooks_dir
-
-        if err_str := self._check_error():
-            raise Exception(err_str)
-
-        if not self.configs_dir:
-            self.mainchain_config = None
-            self.sidechain_config = None
-            self.sidechain_bootstrap_config = None
-            self.genesis_account = None
-            self.mc_door_account = None
-            self.user_account = None
-            self.sc_door_account = None
-            self.federators = None
-            return
 
         if self.standalone:
             self.mainchain_config = ConfigFile(
@@ -232,23 +240,6 @@ class SidechainParams:
             line.split()[1].strip()
             for line in self.sidechain_bootstrap_config.sidechain_federators.get_lines()
         ]
-
-    def _check_error(self) -> str:
-        """
-        Check for errors. Return `None` if no errors,
-        otherwise return a string describing the error
-        """
-        if not self.mainchain_exe:
-            return "Missing mainchain_exe location. Either set the env variable "
-            "RIPPLED_MAINCHAIN_EXE or use the --exe_mainchain command line switch"
-        if not self.sidechain_exe:
-            return "Missing sidechain_exe location. Either set the env variable "
-            "RIPPLED_SIDECHAIN_EXE or use the --exe_sidechain command line switch"
-        if not self.configs_dir:
-            return "Missing configs directory location. Either set the env variable "
-            "RIPPLED_SIDECHAIN_CFG_DIR or use the --cfgs_dir command line switch"
-        if self.verbose and self.quiet:
-            return "Cannot specify both verbose and quiet options at the same time"
 
 
 mainDoorKeeper = 0
