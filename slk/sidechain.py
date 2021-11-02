@@ -43,7 +43,7 @@ from slk.testnet import sidechain_network
 load_dotenv()
 
 
-def parse_args_helper(parser: argparse.ArgumentParser):
+def parse_args_helper(parser: argparse.ArgumentParser) -> None:
 
     parser.add_argument(
         "--debug_sidechain",
