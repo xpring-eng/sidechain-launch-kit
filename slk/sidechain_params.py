@@ -10,7 +10,7 @@ from slk.config_file import ConfigFile
 load_dotenv()
 
 
-def parse_args_helper(parser: argparse.ArgumentParser) -> None:
+def _parse_args_helper(parser: argparse.ArgumentParser) -> None:
 
     parser.add_argument(
         "--debug_sidechain",
@@ -86,15 +86,15 @@ def parse_args_helper(parser: argparse.ArgumentParser) -> None:
     )
 
 
-def parse_args():
+def _parse_args():
     parser = argparse.ArgumentParser(description=("Test and debug sidechains"))
-    parse_args_helper(parser)
+    _parse_args_helper(parser)
     return parser.parse_known_args()[0]
 
 
 class SidechainParams:
     def __init__(self, *, configs_dir: Optional[str] = None, interactive: bool = False):
-        args = parse_args()
+        args = _parse_args()
 
         # set up debug params
         self.debug_sidechain = False
