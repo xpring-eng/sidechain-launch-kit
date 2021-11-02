@@ -22,6 +22,7 @@ from typing import Callable, List, Optional
 from dotenv import load_dotenv
 from xrpl.models import (
     AccountSet,
+    AccountSetFlag,
     Amount,
     IssuedCurrencyAmount,
     Memo,
@@ -154,7 +155,7 @@ class SidechainParams:
             self.mainchain_exe = os.environ["RIPPLED_MAINCHAIN_EXE"]
         if args.exe_mainchain:
             self.mainchain_exe = args.exe_mainchain
-        if self.mainchain is None:
+        if self.mainchain_exe is None:
             raise Exception(
                 "Missing mainchain_exe location. Either set the env variable "
                 "RIPPLED_MAINCHAIN_EXE or use the --exe_mainchain command line switch"
@@ -165,7 +166,7 @@ class SidechainParams:
             self.sidechain_exe = os.environ["RIPPLED_SIDECHAIN_EXE"]
         if args.exe_sidechain:
             self.sidechain_exe = args.exe_sidechain
-        if self.sidechain is None:
+        if self.sidechain_exe is None:
             raise Exception(
                 "Missing sidechain_exe location. Either set the env variable "
                 "RIPPLED_SIDECHAIN_EXE or use the --exe_sidechain command line switch"
@@ -242,9 +243,9 @@ class SidechainParams:
         ]
 
 
-mainDoorKeeper = 0
-sideDoorKeeper = 1
-updateSignerList = 2
+MAINCHAIN_DOOR_KEEPER = 0
+SIDECHAIN_DOOR_KEEPER = 1
+UPDATE_SIGNER_LIST = 2
 
 
 def setup_mainchain(
@@ -258,7 +259,12 @@ def setup_mainchain(
     mc_chain("open")
 
     # Allow rippling through the genesis account
-    mc_chain(AccountSet(account=params.genesis_account.account_id, set_flag=8))
+    mc_chain(
+        AccountSet(
+            account=params.genesis_account.account_id,
+            set_flag=AccountSetFlag.ASF_DEFAULT_RIPPLE,
+        )
+    )
     mc_chain.maybe_ledger_accept()
 
     # Create and fund the mc door account
@@ -301,7 +307,7 @@ def setup_mainchain(
     mc_chain(
         TicketCreate(
             account=params.mc_door_account.account_id,
-            source_tag=mainDoorKeeper,
+            source_tag=MAINCHAIN_DOOR_KEEPER,
             ticket_count=1,
         )
     )
@@ -309,7 +315,7 @@ def setup_mainchain(
     mc_chain(
         TicketCreate(
             account=params.mc_door_account.account_id,
-            source_tag=sideDoorKeeper,
+            source_tag=SIDECHAIN_DOOR_KEEPER,
             ticket_count=1,
         )
     )
@@ -317,12 +323,17 @@ def setup_mainchain(
     mc_chain(
         TicketCreate(
             account=params.mc_door_account.account_id,
-            source_tag=updateSignerList,
+            source_tag=UPDATE_SIGNER_LIST,
             ticket_count=1,
         )
     )
     mc_chain.maybe_ledger_accept()
-    mc_chain(AccountSet(account=params.mc_door_account.account_id, set_flag=4))
+    mc_chain(
+        AccountSet(
+            account=params.mc_door_account.account_id,
+            set_flag=AccountSetFlag.ASF_DISABLE_MASTER,
+        )
+    )
     mc_chain.maybe_ledger_accept()
 
     if setup_user_accounts:
@@ -367,7 +378,7 @@ def setup_sidechain(
     sc_chain(
         TicketCreate(
             account=params.genesis_account.account_id,
-            source_tag=mainDoorKeeper,
+            source_tag=MAINCHAIN_DOOR_KEEPER,
             ticket_count=1,
         )
     )
@@ -375,7 +386,7 @@ def setup_sidechain(
     sc_chain(
         TicketCreate(
             account=params.genesis_account.account_id,
-            source_tag=sideDoorKeeper,
+            source_tag=SIDECHAIN_DOOR_KEEPER,
             ticket_count=1,
         )
     )
@@ -383,12 +394,17 @@ def setup_sidechain(
     sc_chain(
         TicketCreate(
             account=params.genesis_account.account_id,
-            source_tag=updateSignerList,
+            source_tag=UPDATE_SIGNER_LIST,
             ticket_count=1,
         )
     )
     sc_chain.maybe_ledger_accept()
-    sc_chain(AccountSet(account=params.genesis_account.account_id, set_flag=4))
+    sc_chain(
+        AccountSet(
+            account=params.genesis_account.account_id,
+            set_flag=AccountSetFlag.ASF_DISABLE_MASTER,
+        )
+    )
     sc_chain.maybe_ledger_accept()
 
 

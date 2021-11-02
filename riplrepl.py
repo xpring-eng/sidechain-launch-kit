@@ -12,7 +12,7 @@ def main():
     try:
         params = sidechain.SidechainParams()
     except Exception as e:
-        eprint(str(e))
+        eprint("ERROR: " + str(e))
         sys.exit(1)
 
     params.interactive = True
