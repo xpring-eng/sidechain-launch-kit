@@ -6,7 +6,7 @@ import time
 from contextlib import contextmanager
 from typing import List, Optional, Set, Union
 
-from xrpl.models import FederatorInfo, ServerInfo
+from xrpl.models import FederatorInfo
 
 from slk.chain import Chain
 from slk.config_file import ConfigFile
@@ -124,48 +124,12 @@ class Sidechain(Chain):
     def is_running(self, index: int) -> bool:
         return index in self.running_server_indexes
 
-    def wait_for_validated_ledger(self, server_index: Optional[int] = None):
+    def wait_for_validated_ledger(self):
         """Don't return until the network has at least one validated ledger"""
-        if server_index is None:
-            print("")  # adds some spacing after the rippled startup messages
-            for i in range(len(self.nodes)):
-                self.wait_for_validated_ledger(i)
-            return
-
-        node = self.nodes[server_index]
-        if not node.client.is_open():
-            node.client.open()
-        for i in range(600):
-            r = node.request(ServerInfo())
-            state = None
-            if "info" in r:
-                state = r["info"]["server_state"]
-                if state == "proposing":
-                    print(f"Synced: {server_index} : {state}", flush=True)
-                    break
-            if not i % 10:
-                print(f"Waiting for sync: {server_index} : {state}", flush=True)
-            time.sleep(1)
-
-        for i in range(600):
-            r = node.request(ServerInfo())
-            state = None
-            if "info" in r:
-                complete_ledgers = r["info"]["complete_ledgers"]
-                if complete_ledgers and complete_ledgers != "empty":
-                    print(
-                        f"Have complete ledgers: {server_index} : {state}", flush=True
-                    )
-                    return
-            if not i % 10:
-                print(
-                    f"Waiting for complete_ledgers: {server_index} : "
-                    f"{complete_ledgers}",
-                    flush=True,
-                )
-            time.sleep(1)
-
-        raise ValueError("Could not sync server {node.config_file_name}")
+        print("")  # adds some spacing after the rippled startup messages
+        for i in range(len(self.nodes)):
+            self.nodes[i].wait_for_validated_ledger()
+        return
 
     def servers_start(
         self,

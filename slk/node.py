@@ -1,5 +1,6 @@
 import os
 import subprocess
+import time
 from typing import List, Optional
 
 from xrpl.clients import WebsocketClient
@@ -54,22 +55,6 @@ class Node:
     def sign_and_submit(self, txn, wallet) -> dict:
         return safe_sign_and_submit_transaction(txn, wallet, self.client).result
 
-    # Get a dict of the server_state, validated_ledger_seq, and complete_ledgers
-    def get_brief_server_info(self) -> dict:
-        ret = {"server_state": "NA", "ledger_seq": "NA", "complete_ledgers": "NA"}
-        if not self.pid or self.pid == -1:
-            return ret
-        r = self.client.request(ServerInfo()).result
-        if "info" not in r:
-            return ret
-        r = r["info"]
-        for f in ["server_state", "complete_ledgers"]:
-            if f in r:
-                ret[f] = r[f]
-        if "validated_ledger" in r:
-            ret["ledger_seq"] = r["validated_ledger"]["seq"]
-        return ret
-
     def start_server(
         self,
         extra_args: List[str],
@@ -98,3 +83,52 @@ class Node:
 
         self.process.wait()
         self.pid = -1
+
+    def wait_for_validated_ledger(self):
+        if not self.client.is_open():
+            self.client.open()
+        for i in range(600):
+            r = self.request(ServerInfo())
+            state = None
+            if "info" in r:
+                state = r["info"]["server_state"]
+                if state == "proposing":
+                    print(f"Synced: {self.name} : {state}", flush=True)
+                    break
+            if not i % 10:
+                print(f"Waiting for sync: {self.name} : {state}", flush=True)
+            time.sleep(1)
+
+        for i in range(600):
+            r = self.request(ServerInfo())
+            state = None
+            if "info" in r:
+                complete_ledgers = r["info"]["complete_ledgers"]
+                if complete_ledgers and complete_ledgers != "empty":
+                    print(f"Have complete ledgers: {self.name} : {state}", flush=True)
+                    return
+            if not i % 10:
+                print(
+                    f"Waiting for complete_ledgers: {self.name} : "
+                    f"{complete_ledgers}",
+                    flush=True,
+                )
+            time.sleep(1)
+
+        raise ValueError("Could not sync server {self.config_file_name}")
+
+    # Get a dict of the server_state, validated_ledger_seq, and complete_ledgers
+    def get_brief_server_info(self) -> dict:
+        ret = {"server_state": "NA", "ledger_seq": "NA", "complete_ledgers": "NA"}
+        if not self.pid or self.pid == -1:
+            return ret
+        r = self.client.request(ServerInfo()).result
+        if "info" not in r:
+            return ret
+        r = r["info"]
+        for f in ["server_state", "complete_ledgers"]:
+            if f in r:
+                ret[f] = r[f]
+        if "validated_ledger" in r:
+            ret["ledger_seq"] = r["validated_ledger"]["seq"]
+        return ret
