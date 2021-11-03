@@ -515,7 +515,7 @@ def single_node_chain(
         extra_args = []
     server_running = False
     chain = None
-    node = Node(config=config, command_log=command_log, exe=exe)
+    node = Node(config=config, command_log=command_log, exe=exe, name="mainchain")
     try:
         if run_server:
             node.start_server(extra_args, standalone=True, server_out=server_out)
