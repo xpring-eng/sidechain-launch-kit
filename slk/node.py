@@ -87,7 +87,7 @@ class Node:
         )
         self.pid = self.process.pid
         print(
-            f"started rippled: {self.name} PID: {self.process.pid}",
+            f"  started rippled: {self.name} PID: {self.process.pid}",
             flush=True,
         )
 

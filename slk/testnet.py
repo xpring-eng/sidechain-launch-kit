@@ -127,6 +127,7 @@ class Sidechain(Chain):
     def wait_for_validated_ledger(self, server_index: Optional[int] = None):
         """Don't return until the network has at least one validated ledger"""
         if server_index is None:
+            print("")  # adds some spacing after the rippled startup messages
             for i in range(len(self.nodes)):
                 self.wait_for_validated_ledger(i)
             return
