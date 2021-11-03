@@ -6,10 +6,16 @@ from typing import Dict
 from xrpl.models import IssuedCurrencyAmount, Payment, TrustSet
 from xrpl.utils import xrp_to_drops
 
-import slk.sidechain as sidechain
 from slk.chain import Chain
 from slk.common import disable_eprint, eprint, same_amount_new_value
-from slk.sidechain import Params
+from slk.sidechain import (
+    _convert_log_files_to_json,
+    _multinode_with_callback,
+    _standalone_with_callback,
+    close_mainchain_ledgers,
+)
+from slk.sidechain_params import SidechainParams
+from slk.xchain_transfer import main_to_side_transfer, side_to_main_transfer
 from tests.utils import (
     mc_connect_subscription,
     sc_connect_subscription,
@@ -19,7 +25,7 @@ from tests.utils import (
 )
 
 
-def simple_xrp_test(mc_chain: Chain, sc_chain: Chain, params: Params):
+def simple_xrp_test(mc_chain: Chain, sc_chain: Chain, params: SidechainParams):
     alice = mc_chain.account_from_alias("alice")
     adam = sc_chain.account_from_alias("adam")
 
@@ -28,9 +34,7 @@ def simple_xrp_test(mc_chain: Chain, sc_chain: Chain, params: Params):
     with tst_context(mc_chain, sc_chain):
         to_send_asset = xrp_to_drops(1000)
         pre_bal = sc_chain.get_balance(adam, to_send_asset)
-        sidechain.main_to_side_transfer(
-            mc_chain, sc_chain, alice, adam, to_send_asset, params
-        )
+        main_to_side_transfer(mc_chain, sc_chain, alice, adam, to_send_asset, params)
         wait_for_balance_change(sc_chain, adam, pre_bal, to_send_asset)
 
     for i in range(2):
@@ -39,7 +43,7 @@ def simple_xrp_test(mc_chain: Chain, sc_chain: Chain, params: Params):
             with tst_context(mc_chain, sc_chain):
                 to_send_asset = xrp_to_drops(value)
                 pre_bal = sc_chain.get_balance(adam, to_send_asset)
-                sidechain.main_to_side_transfer(
+                main_to_side_transfer(
                     mc_chain, sc_chain, alice, adam, to_send_asset, params
                 )
                 wait_for_balance_change(sc_chain, adam, pre_bal, to_send_asset)
@@ -50,13 +54,13 @@ def simple_xrp_test(mc_chain: Chain, sc_chain: Chain, params: Params):
             with tst_context(mc_chain, sc_chain):
                 to_send_asset = xrp_to_drops(value)
                 pre_bal = mc_chain.get_balance(alice, to_send_asset)
-                sidechain.side_to_main_transfer(
+                side_to_main_transfer(
                     mc_chain, sc_chain, adam, alice, to_send_asset, params
                 )
                 wait_for_balance_change(mc_chain, alice, pre_bal, to_send_asset)
 
 
-def simple_iou_test(mc_chain: Chain, sc_chain: Chain, params: Params):
+def simple_iou_test(mc_chain: Chain, sc_chain: Chain, params: SidechainParams):
     alice = mc_chain.account_from_alias("alice")
     adam = sc_chain.account_from_alias("adam")
 
@@ -77,7 +81,7 @@ def simple_iou_test(mc_chain: Chain, sc_chain: Chain, params: Params):
 
     # make sure adam account on the side chain exists and set the trust line
     with tst_context(mc_chain, sc_chain):
-        sidechain.main_to_side_transfer(
+        main_to_side_transfer(
             mc_chain, sc_chain, alice, adam, xrp_to_drops(300), params
         )
 
@@ -116,7 +120,7 @@ def simple_iou_test(mc_chain: Chain, sc_chain: Chain, params: Params):
                     sc_asset, sc_chain.get_balance(adam, rcv_asset)
                 )
                 print("IN IOU TESTINGGGGGG", to_send_asset, rcv_asset, pre_bal)
-                sidechain.main_to_side_transfer(
+                main_to_side_transfer(
                     mc_chain, sc_chain, alice, adam, to_send_asset, params
                 )
                 wait_for_balance_change(sc_chain, adam, pre_bal, rcv_asset)
@@ -130,18 +134,18 @@ def simple_iou_test(mc_chain: Chain, sc_chain: Chain, params: Params):
                 pre_bal = same_amount_new_value(
                     to_send_asset, mc_chain.get_balance(alice, to_send_asset)
                 )
-                sidechain.side_to_main_transfer(
+                side_to_main_transfer(
                     mc_chain, sc_chain, adam, alice, to_send_asset, params
                 )
                 wait_for_balance_change(mc_chain, alice, pre_bal, rcv_asset)
 
 
-def run(mc_chain: Chain, sc_chain: Chain, params: Params):
+def run(mc_chain: Chain, sc_chain: Chain, params: SidechainParams):
     # process will run while stop token is non-zero
     stop_token = Value("i", 1)
     p = None
     if mc_chain.standalone:
-        p = Process(target=sidechain.close_mainchain_ledgers, args=(stop_token, params))
+        p = Process(target=close_mainchain_ledgers, args=(stop_token, params))
         p.start()
     try:
         # TODO: Tests fail without this sleep. Fix this bug.
@@ -153,21 +157,21 @@ def run(mc_chain: Chain, sc_chain: Chain, params: Params):
         if p:
             stop_token.value = 0
             p.join()
-        sidechain._convert_log_files_to_json(
+        _convert_log_files_to_json(
             mc_chain.get_configs() + sc_chain.get_configs(), "final.json"
         )
 
 
-def standalone_test(params: Params):
+def standalone_test(params: SidechainParams):
     def callback(mc_chain: Chain, sc_chain: Chain):
         mc_connect_subscription(mc_chain, params.mc_door_account)
         sc_connect_subscription(sc_chain, params.sc_door_account)
         run(mc_chain, sc_chain, params)
 
-    sidechain._standalone_with_callback(params, callback, setup_user_accounts=False)
+    _standalone_with_callback(params, callback, setup_user_accounts=False)
 
 
-def setup_accounts(mc_chain: Chain, sc_chain: Chain, params: Params):
+def setup_accounts(mc_chain: Chain, sc_chain: Chain, params: SidechainParams):
     # Setup a funded user account on the main chain, and add an unfunded account.
     # Setup address book and add a funded account on the mainchain.
     # Typical female names are addresses on the mainchain.
@@ -195,20 +199,20 @@ def setup_accounts(mc_chain: Chain, sc_chain: Chain, params: Params):
     sc_chain.create_account("ed")
 
 
-def multinode_test(params: Params):
+def multinode_test(params: SidechainParams):
     def callback(mc_chain: Chain, sc_chain: Chain):
         mc_connect_subscription(mc_chain, params.mc_door_account)
         sc_connect_subscription(sc_chain, params.sc_door_account)
         run(mc_chain, sc_chain, params)
 
-    sidechain._multinode_with_callback(params, callback, setup_user_accounts=False)
+    _multinode_with_callback(params, callback, setup_user_accounts=False)
 
 
 def test_simple_xchain(configs_dirs_dict: Dict[int, str]):
-    params = sidechain.Params(configs_dir=configs_dirs_dict[1])
-
-    if err_str := params.check_error():
-        eprint(err_str)
+    try:
+        params = SidechainParams(configs_dir=configs_dirs_dict[1])
+    except Exception as e:
+        eprint(str(e))
         sys.exit(1)
 
     if params.verbose:

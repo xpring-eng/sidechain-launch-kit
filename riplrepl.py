@@ -4,19 +4,19 @@
 import sys
 
 import slk.interactive as interactive
-import slk.sidechain as sidechain
 from slk.common import disable_eprint, eprint
+from slk.sidechain import multinode_interactive_repl, standalone_interactive_repl
+from slk.sidechain_params import SidechainParams
 
 
 def main():
-    params = sidechain.Params()
-    params.interactive = True
+    try:
+        params = SidechainParams(interactive=True)
+    except Exception as e:
+        eprint("ERROR: " + str(e))
+        sys.exit(1)
 
     interactive.set_hooks_dir(params.hooks_dir)
-
-    if err_str := params.check_error():
-        eprint(err_str)
-        sys.exit(1)
 
     if params.verbose:
         print("eprint enabled")
@@ -24,9 +24,9 @@ def main():
         disable_eprint()
 
     if params.standalone:
-        sidechain.standalone_interactive_repl(params)
+        standalone_interactive_repl(params)
     else:
-        sidechain.multinode_interactive_repl(params)
+        multinode_interactive_repl(params)
 
 
 if __name__ == "__main__":

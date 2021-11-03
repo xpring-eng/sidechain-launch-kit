@@ -2,7 +2,7 @@ import pytest
 from xrpl.models import IssuedCurrencyAmount
 
 import create_config_files
-import slk.sidechain as sidechain
+from slk.sidechain_params import _parse_args_helper
 
 """
 Sidechains uses argparse.ArgumentParser to add command line options.
@@ -28,7 +28,7 @@ class ArgumentParserWrapper:
 
 def pytest_addoption(parser):
     wrapped = ArgumentParserWrapper(parser)
-    sidechain.parse_args_helper(wrapped)
+    _parse_args_helper(wrapped)
 
 
 def _xchain_assets(ratio: int = 1):
@@ -57,7 +57,7 @@ _config_dirs = None
 def configs_dirs_dict(tmp_path):
     global _config_dirs
     if not _config_dirs:
-        params = create_config_files.Params()
+        params = create_config_files.ConfigParams()
         _config_dirs = {}
         for ratio in (1, 2):
             params.configs_dir = str(tmp_path / f"test_config_files_{ratio}")
