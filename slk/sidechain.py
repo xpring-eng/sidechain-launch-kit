@@ -41,7 +41,9 @@ def simple_test(mc_chain: Chain, sc_chain: Chain, params: SidechainParams):
 
         if params.with_pauses:
             _convert_log_files_to_json(
-                mc_chain.get_configs() + sc_chain.get_configs(), "checkpoint1.json"
+                mc_chain.get_configs() + sc_chain.get_configs(),
+                "checkpoint1.json",
+                params.verbose,
             )
             input("Pausing to check for main -> side txns (press enter to continue)")
 
@@ -54,15 +56,18 @@ def simple_test(mc_chain: Chain, sc_chain: Chain, params: SidechainParams):
             input("Pausing to check for side -> main txns (press enter to continue)")
     finally:
         _convert_log_files_to_json(
-            mc_chain.get_configs() + sc_chain.get_configs(), "final.json"
+            mc_chain.get_configs() + sc_chain.get_configs(),
+            "final.json",
+            params.verbose,
         )
 
 
-def _rm_debug_log(config: ConfigFile):
+def _rm_debug_log(config: ConfigFile, verbose: bool):
     try:
         debug_log = config.debug_logfile.get_line()
         if debug_log:
-            print(f"removing debug file: {debug_log}", flush=True)
+            if verbose:
+                print(f"removing debug file: {debug_log}", flush=True)
             os.remove(debug_log)
     except:
         pass
@@ -77,7 +82,7 @@ def _standalone_with_callback(
     if params.debug_mainchain:
         input("Start mainchain server and press enter to continue: ")
     else:
-        _rm_debug_log(params.mainchain_config)
+        _rm_debug_log(params.mainchain_config, params.verbose)
     with single_node_chain(
         config=params.mainchain_config,
         exe=params.mainchain_exe,
@@ -89,7 +94,7 @@ def _standalone_with_callback(
         if params.debug_sidechain:
             input("Start sidechain server and press enter to continue: ")
         else:
-            _rm_debug_log(params.sidechain_config)
+            _rm_debug_log(params.sidechain_config, params.verbose)
         with single_node_chain(
             config=params.sidechain_config,
             exe=params.sidechain_exe,
@@ -100,7 +105,9 @@ def _standalone_with_callback(
             callback(mc_chain, sc_chain)
 
 
-def _convert_log_files_to_json(to_convert: List[ConfigFile], suffix: str):
+def _convert_log_files_to_json(
+    to_convert: List[ConfigFile], suffix: str, verbose: bool
+):
     """Convert the log file to json"""
     for c in to_convert:
         try:
@@ -110,7 +117,8 @@ def _convert_log_files_to_json(to_convert: List[ConfigFile], suffix: str):
             converted_log = f"{debug_log}.{suffix}"
             if os.path.exists(converted_log):
                 os.remove(converted_log)
-            print(f"Converting log {debug_log} to {converted_log}", flush=True)
+            if verbose:
+                print(f"Converting log {debug_log} to {converted_log}", flush=True)
             convert_log(debug_log, converted_log, pure_json=True)
         except:
             eprint("Exception converting log")
@@ -126,7 +134,7 @@ def _multinode_with_callback(
         file_name=f"{params.configs_dir}/sidechain_testnet/main.no_shards.mainchain_0/"
         "rippled.cfg"
     )
-    _rm_debug_log(mainchain_cfg)
+    _rm_debug_log(mainchain_cfg, params.verbose)
     if params.debug_mainchain:
         input("Start mainchain server and press enter to continue: ")
     with single_node_chain(
@@ -146,7 +154,7 @@ def _multinode_with_callback(
             f"{params.configs_dir}/sidechain_testnet/sidechain_"
         )
         for c in testnet_configs:
-            _rm_debug_log(c)
+            _rm_debug_log(c, params.verbose)
 
         run_server_list = [True] * len(testnet_configs)
         if params.debug_sidechain:

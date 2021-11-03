@@ -13,10 +13,16 @@ class Node:
     """Client to send commands to the rippled server"""
 
     def __init__(
-        self, *, config: ConfigFile, exe: str, command_log: Optional[str] = None
+        self,
+        *,
+        config: ConfigFile,
+        exe: str,
+        command_log: Optional[str] = None,
+        name: str,
     ):
         section = config.port_ws_admin_local
         self.websocket_uri = f"{section.protocol}://{section.ip}:{section.port}"
+        self.name = name
         self.client = WebsocketClient(url=self.websocket_uri)
         self.config = config
         self.exe = exe
@@ -74,14 +80,14 @@ class Node:
         to_run = [self.exe, "--conf", self.config_file_name]
         if standalone:
             to_run.append("-a")
-        print(f"Starting server {self.config_file_name}")
+        print(f"Starting server {self.name}")
         fout = open(server_out, "w")
         self.process = subprocess.Popen(
             to_run + extra_args, stdout=fout, stderr=subprocess.STDOUT
         )
         self.pid = self.process.pid
         print(
-            f"started rippled: config: {self.config_file_name} PID: {self.process.pid}",
+            f"  started rippled: {self.name} PID: {self.process.pid}",
             flush=True,
         )
 

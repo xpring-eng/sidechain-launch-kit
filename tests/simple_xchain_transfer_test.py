@@ -119,7 +119,6 @@ def simple_iou_test(mc_chain: Chain, sc_chain: Chain, params: SidechainParams):
                 pre_bal = same_amount_new_value(
                     sc_asset, sc_chain.get_balance(adam, rcv_asset)
                 )
-                print("IN IOU TESTINGGGGGG", to_send_asset, rcv_asset, pre_bal)
                 main_to_side_transfer(
                     mc_chain, sc_chain, alice, adam, to_send_asset, params
                 )
@@ -158,7 +157,9 @@ def run(mc_chain: Chain, sc_chain: Chain, params: SidechainParams):
             stop_token.value = 0
             p.join()
         _convert_log_files_to_json(
-            mc_chain.get_configs() + sc_chain.get_configs(), "final.json"
+            mc_chain.get_configs() + sc_chain.get_configs(),
+            "final.json",
+            params.verbose,
         )
 
 
