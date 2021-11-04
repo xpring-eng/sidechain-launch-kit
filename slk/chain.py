@@ -189,9 +189,7 @@ class Chain:
         """Send the JSON command to the rippled server"""
         return self.node.request_json(req)
 
-    def send_subscribe_command(
-        self, req: Subscribe, callback: Callable[[dict], None]
-    ) -> dict:
+    def send_subscribe(self, req: Subscribe, callback: Callable[[dict], None]) -> dict:
         """Send the subscription command to the rippled server."""
         if not self.node.client.is_open():
             self.node.client.open()
@@ -246,7 +244,7 @@ class Chain:
         if isinstance(to_send, Subscribe):
             if callback is None:
                 raise ValueError("Subsription requires callback")
-            return self.send_subscribe_command(to_send, callback)
+            return self.send_subscribe(to_send, callback)
         assert callback is None
         if isinstance(to_send, Transaction):
             return self.send_signed(to_send)
