@@ -58,7 +58,7 @@ class Node:
         response = self.client.request_json(req)
         if response["status"] == "success":
             return response["result"]
-        raise Exception("failed transaction", response.result)
+        raise Exception("failed transaction", response["result"])
 
     def sign_and_submit(self, txn, wallet) -> dict:
         if not self.client.is_open():
