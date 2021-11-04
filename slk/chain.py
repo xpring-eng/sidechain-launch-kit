@@ -2,7 +2,7 @@ import os
 import time
 from contextlib import contextmanager
 from pathlib import Path
-from typing import Any, Callable, Dict, List, Optional, Set, Union
+from typing import Any, Callable, Dict, List, Optional, Set, Union, cast
 
 from tabulate import tabulate
 from xrpl.models import (
@@ -13,7 +13,6 @@ from xrpl.models import (
     IssuedCurrency,
     IssuedCurrencyAmount,
     LedgerAccept,
-    Payment,
     Request,
     Subscribe,
     is_xrp,
@@ -180,9 +179,9 @@ class Chain:
         if not self.key_manager.is_account(txn.account):
             raise ValueError("Cannot sign transaction without secret key")
         account_obj = self.key_manager.get_account(txn.account)
-        return self.node.sign_and_submit(txn, account_obj.wallet)
+        return cast(dict, self.node.sign_and_submit(txn, account_obj.wallet))
 
-    def request(self, req: Request) -> dict:
+    def request(self, req: Request) -> Union[list, dict]:
         """Send the command to the rippled server"""
         return self.node.request(req)
 
@@ -191,8 +190,8 @@ class Chain:
         return self.node.client.request_json(req)["result"]
 
     def send_subscribe_command(
-        self, req: Subscribe, callback: Optional[Callable[[dict], None]] = None
-    ) -> dict:
+        self, req: Subscribe, callback: Callable[[dict], None]
+    ) -> Union[list, dict]:
         """Send the subscription command to the rippled server."""
         if not self.node.client.is_open():
             self.node.client.open()
@@ -243,9 +242,11 @@ class Chain:
         self,
         to_send: Union[Transaction, Request, str],
         callback: Optional[Callable[[dict], None]] = None,
-    ) -> Optional[dict]:
+    ) -> Optional[Union[list, dict]]:
         """Call `send_signed` for transactions or `request` for requests"""
         if isinstance(to_send, Subscribe):
+            if callback is None:
+                raise ValueError("Subsription requires callback")
             return self.send_subscribe_command(to_send, callback)
         assert callback is None
         if isinstance(to_send, Transaction):
@@ -270,29 +271,6 @@ class Chain:
         self.key_manager.add(account)
         return account
 
-    def create_accounts(
-        self,
-        names: List[str],
-        funding_account: Union[Account, str] = "root",
-        amt: Amount = str(1_000_000_000),
-    ) -> List[Account]:
-        """Fund the accounts with nicknames 'names' by using funding account and amt"""
-        accounts = [self.create_account(n) for n in names]
-        if not isinstance(funding_account, Account):
-            org_funding_account = funding_account
-            funding_account = self.key_manager.account_from_alias(funding_account)
-        if not isinstance(funding_account, Account):
-            raise ValueError(f"Could not find funding account {org_funding_account}")
-        if not isinstance(amt, Amount):
-            assert isinstance(amt, int)
-            amt = str(amt)
-        for a in accounts:
-            p = Payment(
-                account=funding_account.account_id, destination=a.account_id, amount=amt
-            )
-            self.send_signed(p)
-        return accounts
-
     def maybe_ledger_accept(self):
         if not self.standalone:
             return
@@ -316,6 +294,8 @@ class Chain:
         if is_xrp(token):
             try:
                 account_info = self.get_account_info(account)
+                # TODO: split get_account_info into two, depending on list vs dict
+                assert isinstance(account_info, dict)
                 needed_data = ["account", "balance"]
                 account_info = {
                     "account": account_info["account"],
@@ -337,6 +317,7 @@ class Chain:
                     }
                 ]
         else:
+            assert isinstance(token, IssuedCurrencyAmount)  # for typing
             try:
                 trustlines = self.get_trust_lines(account)
                 trustlines = [
@@ -389,6 +370,7 @@ class Chain:
             }
         if "account_data" not in result:
             raise ValueError("Bad result from account_info command")
+        assert isinstance(result, dict)  # for typing
         info = result["account_data"]
         for dk in ["LedgerEntryType", "index"]:
             del info[dk]
@@ -423,6 +405,7 @@ class Chain:
             )
         if "lines" not in result or "account" not in result:
             raise ValueError("Bad result from account_lines command")
+        assert isinstance(result, dict)  # for typing
         address = result["account"]
         account_lines = result["lines"]
         for account_line in account_lines:
@@ -454,7 +437,7 @@ class Chain:
     def known_asset_aliases(self) -> List[str]:
         return self.asset_aliases.known_aliases()
 
-    def known_iou_assets(self) -> List[IssuedCurrencyAmount]:
+    def known_iou_assets(self) -> List[IssuedCurrency]:
         return self.asset_aliases.known_assets()
 
     def is_asset_alias(self, name: str) -> bool:
@@ -475,7 +458,7 @@ def balances_data(
     chains: List[Chain],
     chain_names: List[str],
     account_ids: Optional[List[Optional[Account]]] = None,
-    assets: List[Amount] = None,
+    assets: Optional[List[Union[str, IssuedCurrency]]] = None,
     in_drops: bool = False,
 ):
     if account_ids is None:

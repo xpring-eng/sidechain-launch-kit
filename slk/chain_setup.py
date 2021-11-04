@@ -110,7 +110,7 @@ def setup_mainchain(
         mc_chain(
             Payment(
                 account=params.genesis_account.account_id,
-                destination=params.user_account,
+                destination=params.user_account.account_id,
                 amount=str(2_000),
             )
         )
