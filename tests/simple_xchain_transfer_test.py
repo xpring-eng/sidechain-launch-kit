@@ -72,7 +72,7 @@ def simple_iou_test(mc_chain: Chain, sc_chain: Chain, params: SidechainParams):
     )
     mc_chain.add_asset_alias(mc_asset, "mcd")  # main chain dollar
     sc_chain.add_asset_alias(sc_asset, "scd")  # side chain dollar
-    mc_chain(
+    mc_chain.send_signed(
         TrustSet(
             account=alice.account_id,
             limit_amount=same_amount_new_value(mc_asset, 1_000_000),
@@ -86,14 +86,14 @@ def simple_iou_test(mc_chain: Chain, sc_chain: Chain, params: SidechainParams):
         )
 
     # create a trust line to alice and pay her USD/root
-    mc_chain(
+    mc_chain.send_signed(
         TrustSet(
             account=alice.account_id,
             limit_amount=same_amount_new_value(mc_asset, 1_000_000),
         )
     )
     mc_chain.maybe_ledger_accept()
-    mc_chain(
+    mc_chain.send_signed(
         Payment(
             account=mc_chain.account_from_alias("root").account_id,
             destination=alice.account_id,
@@ -103,7 +103,7 @@ def simple_iou_test(mc_chain: Chain, sc_chain: Chain, params: SidechainParams):
     mc_chain.maybe_ledger_accept()
 
     # create a trust line for adam
-    sc_chain(
+    sc_chain.send_signed(
         TrustSet(
             account=adam.account_id,
             limit_amount=same_amount_new_value(sc_asset, 1_000_000),
@@ -182,7 +182,7 @@ def setup_accounts(mc_chain: Chain, sc_chain: Chain, params: SidechainParams):
     mc_chain.create_account("carol")
     mc_chain.create_account("deb")
     mc_chain.create_account("ella")
-    mc_chain(
+    mc_chain.send_signed(
         Payment(
             account=params.genesis_account.account_id,
             destination=alice.account_id,

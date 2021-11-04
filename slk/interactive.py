@@ -471,7 +471,7 @@ class SidechainRepl(cmd.Cmd):
             amt = str(amt_value)
 
         # TODO: print error if something wrong with payment (e.g. no trustline)
-        chain(
+        chain.send_signed(
             Payment(
                 account=src_account.account_id,
                 destination=dst_account.account_id,
@@ -627,7 +627,7 @@ class SidechainRepl(cmd.Cmd):
         assert not args
         memos = [Memo(memo_data=dst_account.account_id_str_as_hex())]
         door_account = chain.account_from_alias("door")
-        chain(
+        chain.send_signed(
             Payment(
                 account=src_account.account_id,
                 destination=door_account.account_id,
@@ -1125,7 +1125,7 @@ class SidechainRepl(cmd.Cmd):
 
         asset = same_amount_new_value(chain.asset_from_alias(alias), amount)
         # TODO: resolve error where repl crashes if account doesn't exist
-        chain(TrustSet(account=account.account_id, limit_amount=asset))
+        chain.send_signed(TrustSet(account=account.account_id, limit_amount=asset))
         chain.maybe_ledger_accept()
 
     def complete_set_trust(self, text, line, begidx, endidx):
@@ -1336,7 +1336,7 @@ class SidechainRepl(cmd.Cmd):
     #         print(f'Error: The hook file {hook_file} does not exist.')
     #         return
     #     create_code = _file_to_hex(hook_file)
-    #     self.sc_chain(
+    #     self.sc_chain.send_signed(
     #         SetHook(account=src_account.account_id, create_code=create_code)
     #     )
     #     self.sc_chain.maybe_ledger_accept()
@@ -1386,7 +1386,7 @@ class SidechainRepl(cmd.Cmd):
         amt = str(5000 * 1_000_000)
         src = self.mc_chain.account_from_alias("root")
         dst = self.mc_chain.account_from_alias("alice")
-        self.mc_chain(
+        self.mc_chain.send_signed(
             Payment(account=src.account_id, destination=dst.account_id, amount=amt)
         )
         self.mc_chain.maybe_ledger_accept()
@@ -1408,7 +1408,7 @@ class SidechainRepl(cmd.Cmd):
         )
         mc_chain.add_asset_alias(mc_asset, "rrr")
         sc_chain.add_asset_alias(sc_asset, "ddd")
-        mc_chain(
+        mc_chain.send_signed(
             TrustSet(
                 account=mc_chain.account_from_alias("alice").account_id,
                 limit_amount=mc_asset(1_000_000),
@@ -1425,7 +1425,7 @@ class SidechainRepl(cmd.Cmd):
                 }
             )
         ]
-        mc_chain(
+        mc_chain.send_signed(
             Payment(
                 account=mc_chain.account_from_alias("alice").account_id,
                 destination=mc_chain.account_from_alias("door").account_id,
@@ -1436,14 +1436,14 @@ class SidechainRepl(cmd.Cmd):
         mc_chain.maybe_ledger_accept()
 
         # create a trust line to alice and pay her USD/rrr
-        mc_chain(
+        mc_chain.send_signed(
             TrustSet(
                 account=mc_chain.account_from_alias("alice").account_id,
                 limit_amount=mc_asset(1_000_000),
             )
         )
         mc_chain.maybe_ledger_accept()
-        mc_chain(
+        mc_chain.send_signed(
             Payment(
                 account=mc_chain.account_from_alias("root").account_id,
                 destination=mc_chain.account_from_alias("alice").account_id,
@@ -1455,7 +1455,7 @@ class SidechainRepl(cmd.Cmd):
         time.sleep(2)
 
         # create a trust line for brad
-        sc_chain(
+        sc_chain.send_signed(
             TrustSet(
                 account=sc_chain.account_from_alias("brad").account_id,
                 limit_amount=sc_asset(1_000_000),
@@ -1517,7 +1517,9 @@ class SidechainRepl(cmd.Cmd):
 
         account = chain.account_from_alias(accountStr)
 
-        result = json.dumps(chain(AccountTx(account=account.account_id)), indent=1)
+        result = json.dumps(
+            chain.request(AccountTx(account=account.account_id)), indent=1
+        )
         print(f"{result}")
         if out_file:
             with open(out_file, "a") as f:
@@ -1593,7 +1595,7 @@ class SidechainRepl(cmd.Cmd):
             with open(out_file, "a") as f:
                 f.write(f"{json.dumps(v, indent=1)}\n")
 
-        chain(Subscribe(accounts=[account]), _subscribe_callback)
+        chain.send_subscribe(Subscribe(accounts=[account]), _subscribe_callback)
 
     def complete_subscribe(self, text, line, begidx, endidx):
         args = line.split()
