@@ -37,7 +37,7 @@ from slk.chain import Chain, single_node_chain
 from slk.common import eprint, same_amount_new_value
 from slk.config_file import ConfigFile
 
-mainnet_validators = """
+MAINNET_VALIDATORS = """
 [validator_list_sites]
 https://vl.ripple.com
 
@@ -45,7 +45,7 @@ https://vl.ripple.com
 ED2677ABFFD1B33AC6FBC3062B71F1E8397C1505E1C42C64D11AD1B28FF73F4734
 """
 
-altnet_validators = """
+ALTNET_VALIDATORS = """
 [validator_list_sites]
 https://vl.altnet.rippletest.net
 
@@ -53,8 +53,7 @@ https://vl.altnet.rippletest.net
 ED264807102805220DA0F312E71FC2C69E1552C9C5790F6C25E3729DEB573D5860
 """
 
-node_size = "medium"
-default_data_dir = "/home/swd/data/rippled"
+NODE_SIZE = "medium"
 
 load_dotenv()
 
@@ -298,7 +297,6 @@ def generate_cfg_dir(
 [validation_seed]
 {validation_seed}
         """
-    node_size = "medium"
     shard_str = "shards" if with_shards else "no_shards"
     net_str = "main" if main_net else "test"
     if not fixed_ips:
@@ -345,7 +343,7 @@ protocol = ws
 # protocol = wss
 
 [node_size]
-{node_size}
+{NODE_SIZE}
 
 [ledger_history]
 {history_line}
@@ -449,7 +447,7 @@ CheckCashMakesTrustLine
         for k in validators:
             validators_str += f"{k}\n"
     else:
-        validators_str = mainnet_validators if main_net else altnet_validators
+        validators_str = MAINNET_VALIDATORS if main_net else ALTNET_VALIDATORS
     with open(sub_dir + "/validators.txt", "w") as f:
         f.write(validators_str)
 
