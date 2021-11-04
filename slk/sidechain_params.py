@@ -117,24 +117,24 @@ class SidechainParams:
             )
 
         # identify mainchain rippled exe file location (for standalone)
-        self.mainchain_exe = None
         if "RIPPLED_MAINCHAIN_EXE" in os.environ:
             self.mainchain_exe = os.environ["RIPPLED_MAINCHAIN_EXE"]
         if args.exe_mainchain:
             self.mainchain_exe = args.exe_mainchain
-        if self.mainchain_exe is None:
+
+        if not hasattr(self, "mainchain_exe"):
             raise Exception(
                 "Missing mainchain_exe location. Either set the env variable "
                 "RIPPLED_MAINCHAIN_EXE or use the --exe_mainchain command line switch"
             )
 
         # identify sidechain rippled exe file location
-        self.sidechain_exe = None
         if "RIPPLED_SIDECHAIN_EXE" in os.environ:
             self.sidechain_exe = os.environ["RIPPLED_SIDECHAIN_EXE"]
         if args.exe_sidechain:
             self.sidechain_exe = args.exe_sidechain
-        if self.sidechain_exe is None:
+        # if `self.sidechain_exe` doesn't exist (done this way for typing purposes)
+        if not hasattr(self, "sidechain_exe"):
             raise Exception(
                 "Missing sidechain_exe location. Either set the env variable "
                 "RIPPLED_SIDECHAIN_EXE or use the --exe_sidechain command line switch"
@@ -148,7 +148,8 @@ class SidechainParams:
             self.configs_dir = args.cfgs_dir
         if configs_dir is not None:
             self.configs_dir = configs_dir
-        if self.configs_dir is None:
+        # if `self.configs_dir` doesn't exist (done this way for typing purposes)
+        if not hasattr(self, "configs_dir"):
             raise Exception(
                 "Missing configs directory location. Either set the env variable "
                 "RIPPLED_SIDECHAIN_CFG_DIR or use the --cfgs_dir command line switch"
