@@ -181,6 +181,7 @@ def generate_multinode_net(
 
 def main(params: ConfigParams, xchain_assets: Optional[Dict[str, XChainAsset]] = None):
     index = 0
+    # generate normal config files so we can get rippled up and running
     nonvalidator_cfg_file_name = generate_cfg_dir(
         ports=Ports(index),
         with_shards=False,
@@ -193,6 +194,7 @@ def main(params: ConfigParams, xchain_assets: Optional[Dict[str, XChainAsset]] =
     )
     index = index + 1
 
+    # spin up rippled so that we can use rippled to do cryptography for us
     nonvalidator_config = ConfigFile(file_name=nonvalidator_cfg_file_name)
     with single_node_chain(exe=params.exe, config=nonvalidator_config) as rip:
         mainnet = Network(
