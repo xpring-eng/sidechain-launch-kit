@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 from dataclasses import dataclass
 from typing import List, Optional, Union
 
@@ -16,43 +18,6 @@ class Keypair:
     public_key: str
     secret_key: str
     account_id: Optional[str]
-
-
-def generate_node_keypairs(n: int, rip: Chain) -> List[Keypair]:
-    """generate keypairs suitable for validator keys"""
-    result = []
-    for i in range(n):
-        # TODO: do this locally
-        req = {
-            "id": f"vc_{i}_{n}",
-            "command": "validation_create",
-        }
-        keys = rip.request_json(req)
-        result.append(
-            Keypair(
-                public_key=keys["validation_public_key"],
-                secret_key=keys["validation_seed"],
-                account_id=None,
-            )
-        )
-    return result
-
-
-def generate_federator_keypairs(n: int, rip: Chain) -> List[Keypair]:
-    """generate keypairs suitable for federator keys"""
-    result = []
-    for i in range(n):
-        # TODO: clean this up after the PR gets merged in the C++ code
-        wallet = Wallet.create(crypto_algorithm=CryptoAlgorithm.ED25519)
-        entropy = decode_seed(wallet.seed)[0]
-        result.append(
-            Keypair(
-                public_key=encode_account_public_key(bytes.fromhex(wallet.public_key)),
-                secret_key=_encode(entropy, _FAMILY_SEED_PREFIX, SEED_LENGTH),
-                account_id=wallet.classic_address,
-            )
-        )
-    return result
 
 
 class Ports:
@@ -76,10 +41,31 @@ class Ports:
 
 class Network:
     def __init__(
-        self, num_nodes: int, num_validators: int, start_cfg_index: int, rip: Chain
+        self, num_nodes: int, num_validators: int, start_cfg_index: int, chain: Chain
     ):
-        self.validator_keypairs = generate_node_keypairs(num_validators, rip)
+        self.num_validators = num_validators
+        self.chain = chain
+        self.validator_keypairs = self._generate_node_keypairs()
         self.ports = [Ports(start_cfg_index + i) for i in range(num_nodes)]
+
+    def _generate_node_keypairs(self: Network) -> List[Keypair]:
+        """generate keypairs suitable for validator keys"""
+        result = []
+        for i in range(self.num_validators):
+            # TODO: do this locally
+            req = {
+                "id": f"vc_{i}_{self.num_validators}",
+                "command": "validation_create",
+            }
+            keys = self.chain.request_json(req)
+            result.append(
+                Keypair(
+                    public_key=keys["validation_public_key"],
+                    secret_key=keys["validation_seed"],
+                    account_id=None,
+                )
+            )
+        return result
 
 
 class SidechainNetwork(Network):
@@ -89,11 +75,30 @@ class SidechainNetwork(Network):
         num_federators: int,
         num_validators: int,
         start_cfg_index: int,
-        rip: Chain,
+        chain: Chain,
     ):
-        super().__init__(num_nodes, num_validators, start_cfg_index, rip)
-        self.federator_keypairs = generate_federator_keypairs(num_federators, rip)
+        super().__init__(num_nodes, num_validators, start_cfg_index, chain)
+        self.num_federators = num_federators
+        self.federator_keypairs = self._generate_federator_keypairs()
         self.main_account = Wallet.create(CryptoAlgorithm.SECP256K1)
+
+    def _generate_federator_keypairs(self: SidechainNetwork) -> List[Keypair]:
+        """generate keypairs suitable for federator keys"""
+        result = []
+        for i in range(self.num_federators):
+            # TODO: clean this up after the PR gets merged in the C++ code
+            wallet = Wallet.create(crypto_algorithm=CryptoAlgorithm.ED25519)
+            entropy = decode_seed(wallet.seed)[0]
+            result.append(
+                Keypair(
+                    public_key=encode_account_public_key(
+                        bytes.fromhex(wallet.public_key)
+                    ),
+                    secret_key=_encode(entropy, _FAMILY_SEED_PREFIX, SEED_LENGTH),
+                    account_id=wallet.classic_address,
+                )
+            )
+        return result
 
 
 class XChainAsset:

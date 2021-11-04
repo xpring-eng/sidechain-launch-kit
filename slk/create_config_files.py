@@ -195,13 +195,15 @@ def main(params: ConfigParams, xchain_assets: Optional[Dict[str, XChainAsset]] =
 
     nonvalidator_config = ConfigFile(file_name=nonvalidator_cfg_file_name)
     with single_node_chain(exe=params.exe, config=nonvalidator_config) as rip:
-        mainnet = Network(num_nodes=1, num_validators=1, start_cfg_index=index, rip=rip)
+        mainnet = Network(
+            num_nodes=1, num_validators=1, start_cfg_index=index, chain=rip
+        )
         sidenet = SidechainNetwork(
             num_nodes=5,
             num_federators=5,
             num_validators=5,
             start_cfg_index=index + 1,
-            rip=rip,
+            chain=rip,
         )
         generate_multinode_net(
             out_dir=f"{params.configs_dir}/sidechain_testnet",
@@ -220,7 +222,7 @@ def main(params: ConfigParams, xchain_assets: Optional[Dict[str, XChainAsset]] =
                         continue
 
                     mainnet = Network(
-                        num_nodes=1, num_validators=1, start_cfg_index=index, rip=rip
+                        num_nodes=1, num_validators=1, start_cfg_index=index, chain=rip
                     )
                     mainchain_cfg_file = generate_cfg_dir(
                         data_dir=params.configs_dir,
@@ -238,7 +240,7 @@ def main(params: ConfigParams, xchain_assets: Optional[Dict[str, XChainAsset]] =
                         num_federators=5,
                         num_validators=1,
                         start_cfg_index=index + 1,
-                        rip=rip,
+                        chain=rip,
                     )
                     signing_key = sidenet.federator_keypairs[0].secret_key
 
