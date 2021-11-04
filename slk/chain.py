@@ -249,7 +249,7 @@ class Chain:
     def maybe_ledger_accept(self):
         if not self.standalone:
             return
-        self(LedgerAccept())
+        self.request(LedgerAccept())
 
     def get_balances(
         self,

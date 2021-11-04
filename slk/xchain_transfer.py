@@ -17,7 +17,7 @@ def _xchain_transfer(
     to_chain_door: Account,
 ):
     memo = Memo(memo_data=dst.account_id_str_as_hex())
-    from_chain(
+    from_chain.send_signed(
         Payment(
             account=src.account_id,
             destination=from_chain_door.account_id,

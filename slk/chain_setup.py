@@ -25,10 +25,10 @@ def setup_mainchain(
     if setup_user_accounts:
         mc_chain.add_to_keymanager(params.user_account)
 
-    # mc_chain(LogLevel('fatal'))
+    # mc_chain.request(LogLevel('fatal'))
 
     # Allow rippling through the genesis account
-    mc_chain(
+    mc_chain.send_signed(
         AccountSet(
             account=params.genesis_account.account_id,
             set_flag=AccountSetFlag.ASF_DEFAULT_RIPPLE,
@@ -37,7 +37,7 @@ def setup_mainchain(
     mc_chain.maybe_ledger_accept()
 
     # Create and fund the mc door account
-    mc_chain(
+    mc_chain.send_signed(
         Payment(
             account=params.genesis_account.account_id,
             destination=params.mc_door_account.account_id,
@@ -47,7 +47,7 @@ def setup_mainchain(
     mc_chain.maybe_ledger_accept()
 
     # Create a trust line so USD/root account ious can be sent cross chain
-    mc_chain(
+    mc_chain.send_signed(
         TrustSet(
             account=params.mc_door_account.account_id,
             limit_amount=IssuedCurrencyAmount(
@@ -62,7 +62,7 @@ def setup_mainchain(
     divide = 4 * len(params.federators)
     by = 5
     quorum = (divide + by - 1) // by
-    mc_chain(
+    mc_chain.send_signed(
         SignerListSet(
             account=params.mc_door_account.account_id,
             signer_quorum=quorum,
@@ -73,7 +73,7 @@ def setup_mainchain(
         )
     )
     mc_chain.maybe_ledger_accept()
-    mc_chain(
+    mc_chain.send_signed(
         TicketCreate(
             account=params.mc_door_account.account_id,
             source_tag=MAINCHAIN_DOOR_KEEPER,
@@ -81,7 +81,7 @@ def setup_mainchain(
         )
     )
     mc_chain.maybe_ledger_accept()
-    mc_chain(
+    mc_chain.send_signed(
         TicketCreate(
             account=params.mc_door_account.account_id,
             source_tag=SIDECHAIN_DOOR_KEEPER,
@@ -89,7 +89,7 @@ def setup_mainchain(
         )
     )
     mc_chain.maybe_ledger_accept()
-    mc_chain(
+    mc_chain.send_signed(
         TicketCreate(
             account=params.mc_door_account.account_id,
             source_tag=UPDATE_SIGNER_LIST,
@@ -97,7 +97,7 @@ def setup_mainchain(
         )
     )
     mc_chain.maybe_ledger_accept()
-    mc_chain(
+    mc_chain.send_signed(
         AccountSet(
             account=params.mc_door_account.account_id,
             set_flag=AccountSetFlag.ASF_DISABLE_MASTER,
@@ -107,7 +107,7 @@ def setup_mainchain(
 
     if setup_user_accounts:
         # Create and fund a regular user account
-        mc_chain(
+        mc_chain.send_signed(
             Payment(
                 account=params.genesis_account.account_id,
                 destination=params.user_account.account_id,
@@ -124,14 +124,14 @@ def setup_sidechain(
     if setup_user_accounts:
         sc_chain.add_to_keymanager(params.user_account)
 
-    # sc_chain(LogLevel('fatal'))
-    # sc_chain(LogLevel('trace', partition='SidechainFederator'))
+    # sc_chain.send_signed(LogLevel('fatal'))
+    # sc_chain.send_signed(LogLevel('trace', partition='SidechainFederator'))
 
     # set the chain's signer list and disable the master key
     divide = 4 * len(params.federators)
     by = 5
     quorum = (divide + by - 1) // by
-    sc_chain(
+    sc_chain.send_signed(
         SignerListSet(
             account=params.genesis_account.account_id,
             signer_quorum=quorum,
@@ -142,7 +142,7 @@ def setup_sidechain(
         )
     )
     sc_chain.maybe_ledger_accept()
-    sc_chain(
+    sc_chain.send_signed(
         TicketCreate(
             account=params.genesis_account.account_id,
             source_tag=MAINCHAIN_DOOR_KEEPER,
@@ -150,7 +150,7 @@ def setup_sidechain(
         )
     )
     sc_chain.maybe_ledger_accept()
-    sc_chain(
+    sc_chain.send_signed(
         TicketCreate(
             account=params.genesis_account.account_id,
             source_tag=SIDECHAIN_DOOR_KEEPER,
@@ -158,7 +158,7 @@ def setup_sidechain(
         )
     )
     sc_chain.maybe_ledger_accept()
-    sc_chain(
+    sc_chain.send_signed(
         TicketCreate(
             account=params.genesis_account.account_id,
             source_tag=UPDATE_SIGNER_LIST,
@@ -166,7 +166,7 @@ def setup_sidechain(
         )
     )
     sc_chain.maybe_ledger_accept()
-    sc_chain(
+    sc_chain.send_signed(
         AccountSet(
             account=params.genesis_account.account_id,
             set_flag=AccountSetFlag.ASF_DISABLE_MASTER,

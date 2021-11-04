@@ -26,11 +26,15 @@ def _sc_subscribe_callback(v: dict):
 
 
 def mc_connect_subscription(chain: Chain, door_account: Account):
-    chain(Subscribe(accounts=[door_account.account_id]), _mc_subscribe_callback)
+    chain.send_subscribe(
+        Subscribe(accounts=[door_account.account_id]), _mc_subscribe_callback
+    )
 
 
 def sc_connect_subscription(chain: Chain, door_account: Account):
-    chain(Subscribe(accounts=[door_account.account_id]), _sc_subscribe_callback)
+    chain.send_subscribe(
+        Subscribe(accounts=[door_account.account_id]), _sc_subscribe_callback
+    )
 
 
 def wait_for_balance_change(
