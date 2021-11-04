@@ -1,4 +1,4 @@
-name: Lint
+name: Lint and type-check
 
 on:
   push:
@@ -34,6 +34,7 @@ jobs:
         run: |
           poetry run flake8 slk tests
 
-      # - name: Type-check
-      #   run: |
-      #     poetry run mypy --strict slk
+      # TODO: add `strict`
+      - name: Type-check
+        run: |
+          poetry run mypy slk *.py

@@ -2,6 +2,7 @@
 """Script to run an interactive shell to test sidechains."""
 
 import sys
+import traceback
 
 import slk.interactive as interactive
 from slk.common import disable_eprint, eprint
@@ -12,8 +13,8 @@ from slk.sidechain_params import SidechainParams
 def main():
     try:
         params = SidechainParams(interactive=True)
-    except Exception as e:
-        eprint("ERROR: " + str(e))
+    except Exception:
+        eprint(traceback.format_exc())
         sys.exit(1)
 
     interactive.set_hooks_dir(params.hooks_dir)

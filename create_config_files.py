@@ -69,14 +69,13 @@ class Keypair:
 def generate_node_keypairs(n: int, rip: Chain) -> List[Keypair]:
     """generate keypairs suitable for validator keys"""
     result = []
-    rip.node.client.open()
     for i in range(n):
         # TODO: do this locally
         req = {
             "id": f"vc_{i}_{n}",
             "command": "validation_create",
         }
-        keys = rip(req)
+        keys = rip.request_json(req)
         result.append(
             Keypair(
                 public_key=keys["validation_public_key"],
@@ -200,7 +199,7 @@ sidechain_refund_penalty={json.dumps(amt_to_json(xchainasset.side_refund_penalty
 # second element is the bootstrap stanzas
 def generate_sidechain_stanza(
     mainchain_ports: Ports,
-    main_account: dict,
+    main_account: Wallet,
     federators: List[Keypair],
     signing_key: str,
     mainchain_cfg_file: str,
@@ -442,8 +441,8 @@ CheckCashMakesTrustLine
 """
 
     validators_str = ""
-    for p in [sub_dir, db_path, shard_db_path]:
-        Path(p).mkdir(parents=True, exist_ok=True)
+    for path in [sub_dir, db_path, shard_db_path]:
+        Path(path).mkdir(parents=True, exist_ok=True)
     # Add the validators.txt file
     if validators:
         validators_str = "[validators]\n"
@@ -568,17 +567,19 @@ class ConfigParams:
         if args.usd:
             self.usd = args.usd
 
-    def check_error(self) -> str:
+    def check_error(self) -> Optional[str]:
         """
         Check for errors. Return `None` if no errors,
         otherwise return a string describing the error
         """
+        # TODO: remove `check_error` a la SidechainParams
         if not self.exe:
             return "Missing exe location. Either set the env variable "
             "RIPPLED_MAINCHAIN_EXE or use the --exe_mainchain command line switch"
         if not self.configs_dir:
             return "Missing configs directory location. Either set the env variable "
             "RIPPLED_SIDECHAIN_CFG_DIR or use the --cfgs_dir command line switch"
+        return None
 
 
 def main(params: ConfigParams, xchain_assets: Optional[Dict[str, XChainAsset]] = None):
@@ -682,10 +683,10 @@ if __name__ == "__main__":
         xchain_assets["xrp_xrp_sidechain_asset"] = XChainAsset("0", "0", 1, 1, 200, 200)
         root_account = "rHb9CJAWyB4rj91VRWn96DkukG4bwdtyTh"
         main_iou_asset = IssuedCurrencyAmount(
-            value=0, currency="USD", issuer=root_account
+            value="0", currency="USD", issuer=root_account
         )
         side_iou_asset = IssuedCurrencyAmount(
-            value=0, currency="USD", issuer=root_account
+            value="0", currency="USD", issuer=root_account
         )
         xchain_assets["iou_iou_sidechain_asset"] = XChainAsset(
             main_iou_asset, side_iou_asset, 1, 1, 0.02, 0.02

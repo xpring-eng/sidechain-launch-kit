@@ -28,11 +28,9 @@ class Node:
         self.config = config
         self.exe = exe
         self.command_log = command_log
-        self.subscription_websockets = []
-        self.tasks = []
-        self.pid = None
-        self.process = None
-        if command_log:
+        self.pid: Optional[int] = None
+        self.process: Optional[subprocess.Popen[bytes]] = None
+        if self.command_log is not None:
             with open(self.command_log, "w") as f:
                 f.write("# Start \n")
 
@@ -47,12 +45,24 @@ class Node:
         return self.pid
 
     def request(self, req) -> dict:
+        if not self.client.is_open():
+            self.client.open()
         response = self.client.request(req)
         if response.is_successful():
             return response.result
         raise Exception("failed transaction", response.result)
 
+    def request_json(self, req) -> dict:
+        if not self.client.is_open():
+            self.client.open()
+        response = self.client.request_json(req)
+        if response["status"] == "success":
+            return response["result"]
+        raise Exception("failed transaction", response["result"])
+
     def sign_and_submit(self, txn, wallet) -> dict:
+        if not self.client.is_open():
+            self.client.open()
         return safe_sign_and_submit_transaction(txn, wallet, self.client).result
 
     def start_server(
@@ -81,12 +91,11 @@ class Node:
         fout = open(os.devnull, "w")
         subprocess.Popen(to_run + ["stop"], stdout=fout, stderr=subprocess.STDOUT)
 
+        assert self.process is not None
         self.process.wait()
         self.pid = -1
 
     def wait_for_validated_ledger(self):
-        if not self.client.is_open():
-            self.client.open()
         for i in range(600):
             r = self.request(ServerInfo())
             state = None

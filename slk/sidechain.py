@@ -16,7 +16,7 @@ import os
 import sys
 import time
 from multiprocessing import Process, Value
-from typing import Callable, List
+from typing import Any, Callable, List
 
 import slk.interactive as interactive
 from slk.chain import Chain, configs_for_testnet, single_node_chain
@@ -142,7 +142,6 @@ def _multinode_with_callback(
         exe=params.mainchain_exe,
         run_server=not params.debug_mainchain,
     ) as mc_chain:
-        mc_chain("open")
         if params.with_pauses:
             input("Pausing after mainchain start (press enter to continue)")
 
@@ -196,13 +195,12 @@ def multinode_test(params: SidechainParams):
 # The mainchain runs in standalone mode. Most operations - like cross chain
 # payments - will automatically close ledgers. However, some operations, like
 # refunds, need an extra close. This loop automatically closes ledgers.
-def close_mainchain_ledgers(stop_token: Value, params: SidechainParams, sleep_time=4):
+def close_mainchain_ledgers(stop_token: Any, params: SidechainParams, sleep_time=4):
     with single_node_chain(
         config=params.mainchain_config,
         exe=params.mainchain_exe,
         run_server=False,
     ) as mc_chain:
-        mc_chain("open")
         while stop_token.value != 0:
             mc_chain.maybe_ledger_accept()
             time.sleep(sleep_time)

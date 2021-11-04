@@ -39,17 +39,17 @@ class LogLine:
         try:
             if line.endswith("}"):
                 m = self.STRUCTURED_RE.match(line)
-                try:
+                if m is not None:
                     self.json_data = json.loads(m.group("json_data"))
-                except:
+                else:
                     m = self.UNSTRUCTURED_RE.match(line)
             else:
                 m = self.UNSTRUCTURED_RE.match(line)
 
-            self.timestamp = m.group("timestamp")
-            self.level = m.group("level")
-            self.module = m.group("module")
-            self.msg = m.group("msg")
+            self.timestamp = m.group("timestamp")  # type: ignore
+            self.level = m.group("level")  # type: ignore
+            self.module = m.group("module")  # type: ignore
+            self.msg = m.group("msg")  # type: ignore
         except Exception as e:
             eprint(f"init exception: {e} line: {line}")
 

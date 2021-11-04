@@ -2,7 +2,7 @@ import os
 import time
 from contextlib import contextmanager
 from pathlib import Path
-from typing import Callable, Dict, List, Optional, Set, Union
+from typing import Any, Callable, Dict, List, Optional, Set, Union, cast
 
 from tabulate import tabulate
 from xrpl.models import (
@@ -13,7 +13,6 @@ from xrpl.models import (
     IssuedCurrency,
     IssuedCurrencyAmount,
     LedgerAccept,
-    Payment,
     Request,
     Subscribe,
     is_xrp,
@@ -31,9 +30,8 @@ class KeyManager:
         self._aliases = {}  # alias -> account
         self._accounts = {}  # account id -> account
 
-    def add(self, account: Account) -> bool:
-        if account.nickname:
-            self._aliases[account.nickname] = account
+    def add(self, account: Account) -> None:
+        self._aliases[account.nickname] = account
         self._accounts[account.account_id] = account
 
     def is_alias(self, name: str) -> bool:
@@ -58,7 +56,7 @@ class KeyManager:
     def alias_or_account_id(self, id: Union[Account, str]) -> str:
         """return the alias if it exists, otherwise return the id"""
         if isinstance(id, Account):
-            return id.alias_or_account_id()
+            return id.nickname
 
         if id in self._accounts:
             return self._accounts[id].nickname
@@ -161,10 +159,11 @@ class Chain:
 
         self.key_manager = KeyManager()
         self.asset_aliases = AssetAliases()
+
         root_account = Account(
             nickname="root",
             account_id="rHb9CJAWyB4rj91VRWn96DkukG4bwdtyTh",
-            secret_key="snoPBrXtMeMyMHUVTgbuqAfg1SUTb",
+            seed="snoPBrXtMeMyMHUVTgbuqAfg1SUTb",
         )
         self.key_manager.add(root_account)
 
@@ -188,10 +187,10 @@ class Chain:
 
     def request_json(self, req: dict) -> dict:
         """Send the JSON command to the rippled server"""
-        return self.node.client.request_json(req)["result"]
+        return self.node.request_json(req)
 
     def send_subscribe_command(
-        self, req: Subscribe, callback: Optional[Callable[[dict], None]] = None
+        self, req: Subscribe, callback: Callable[[dict], None]
     ) -> dict:
         """Send the subscription command to the rippled server."""
         if not self.node.client.is_open():
@@ -202,6 +201,7 @@ class Chain:
     def get_pids(self) -> List[int]:
         if pid := self.node.get_pid():
             return [pid]
+        return []
 
     def get_running_status(self) -> List[bool]:
         if self.node.get_pid():
@@ -232,7 +232,8 @@ class Chain:
     ):
         # key is server index. value is federator_info result
         result_dict = {}
-        if 0 in server_indexes:
+        # TODO: do this more elegantly
+        if server_indexes is not None and 0 in server_indexes:
             result_dict[0] = self.node.request(FederatorInfo())
         return result_dict
 
@@ -242,10 +243,9 @@ class Chain:
         callback: Optional[Callable[[dict], None]] = None,
     ) -> dict:
         """Call `send_signed` for transactions or `request` for requests"""
-        if to_send == "open":
-            self.node.client.open()
-            return
         if isinstance(to_send, Subscribe):
+            if callback is None:
+                raise ValueError("Subsription requires callback")
             return self.send_subscribe_command(to_send, callback)
         assert callback is None
         if isinstance(to_send, Transaction):
@@ -259,41 +259,16 @@ class Chain:
             "SubscriptionCommand"
         )
 
-    def get_configs(self) -> List[str]:
+    def get_configs(self) -> List[ConfigFile]:
         return [self.node.config]
 
     def create_account(self, name: str) -> Account:
         """Create an account. Use the name as the alias."""
-        if name == "root":
-            return
         assert not self.key_manager.is_alias(name)
 
         account = Account.create(name)
         self.key_manager.add(account)
         return account
-
-    def create_accounts(
-        self,
-        names: List[str],
-        funding_account: Union[Account, str] = "root",
-        amt: Amount = str(1_000_000_000),
-    ) -> List[Account]:
-        """Fund the accounts with nicknames 'names' by using funding account and amt"""
-        accounts = [self.create_account(n) for n in names]
-        if not isinstance(funding_account, Account):
-            org_funding_account = funding_account
-            funding_account = self.key_manager.account_from_alias(funding_account)
-        if not isinstance(funding_account, Account):
-            raise ValueError(f"Could not find funding account {org_funding_account}")
-        if not isinstance(amt, Amount):
-            assert isinstance(amt, int)
-            amt = str(amt)
-        for a in accounts:
-            p = Payment(
-                account=funding_account.account_id, destination=a.account_id, amount=amt
-            )
-            self.send_signed(p)
-        return accounts
 
     def maybe_ledger_accept(self):
         if not self.standalone:
@@ -318,6 +293,8 @@ class Chain:
         if is_xrp(token):
             try:
                 account_info = self.get_account_info(account)
+                # TODO: split get_account_info into two, depending on list vs dict
+                assert isinstance(account_info, dict)
                 needed_data = ["account", "balance"]
                 account_info = {
                     "account": account_info["account"],
@@ -339,6 +316,7 @@ class Chain:
                     }
                 ]
         else:
+            assert isinstance(token, IssuedCurrencyAmount)  # for typing
             try:
                 trustlines = self.get_trust_lines(account)
                 trustlines = [
@@ -357,7 +335,7 @@ class Chain:
                 # data frame
                 return []
 
-    def get_balance(self, account: Account, token: IssuedCurrency) -> str:
+    def get_balance(self, account: Account, token: IssuedCurrencyAmount) -> str:
         """Get a balance from a single account in a single token"""
         try:
             result = self.get_balances(account, token)
@@ -365,16 +343,21 @@ class Chain:
         except:
             return "0"
 
-    def get_account_info(self, account: Optional[Account] = None) -> Union[dict, list]:
+    def get_account_info(
+        self, account: Optional[Account] = None
+    ) -> Union[Dict[str, Any], List[Dict[str, Any]]]:
         """
         Return a dictionary of account info. If account is None, treat as a
         wildcard (use address book)
         """
         if account is None:
             known_accounts = self.key_manager.known_accounts()
-            return [self.get_account_info(acc) for acc in known_accounts]
+            return cast(
+                List[Dict[str, Any]],
+                [self.get_account_info(acc) for acc in known_accounts],
+            )
         try:
-            result = self.node.request(AccountInfo(account=account.account_id))
+            result = self.request(AccountInfo(account=account.account_id))
         except:
             # TODO: better error checking
             # Most likely the account does not exist on the ledger. Give a balance of 0.
@@ -432,12 +415,12 @@ class Chain:
 
     def substitute_nicknames(
         self, items: dict, cols: List[str] = ["account", "peer"]
-    ) -> list:
+    ) -> None:
+        """Substitutes in-place account IDs for nicknames"""
         for c in cols:
             if c not in items:
                 continue
             items[c] = self.key_manager.alias_or_account_id(items[c])
-        return
 
     def add_to_keymanager(self, account: Account):
         self.key_manager.add(account)
@@ -454,7 +437,7 @@ class Chain:
     def known_asset_aliases(self) -> List[str]:
         return self.asset_aliases.known_aliases()
 
-    def known_iou_assets(self) -> List[IssuedCurrencyAmount]:
+    def known_iou_assets(self) -> List[IssuedCurrency]:
         return self.asset_aliases.known_assets()
 
     def is_asset_alias(self, name: str) -> bool:
@@ -466,15 +449,16 @@ class Chain:
     def asset_from_alias(self, name: str) -> IssuedCurrency:
         return self.asset_aliases.asset_from_alias(name)
 
-    def get_node(self) -> Node:
+    def get_node(self, i: Optional[int] = None) -> Node:
+        assert i is None
         return self.node
 
 
 def balances_data(
     chains: List[Chain],
     chain_names: List[str],
-    account_ids: Optional[List[Account]] = None,
-    assets: List[Amount] = None,
+    account_ids: Optional[List[Optional[Account]]] = None,
+    assets: Optional[List[Amount]] = None,
     in_drops: bool = False,
 ):
     if account_ids is None:
@@ -482,7 +466,7 @@ def balances_data(
 
     if assets is None:
         # XRP and all assets in the assets alias list
-        assets = [["0"] + c.known_iou_assets() for c in chains]
+        assets = [["0"] + c.known_iou_assets() for c in chains]  # type: ignore
 
     result = []
     for chain, chain_name, acc, asset in zip(chains, chain_names, account_ids, assets):
@@ -507,7 +491,7 @@ def single_node_chain(
     command_log: Optional[str] = None,
     server_out=os.devnull,
     run_server: bool = True,
-    exe: Optional[str] = None,
+    exe: str,
     extra_args: Optional[List[str]] = None,
 ):
     """Start a ripple server and return a chain"""

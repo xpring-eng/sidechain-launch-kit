@@ -26,7 +26,6 @@ def setup_mainchain(
         mc_chain.add_to_keymanager(params.user_account)
 
     # mc_chain(LogLevel('fatal'))
-    mc_chain("open")
 
     # Allow rippling through the genesis account
     mc_chain(
@@ -111,7 +110,7 @@ def setup_mainchain(
         mc_chain(
             Payment(
                 account=params.genesis_account.account_id,
-                destination=params.user_account,
+                destination=params.user_account.account_id,
                 amount=str(2_000),
             )
         )
@@ -124,8 +123,6 @@ def setup_sidechain(
     sc_chain.add_to_keymanager(params.sc_door_account)
     if setup_user_accounts:
         sc_chain.add_to_keymanager(params.user_account)
-
-    sc_chain("open")
 
     # sc_chain(LogLevel('fatal'))
     # sc_chain(LogLevel('trace', partition='SidechainFederator'))
