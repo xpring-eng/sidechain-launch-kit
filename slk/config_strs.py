@@ -78,8 +78,7 @@ port_peer
 port_ws_admin_local
 port_ws_public
 #ssl_key = /etc/ssl/private/server.key
-#ssl_cert = /etc/ssl/certs/server.crt
-"""
+#ssl_cert = /etc/ssl/certs/server.crt"""
 
 
 def _get_ports_stanzas(ports, this_ip):
@@ -104,8 +103,7 @@ protocol = ws
 port = {ports.ws_public_port}
 ip = {this_ip}
 protocol = ws
-# protocol = wss
-"""
+# protocol = wss"""
 
 
 def _get_node_db_stanza(node_db_path, earliest_seq_line, disable_delete):
@@ -119,8 +117,7 @@ file_size_mb=8
 file_size_mult=2
 {earliest_seq_line}
 {disable_delete}online_delete=256
-{disable_delete}advisory_delete=0
-"""
+{disable_delete}advisory_delete=0"""
 
 
 def _get_features_stanza(hooks_line):
@@ -164,5 +161,4 @@ TicketBatch
 FlowSortStrands
 fixSTAmountCanonicalize
 fixRmSmallIncreasedQOffers
-CheckCashMakesTrustLine
-"""
+CheckCashMakesTrustLine"""

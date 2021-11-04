@@ -221,14 +221,13 @@ def generate_sidechain_stanza(
 ) -> Tuple[str, str]:
     assets_stanzas = generate_asset_stanzas(xchain_assets)
 
+    federators_stanza = FEDERATORS_STANZA_INIT
+    federators_secrets_stanza = FEDERATORS_SECRETS_STANZA_INIT
+    bootstrap_federators_stanza = BOOTSTRAP_FEDERATORS_STANZA_INIT
     for fed in federators:
-        federators_stanza = FEDERATORS_STANZA_INIT + f"{fed.public_key}\n"
-        federators_secrets_stanza = (
-            FEDERATORS_SECRETS_STANZA_INIT + f"{fed.secret_key}\n"
-        )
-        bootstrap_federators_stanza = (
-            BOOTSTRAP_FEDERATORS_STANZA_INIT + f"{fed.public_key} {fed.account_id}\n"
-        )
+        federators_stanza += f"{fed.public_key}\n"
+        federators_secrets_stanza += f"{fed.secret_key}\n"
+        bootstrap_federators_stanza += f"{fed.public_key} {fed.account_id}\n"
 
     sidechain_stanzas = f"""
 [sidechain]
