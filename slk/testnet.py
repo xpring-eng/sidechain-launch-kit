@@ -97,7 +97,7 @@ class Sidechain(Chain):
         return [pid for c in self.nodes if (pid := c.get_pid()) is not None]
 
     def federator_info(
-        self, server_indexes: Optional[Union[Dict[int, dict], List[int]]] = None
+        self, server_indexes: Optional[Union[Set[int], List[int]]] = None
     ):
         # key is server index. value is federator_info result
         result_dict = {}

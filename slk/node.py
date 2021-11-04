@@ -1,7 +1,7 @@
 import os
 import subprocess
 import time
-from typing import List, Optional, cast
+from typing import List, Optional
 
 from xrpl.clients import WebsocketClient
 from xrpl.models import ServerInfo
@@ -123,7 +123,7 @@ class Node:
         ret = {"server_state": "NA", "ledger_seq": "NA", "complete_ledgers": "NA"}
         if not self.pid or self.pid == -1:
             return ret
-        r = cast(dict, self.client.request(ServerInfo()).result)
+        r = self.client.request(ServerInfo()).result
         if "info" not in r:
             return ret
         r = r["info"]

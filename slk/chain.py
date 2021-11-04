@@ -179,7 +179,7 @@ class Chain:
         if not self.key_manager.is_account(txn.account):
             raise ValueError("Cannot sign transaction without secret key")
         account_obj = self.key_manager.get_account(txn.account)
-        return cast(dict, self.node.sign_and_submit(txn, account_obj.wallet))
+        return self.node.sign_and_submit(txn, account_obj.wallet)
 
     def request(self, req: Request) -> dict:
         """Send the command to the rippled server"""
@@ -201,8 +201,7 @@ class Chain:
     def get_pids(self) -> List[int]:
         if pid := self.node.get_pid():
             return [pid]
-        else:
-            return []
+        return []
 
     def get_running_status(self) -> List[bool]:
         if self.node.get_pid():
@@ -229,7 +228,7 @@ class Chain:
         raise ValueError("Cannot stop stand alone server")
 
     def federator_info(
-        self, server_indexes: Optional[Union[Dict[int, dict], List[int]]] = None
+        self, server_indexes: Optional[Union[Set[int], List[int]]] = None
     ):
         # key is server index. value is federator_info result
         result_dict = {}
@@ -242,7 +241,7 @@ class Chain:
         self,
         to_send: Union[Transaction, Request, str],
         callback: Optional[Callable[[dict], None]] = None,
-    ) -> Optional[Union[list, dict]]:
+    ) -> dict:
         """Call `send_signed` for transactions or `request` for requests"""
         if isinstance(to_send, Subscribe):
             if callback is None:
