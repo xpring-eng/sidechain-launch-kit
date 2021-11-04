@@ -37,4 +37,4 @@ jobs:
       # TODO: add `strict`
       - name: Type-check
         run: |
-          poetry run mypy slk
+          poetry run mypy slk *.py
