@@ -36,7 +36,7 @@ from xrpl.wallet import Wallet
 from slk.chain import Chain, single_node_chain
 from slk.common import eprint, same_amount_new_value
 from slk.config_file import ConfigFile
-from slk.config_strs import get_cfg_str
+from slk.config_strs import get_cfg_str, get_ips_stanza
 
 load_dotenv()
 
@@ -269,23 +269,7 @@ def generate_cfg_dir(
     full_history: bool = False,
     with_hooks: bool = False,
 ) -> str:
-    ips_stanza = ""
-    this_ip = "127.0.0.1"
-    if fixed_ips:
-        ips_stanza = "# Fixed ips for a testnet.\n"
-        ips_stanza += "[ips_fixed]\n"
-        for i, p in enumerate(fixed_ips):
-            if p.peer_port == ports.peer_port:
-                continue
-            # rippled limits number of connects per ip. So use other loopback devices
-            ips_stanza += f"127.0.0.{i+1} {p.peer_port}\n"
-    else:
-        ips_stanza = "# Where to find some other servers speaking Ripple protocol.\n"
-        ips_stanza += "[ips]\n"
-        if main_net:
-            ips_stanza += "r.ripple.com 51235\n"
-        else:
-            ips_stanza += "r.altnet.rippletest.net 51235\n"
+    ips_stanza = get_ips_stanza(fixed_ips, ports.peer_port, main_net)
     disable_shards = "" if with_shards else "# "
     disable_delete = "#" if full_history else ""
     history_line = "full" if full_history else "256"
@@ -310,7 +294,6 @@ def generate_cfg_dir(
 
     cfg_str = get_cfg_str(
         ports,
-        this_ip,
         history_line,
         sub_dir,
         earliest_seq_line,
@@ -321,6 +304,10 @@ def generate_cfg_dir(
         sidechain_stanza,
         hooks_line,
     )
+
+    # add the rippled.cfg file
+    with open(sub_dir + "/rippled.cfg", "w") as f:
+        f.write(cfg_str)
 
     validators_str = ""
     for path in ["sub_dir", "/db", "/shards"]:
@@ -334,10 +321,6 @@ def generate_cfg_dir(
         validators_str = MAINNET_VALIDATORS if main_net else ALTNET_VALIDATORS
     with open(sub_dir + "/validators.txt", "w") as f:
         f.write(validators_str)
-
-    # add the rippled.cfg file
-    with open(sub_dir + "/rippled.cfg", "w") as f:
-        f.write(cfg_str)
 
     if sidechain_bootstrap_stanza:
         # add the bootstrap file
@@ -563,6 +546,7 @@ if __name__ == "__main__":
     if params.usd:
         xchain_assets = {}
         xchain_assets["xrp_xrp_sidechain_asset"] = XChainAsset("0", "0", 1, 1, 200, 200)
+
         root_account = "rHb9CJAWyB4rj91VRWn96DkukG4bwdtyTh"
         main_iou_asset = IssuedCurrencyAmount(
             value="0", currency="USD", issuer=root_account

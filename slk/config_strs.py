@@ -1,9 +1,29 @@
 NODE_SIZE = "medium"
+THIS_IP = "127.0.0.1"
+
+
+def get_ips_stanza(fixed_ips, peer_port, main_net):
+    ips_stanza = ""
+    if fixed_ips:
+        ips_stanza = "# Fixed ips for a testnet.\n"
+        ips_stanza += "[ips_fixed]\n"
+        for i, p in enumerate(fixed_ips):
+            if p.peer_port == peer_port:
+                continue
+            # rippled limits number of connects per ip. So use other loopback devices
+            ips_stanza += f"127.0.0.{i+1} {p.peer_port}\n"
+    else:
+        ips_stanza = "# Where to find some other servers speaking Ripple protocol.\n"
+        ips_stanza += "[ips]\n"
+        if main_net:
+            ips_stanza += "r.ripple.com 51235\n"
+        else:
+            ips_stanza += "r.altnet.rippletest.net 51235\n"
+    return ips_stanza
 
 
 def get_cfg_str(
     ports,
-    this_ip,
     history_line,
     sub_dir,
     earliest_seq_line,
@@ -22,7 +42,7 @@ def get_cfg_str(
     return f"""
 {_get_server_stanza()}
 
-{_get_ports_stanzas(ports, this_ip)}
+{_get_ports_stanzas(ports)}
 
 [node_size]
 {NODE_SIZE}
@@ -81,11 +101,11 @@ port_ws_public
 #ssl_cert = /etc/ssl/certs/server.crt"""
 
 
-def _get_ports_stanzas(ports, this_ip):
+def _get_ports_stanzas(ports):
     return f"""[port_rpc_admin_local]
 port = {ports.http_admin_port}
-ip = {this_ip}
-admin = {this_ip}
+ip = {THIS_IP}
+admin = {THIS_IP}
 protocol = http
 
 [port_peer]
@@ -95,13 +115,13 @@ protocol = peer
 
 [port_ws_admin_local]
 port = {ports.ws_admin_port}
-ip = {this_ip}
-admin = {this_ip}
+ip = {THIS_IP}
+admin = {THIS_IP}
 protocol = ws
 
 [port_ws_public]
 port = {ports.ws_public_port}
-ip = {this_ip}
+ip = {THIS_IP}
 protocol = ws
 # protocol = wss"""
 
