@@ -52,6 +52,14 @@ class Node:
             return response.result
         raise Exception("failed transaction", response.result)
 
+    def request_json(self, req) -> dict:
+        if not self.client.is_open():
+            self.client.open()
+        response = self.client.request_json(req)
+        if response["status"] == "success":
+            return response["result"]
+        raise Exception("failed transaction", response.result)
+
     def sign_and_submit(self, txn, wallet) -> dict:
         if not self.client.is_open():
             self.client.open()

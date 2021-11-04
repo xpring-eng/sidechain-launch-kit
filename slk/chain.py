@@ -187,7 +187,7 @@ class Chain:
 
     def request_json(self, req: dict) -> dict:
         """Send the JSON command to the rippled server"""
-        return self.node.client.request_json(req)["result"]
+        return self.node.request_json(req)
 
     def send_subscribe_command(
         self, req: Subscribe, callback: Callable[[dict], None]
