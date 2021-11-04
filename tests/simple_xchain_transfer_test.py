@@ -103,7 +103,7 @@ def simple_iou_test(mc_chain: Chain, sc_chain: Chain, params: SidechainParams):
     mc_chain.maybe_ledger_accept()
 
     # create a trust line for adam
-    sc_chain(
+    sc_chain.send_signed(
         TrustSet(
             account=adam.account_id,
             limit_amount=same_amount_new_value(sc_asset, 1_000_000),
