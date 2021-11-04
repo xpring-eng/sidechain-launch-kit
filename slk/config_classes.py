@@ -4,8 +4,13 @@ from dataclasses import dataclass
 from typing import List, Optional, Union
 
 from xrpl import CryptoAlgorithm
-from xrpl.core.addresscodec import decode_seed, encode_account_public_key
+from xrpl.core.addresscodec import (
+    decode_seed,
+    encode_account_public_key,
+    encode_node_public_key,
+)
 from xrpl.core.addresscodec.codec import _FAMILY_SEED_PREFIX, SEED_LENGTH, _encode
+from xrpl.core.keypairs import derive_keypair, generate_seed
 from xrpl.models import Amount
 from xrpl.wallet import Wallet
 
@@ -52,16 +57,12 @@ class Network:
         """generate keypairs suitable for validator keys"""
         result = []
         for i in range(self.num_validators):
-            # TODO: do this locally
-            req = {
-                "id": f"vc_{i}_{self.num_validators}",
-                "command": "validation_create",
-            }
-            keys = self.chain.request_json(req)
+            seed = generate_seed(None, CryptoAlgorithm.SECP256K1)
+            pub_key, priv_key = derive_keypair(seed, True)
             result.append(
                 Keypair(
-                    public_key=keys["validation_public_key"],
-                    secret_key=keys["validation_seed"],
+                    public_key=encode_node_public_key(bytes.fromhex(pub_key)),
+                    secret_key=seed,
                     account_id=None,
                 )
             )
