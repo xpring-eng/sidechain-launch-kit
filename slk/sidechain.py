@@ -142,7 +142,6 @@ def _multinode_with_callback(
         exe=params.mainchain_exe,
         run_server=not params.debug_mainchain,
     ) as mc_chain:
-        mc_chain("open")
         if params.with_pauses:
             input("Pausing after mainchain start (press enter to continue)")
 
@@ -202,7 +201,6 @@ def close_mainchain_ledgers(stop_token: Value, params: SidechainParams, sleep_ti
         exe=params.mainchain_exe,
         run_server=False,
     ) as mc_chain:
-        mc_chain("open")
         while stop_token.value != 0:
             mc_chain.maybe_ledger_accept()
             time.sleep(sleep_time)

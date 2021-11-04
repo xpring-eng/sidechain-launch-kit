@@ -245,9 +245,6 @@ class Chain:
         callback: Optional[Callable[[dict], None]] = None,
     ) -> Optional[dict]:
         """Call `send_signed` for transactions or `request` for requests"""
-        if to_send == "open":
-            self.node.client.open()
-            return
         if isinstance(to_send, Subscribe):
             return self.send_subscribe_command(to_send, callback)
         assert callback is None

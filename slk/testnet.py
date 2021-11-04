@@ -101,7 +101,7 @@ class Sidechain(Chain):
     ):
         # key is server index. value is federator_info result
         result_dict = {}
-        if server_indexes is None:
+        if server_indexes is None or len(server_indexes) == 0:
             server_indexes = [i for i in range(self.num_nodes()) if self.is_running(i)]
         for i in server_indexes:
             if self.is_running(i):

@@ -45,12 +45,16 @@ class Node:
         return self.pid
 
     def request(self, req) -> dict:
+        if not self.client.is_open():
+            self.client.open()
         response = self.client.request(req)
         if response.is_successful():
             return response.result
         raise Exception("failed transaction", response.result)
 
     def sign_and_submit(self, txn, wallet) -> dict:
+        if not self.client.is_open():
+            self.client.open()
         return safe_sign_and_submit_transaction(txn, wallet, self.client).result
 
     def start_server(
@@ -84,8 +88,6 @@ class Node:
         self.pid = -1
 
     def wait_for_validated_ledger(self):
-        if not self.client.is_open():
-            self.client.open()
         for i in range(600):
             r = self.request(ServerInfo())
             state = None

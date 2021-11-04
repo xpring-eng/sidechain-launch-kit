@@ -69,7 +69,6 @@ class Keypair:
 def generate_node_keypairs(n: int, rip: Chain) -> List[Keypair]:
     """generate keypairs suitable for validator keys"""
     result = []
-    rip.node.client.open()
     for i in range(n):
         # TODO: do this locally
         req = {

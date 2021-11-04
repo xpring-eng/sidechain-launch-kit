@@ -190,23 +190,23 @@ class SidechainParams:
         # set up root/door accounts
         self.genesis_account = Account(
             account_id="rHb9CJAWyB4rj91VRWn96DkukG4bwdtyTh",
-            secret_key="snoPBrXtMeMyMHUVTgbuqAfg1SUTb",
+            seed="snoPBrXtMeMyMHUVTgbuqAfg1SUTb",
             nickname="genesis",
         )
         self.mc_door_account = Account(
             account_id=self.sidechain_config.sidechain.mainchain_account,
-            secret_key=self.sidechain_bootstrap_config.sidechain.mainchain_secret,
+            seed=self.sidechain_bootstrap_config.sidechain.mainchain_secret,
             nickname="door",
         )
         self.user_account = Account(
             account_id="rJynXY96Vuq6B58pST9K5Ak5KgJ2JcRsQy",
-            secret_key="snVsJfrr2MbVpniNiUU6EDMGBbtzN",
+            seed="snVsJfrr2MbVpniNiUU6EDMGBbtzN",
             nickname="alice",
         )
 
         self.sc_door_account = Account(
             account_id="rHb9CJAWyB4rj91VRWn96DkukG4bwdtyTh",
-            secret_key="snoPBrXtMeMyMHUVTgbuqAfg1SUTb",
+            seed="snoPBrXtMeMyMHUVTgbuqAfg1SUTb",
             nickname="door",
         )
 
