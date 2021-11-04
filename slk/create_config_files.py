@@ -308,31 +308,24 @@ def generate_cfg_dir(
             sub_dir += ".sidechain"
     else:
         sub_dir = data_dir + f"/{cfg_type}"
-    db_path = sub_dir + "/db"
-    debug_logfile = sub_dir + "/debug.log"
-    shard_db_path = sub_dir + "/shards"
-    node_db_path = db_path + "/nudb"
 
     cfg_str = get_cfg_str(
         ports,
         this_ip,
         history_line,
-        node_db_path,
+        sub_dir,
         earliest_seq_line,
         disable_delete,
-        db_path,
-        debug_logfile,
         ips_stanza,
         validation_seed_stanza,
         disable_shards,
-        shard_db_path,
         sidechain_stanza,
         hooks_line,
     )
 
     validators_str = ""
-    for path in [sub_dir, db_path, shard_db_path]:
-        Path(path).mkdir(parents=True, exist_ok=True)
+    for path in ["sub_dir", "/db", "/shards"]:
+        Path(sub_dir + path).mkdir(parents=True, exist_ok=True)
     # Add the validators.txt file
     if validators:
         validators_str = "[validators]\n"

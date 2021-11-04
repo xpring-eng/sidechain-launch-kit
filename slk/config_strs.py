@@ -5,49 +5,24 @@ def get_cfg_str(
     ports,
     this_ip,
     history_line,
-    node_db_path,
+    sub_dir,
     earliest_seq_line,
     disable_delete,
-    db_path,
-    debug_logfile,
     ips_stanza,
     validation_seed_stanza,
     disable_shards,
-    shard_db_path,
     sidechain_stanza,
     hooks_line,
 ):
+    db_path = sub_dir + "/db"
+    debug_logfile = sub_dir + "/debug.log"
+    shard_db_path = sub_dir + "/shards"
+    node_db_path = db_path + "/nudb"
+
     return f"""
-[server]
-port_rpc_admin_local
-port_peer
-port_ws_admin_local
-port_ws_public
-#ssl_key = /etc/ssl/private/server.key
-#ssl_cert = /etc/ssl/certs/server.crt
+{_get_server_stanza()}
 
-[port_rpc_admin_local]
-port = {ports.http_admin_port}
-ip = {this_ip}
-admin = {this_ip}
-protocol = http
-
-[port_peer]
-port = {ports.peer_port}
-ip = 0.0.0.0
-protocol = peer
-
-[port_ws_admin_local]
-port = {ports.ws_admin_port}
-ip = {this_ip}
-admin = {this_ip}
-protocol = ws
-
-[port_ws_public]
-port = {ports.ws_public_port}
-ip = {this_ip}
-protocol = ws
-# protocol = wss
+{_get_ports_stanzas(ports, this_ip)}
 
 [node_size]
 {NODE_SIZE}
@@ -55,17 +30,7 @@ protocol = ws
 [ledger_history]
 {history_line}
 
-[node_db]
-type=NuDB
-path={node_db_path}
-open_files=2000
-filter_bits=12
-cache_mb=256
-file_size_mb=8
-file_size_mult=2
-{earliest_seq_line}
-{disable_delete}online_delete=256
-{disable_delete}advisory_delete=0
+{_get_node_db_stanza(node_db_path, earliest_seq_line, disable_delete)}
 
 [database_path]
 {db_path}
@@ -102,7 +67,64 @@ validators.txt
 
 {sidechain_stanza}
 
-[features]
+{_get_features_stanza(hooks_line)}
+"""
+
+
+def _get_server_stanza():
+    return """[server]
+port_rpc_admin_local
+port_peer
+port_ws_admin_local
+port_ws_public
+#ssl_key = /etc/ssl/private/server.key
+#ssl_cert = /etc/ssl/certs/server.crt
+"""
+
+
+def _get_ports_stanzas(ports, this_ip):
+    return f"""[port_rpc_admin_local]
+port = {ports.http_admin_port}
+ip = {this_ip}
+admin = {this_ip}
+protocol = http
+
+[port_peer]
+port = {ports.peer_port}
+ip = 0.0.0.0
+protocol = peer
+
+[port_ws_admin_local]
+port = {ports.ws_admin_port}
+ip = {this_ip}
+admin = {this_ip}
+protocol = ws
+
+[port_ws_public]
+port = {ports.ws_public_port}
+ip = {this_ip}
+protocol = ws
+# protocol = wss
+"""
+
+
+def _get_node_db_stanza(node_db_path, earliest_seq_line, disable_delete):
+    return f"""[node_db]
+type=NuDB
+path={node_db_path}
+open_files=2000
+filter_bits=12
+cache_mb=256
+file_size_mb=8
+file_size_mult=2
+{earliest_seq_line}
+{disable_delete}online_delete=256
+{disable_delete}advisory_delete=0
+"""
+
+
+def _get_features_stanza(hooks_line):
+    return f"""[features]
 {hooks_line}
 PayChan
 Flow
