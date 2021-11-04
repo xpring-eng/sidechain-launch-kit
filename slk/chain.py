@@ -235,28 +235,6 @@ class Chain:
             result_dict[0] = self.node.request(FederatorInfo())
         return result_dict
 
-    def __call__(
-        self,
-        to_send: Union[Transaction, Request, str],
-        callback: Optional[Callable[[dict], None]] = None,
-    ) -> dict:
-        """Call `send_signed` for transactions or `request` for requests"""
-        if isinstance(to_send, Subscribe):
-            if callback is None:
-                raise ValueError("Subsription requires callback")
-            return self.send_subscribe(to_send, callback)
-        assert callback is None
-        if isinstance(to_send, Transaction):
-            return self.send_signed(to_send)
-        if isinstance(to_send, Request):
-            return self.request(to_send)
-        if isinstance(to_send, dict):
-            return self.request_json(to_send)
-        raise ValueError(
-            "Expected `to_send` to be either a Transaction, Command, or "
-            "SubscriptionCommand"
-        )
-
     def get_configs(self) -> List[ConfigFile]:
         return [self.node.config]
 
