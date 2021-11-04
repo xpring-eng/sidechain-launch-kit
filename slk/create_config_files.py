@@ -37,6 +37,8 @@ from slk.chain import Chain, single_node_chain
 from slk.common import eprint, same_amount_new_value
 from slk.config_file import ConfigFile
 
+load_dotenv()
+
 MAINNET_VALIDATORS = """
 [validator_list_sites]
 https://vl.ripple.com
@@ -55,7 +57,21 @@ ED264807102805220DA0F312E71FC2C69E1552C9C5790F6C25E3729DEB573D5860
 
 NODE_SIZE = "medium"
 
-load_dotenv()
+MAINCHAIN_IP = "127.0.0.1"
+
+FEDERATORS_STANZA_INIT = """
+# federator signing public keys
+[sidechain_federators]
+"""
+FEDERATORS_SECRETS_STANZA_INIT = """
+# federator signing secret keys (for standalone-mode testing only; Normally won't be in
+# a config file)
+[sidechain_federators_secrets]
+"""
+BOOTSTRAP_FEDERATORS_STANZA_INIT = """
+# first value is federator signing public key, second is the signing pk account
+[sidechain_federators]
+"""
 
 
 @dataclass
@@ -204,34 +220,22 @@ def generate_sidechain_stanza(
     mainchain_cfg_file: str,
     xchain_assets: Optional[Dict[str, XChainAsset]] = None,
 ) -> Tuple[str, str]:
-    mainchain_ip = "127.0.0.1"
-
-    federators_stanza = """
-# federator signing public keys
-[sidechain_federators]
-"""
-    federators_secrets_stanza = """
-# federator signing secret keys (for standalone-mode testing only; Normally won't be in
-# a config file)
-[sidechain_federators_secrets]
-"""
-    bootstrap_federators_stanza = """
-# first value is federator signing public key, second is the signing pk account
-[sidechain_federators]
-"""
-
     assets_stanzas = generate_asset_stanzas(xchain_assets)
 
     for fed in federators:
-        federators_stanza += f"{fed.public_key}\n"
-        federators_secrets_stanza += f"{fed.secret_key}\n"
-        bootstrap_federators_stanza += f"{fed.public_key} {fed.account_id}\n"
+        federators_stanza = FEDERATORS_STANZA_INIT + f"{fed.public_key}\n"
+        federators_secrets_stanza = (
+            FEDERATORS_SECRETS_STANZA_INIT + f"{fed.secret_key}\n"
+        )
+        bootstrap_federators_stanza = (
+            BOOTSTRAP_FEDERATORS_STANZA_INIT + f"{fed.public_key} {fed.account_id}\n"
+        )
 
     sidechain_stanzas = f"""
 [sidechain]
 signing_key={signing_key}
 mainchain_account={main_account.classic_address}
-mainchain_ip={mainchain_ip}
+mainchain_ip={MAINCHAIN_IP}
 mainchain_port_ws={mainchain_ports.ws_public_port}
 # mainchain config file is: {mainchain_cfg_file}
 
