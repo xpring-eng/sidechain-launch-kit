@@ -4,12 +4,7 @@ from dataclasses import dataclass
 from typing import List, Optional, Union
 
 from xrpl import CryptoAlgorithm
-from xrpl.core.addresscodec import (
-    decode_seed,
-    encode_account_public_key,
-    encode_node_public_key,
-)
-from xrpl.core.addresscodec.codec import _FAMILY_SEED_PREFIX, SEED_LENGTH, _encode
+from xrpl.core.addresscodec import encode_account_public_key, encode_node_public_key
 from xrpl.core.keypairs import derive_keypair, generate_seed
 from xrpl.models import Amount
 from xrpl.wallet import Wallet
@@ -89,13 +84,12 @@ class SidechainNetwork(Network):
         for i in range(self.num_federators):
             # TODO: clean this up after the PR gets merged in the C++ code
             wallet = Wallet.create(crypto_algorithm=CryptoAlgorithm.ED25519)
-            entropy = decode_seed(wallet.seed)[0]
             result.append(
                 Keypair(
                     public_key=encode_account_public_key(
                         bytes.fromhex(wallet.public_key)
                     ),
-                    secret_key=_encode(entropy, _FAMILY_SEED_PREFIX, SEED_LENGTH),
+                    secret_key=wallet.seed,
                     account_id=wallet.classic_address,
                 )
             )
