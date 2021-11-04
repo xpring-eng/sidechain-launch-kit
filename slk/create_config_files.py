@@ -22,6 +22,7 @@ import argparse
 import json
 import os
 import sys
+import traceback
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Dict, List, Optional, Tuple, Union
@@ -416,42 +417,35 @@ class ConfigParams:
     def __init__(self):
         args = parse_args()
 
-        self.exe = None
         if "RIPPLED_MAINCHAIN_EXE" in os.environ:
             self.exe = os.environ["RIPPLED_MAINCHAIN_EXE"]
         if args.exe:
             self.exe = args.exe
+        # if `self.mainchain_exe` doesn't exist (done this way for typing purposes)
+        if not hasattr(self, "exe"):
+            raise Exception(
+                "Missing exe location. Either set the env variable "
+                "RIPPLED_MAINCHAIN_EXE or use the --exe_mainchain command line switch"
+            )
 
         self.configs_dir = None
         if "RIPPLED_SIDECHAIN_CFG_DIR" in os.environ:
             self.configs_dir = os.environ["RIPPLED_SIDECHAIN_CFG_DIR"]
         if args.cfgs_dir:
             self.configs_dir = args.cfgs_dir
+        # if `self.configs_dir` doesn't exist (done this way for typing purposes)
+        if not hasattr(self, "configs_dir"):
+            raise Exception(
+                "Missing configs directory location. Either set the env variable "
+                "RIPPLED_SIDECHAIN_CFG_DIR or use the --cfgs_dir command line switch"
+            )
 
         self.usd = False
         if args.usd:
             self.usd = args.usd
 
-    def check_error(self) -> Optional[str]:
-        """
-        Check for errors. Return `None` if no errors,
-        otherwise return a string describing the error
-        """
-        # TODO: remove `check_error` a la SidechainParams
-        if not self.exe:
-            return "Missing exe location. Either set the env variable "
-            "RIPPLED_MAINCHAIN_EXE or use the --exe_mainchain command line switch"
-        if not self.configs_dir:
-            return "Missing configs directory location. Either set the env variable "
-            "RIPPLED_SIDECHAIN_CFG_DIR or use the --cfgs_dir command line switch"
-        return None
-
 
 def main(params: ConfigParams, xchain_assets: Optional[Dict[str, XChainAsset]] = None):
-
-    if err_str := params.check_error():
-        eprint(err_str)
-        sys.exit(1)
     index = 0
     nonvalidator_cfg_file_name = generate_cfg_dir(
         ports=Ports(index),
@@ -540,7 +534,11 @@ def main(params: ConfigParams, xchain_assets: Optional[Dict[str, XChainAsset]] =
 
 
 if __name__ == "__main__":
-    params = ConfigParams()
+    try:
+        params = ConfigParams()
+    except Exception:
+        eprint(traceback.format_exc())
+        sys.exit(1)
 
     xchain_assets = None
     if params.usd:
