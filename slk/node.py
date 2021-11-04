@@ -1,7 +1,7 @@
 import os
 import subprocess
 import time
-from typing import List, Optional
+from typing import List, Optional, Union, cast
 
 from xrpl.clients import WebsocketClient
 from xrpl.models import ServerInfo
@@ -44,7 +44,7 @@ class Node:
     def get_pid(self) -> Optional[int]:
         return self.pid
 
-    def request(self, req) -> dict:
+    def request(self, req) -> Union[list, dict]:
         if not self.client.is_open():
             self.client.open()
         response = self.client.request(req)
@@ -52,7 +52,7 @@ class Node:
             return response.result
         raise Exception("failed transaction", response.result)
 
-    def sign_and_submit(self, txn, wallet) -> dict:
+    def sign_and_submit(self, txn, wallet) -> Union[list, dict]:
         if not self.client.is_open():
             self.client.open()
         return safe_sign_and_submit_transaction(txn, wallet, self.client).result
@@ -123,7 +123,7 @@ class Node:
         ret = {"server_state": "NA", "ledger_seq": "NA", "complete_ledgers": "NA"}
         if not self.pid or self.pid == -1:
             return ret
-        r = self.client.request(ServerInfo()).result
+        r = cast(dict, self.client.request(ServerInfo()).result)
         if "info" not in r:
             return ret
         r = r["info"]
