@@ -1,5 +1,28 @@
+import json
+from typing import Dict, List, Optional, Tuple
+
+from xrpl.wallet import Wallet
+
+from slk.config_classes import Keypair, Ports, XChainAsset
+
 NODE_SIZE = "medium"
+
+MAINCHAIN_IP = "127.0.0.1"
 THIS_IP = "127.0.0.1"
+
+FEDERATORS_STANZA_INIT = """
+# federator signing public keys
+[sidechain_federators]
+"""
+FEDERATORS_SECRETS_STANZA_INIT = """
+# federator signing secret keys (for standalone-mode testing only; Normally won't be in
+# a config file)
+[sidechain_federators_secrets]
+"""
+BOOTSTRAP_FEDERATORS_STANZA_INIT = """
+# first value is federator signing public key, second is the signing pk account
+[sidechain_federators]
+"""
 
 
 def get_ips_stanza(fixed_ips, peer_port, main_net):
@@ -20,6 +43,80 @@ def get_ips_stanza(fixed_ips, peer_port, main_net):
         else:
             ips_stanza += "r.altnet.rippletest.net 51235\n"
     return ips_stanza
+
+
+def amt_to_json(amt):
+    if isinstance(amt, str):
+        return amt
+    else:
+        return amt.to_dict()
+
+
+def generate_asset_stanzas(assets: Optional[Dict[str, XChainAsset]] = None) -> str:
+    if assets is None:
+        # default to xrp only at a 1:1 value
+        assets = {}
+        assets["xrp_xrp_sidechain_asset"] = XChainAsset("0", "0", 1, 1, 400, 400)
+
+    index_stanza = """
+[sidechain_assets]"""
+
+    asset_stanzas = []
+
+    for name, xchainasset in assets.items():
+        index_stanza += "\n" + name
+        new_stanza = f"""
+[{name}]
+mainchain_asset={json.dumps(amt_to_json(xchainasset.main_asset))}
+sidechain_asset={json.dumps(amt_to_json(xchainasset.side_asset))}
+mainchain_refund_penalty={json.dumps(amt_to_json(xchainasset.main_refund_penalty))}
+sidechain_refund_penalty={json.dumps(amt_to_json(xchainasset.side_refund_penalty))}"""
+        asset_stanzas.append(new_stanza)
+
+    return index_stanza + "\n" + "\n".join(asset_stanzas)
+
+
+# First element of the returned tuple is the sidechain stanzas
+# second element is the bootstrap stanzas
+def generate_sidechain_stanza(
+    mainchain_ports: Ports,
+    main_account: Wallet,
+    federators: List[Keypair],
+    signing_key: str,
+    mainchain_cfg_file: str,
+    xchain_assets: Optional[Dict[str, XChainAsset]] = None,
+) -> Tuple[str, str]:
+    assets_stanzas = generate_asset_stanzas(xchain_assets)
+
+    federators_stanza = FEDERATORS_STANZA_INIT
+    federators_secrets_stanza = FEDERATORS_SECRETS_STANZA_INIT
+    bootstrap_federators_stanza = BOOTSTRAP_FEDERATORS_STANZA_INIT
+    for fed in federators:
+        federators_stanza += f"{fed.public_key}\n"
+        federators_secrets_stanza += f"{fed.secret_key}\n"
+        bootstrap_federators_stanza += f"{fed.public_key} {fed.account_id}\n"
+
+    sidechain_stanzas = f"""
+[sidechain]
+signing_key={signing_key}
+mainchain_account={main_account.classic_address}
+mainchain_ip={MAINCHAIN_IP}
+mainchain_port_ws={mainchain_ports.ws_public_port}
+# mainchain config file is: {mainchain_cfg_file}
+
+{assets_stanzas}
+
+{federators_stanza}
+
+{federators_secrets_stanza}
+"""
+    bootstrap_stanzas = f"""
+[sidechain]
+mainchain_secret={main_account.seed}
+
+{bootstrap_federators_stanza}
+"""
+    return (sidechain_stanzas, bootstrap_stanzas)
 
 
 def get_cfg_str(
