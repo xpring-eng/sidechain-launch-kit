@@ -107,7 +107,7 @@ def generate_cfg_dir(
         f.write(cfg_str)
 
     validators_str = ""
-    for path in ["sub_dir", "/db", "/shards"]:
+    for path in ["", "/db", "/shards"]:
         Path(sub_dir + path).mkdir(parents=True, exist_ok=True)
     # Add the validators.txt file
     if validators:
