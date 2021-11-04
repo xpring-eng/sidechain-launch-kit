@@ -181,7 +181,7 @@ class Chain:
         account_obj = self.key_manager.get_account(txn.account)
         return cast(dict, self.node.sign_and_submit(txn, account_obj.wallet))
 
-    def request(self, req: Request) -> Union[list, dict]:
+    def request(self, req: Request) -> dict:
         """Send the command to the rippled server"""
         return self.node.request(req)
 
@@ -191,7 +191,7 @@ class Chain:
 
     def send_subscribe_command(
         self, req: Subscribe, callback: Callable[[dict], None]
-    ) -> Union[list, dict]:
+    ) -> dict:
         """Send the subscription command to the rippled server."""
         if not self.node.client.is_open():
             self.node.client.open()
@@ -336,7 +336,7 @@ class Chain:
                 # data frame
                 return []
 
-    def get_balance(self, account: Account, token: IssuedCurrency) -> str:
+    def get_balance(self, account: Account, token: IssuedCurrencyAmount) -> str:
         """Get a balance from a single account in a single token"""
         try:
             result = self.get_balances(account, token)
@@ -353,9 +353,12 @@ class Chain:
         """
         if account is None:
             known_accounts = self.key_manager.known_accounts()
-            return [self.get_account_info(acc) for acc in known_accounts]
+            return cast(
+                List[Dict[str, Any]],
+                [self.get_account_info(acc) for acc in known_accounts],
+            )
         try:
-            result = self.node.request(AccountInfo(account=account.account_id))
+            result = self.request(AccountInfo(account=account.account_id))
         except:
             # TODO: better error checking
             # Most likely the account does not exist on the ledger. Give a balance of 0.
@@ -370,7 +373,6 @@ class Chain:
             }
         if "account_data" not in result:
             raise ValueError("Bad result from account_info command")
-        assert isinstance(result, dict)  # for typing
         info = result["account_data"]
         for dk in ["LedgerEntryType", "index"]:
             del info[dk]
@@ -405,7 +407,6 @@ class Chain:
             )
         if "lines" not in result or "account" not in result:
             raise ValueError("Bad result from account_lines command")
-        assert isinstance(result, dict)  # for typing
         address = result["account"]
         account_lines = result["lines"]
         for account_line in account_lines:
@@ -458,7 +459,7 @@ def balances_data(
     chains: List[Chain],
     chain_names: List[str],
     account_ids: Optional[List[Optional[Account]]] = None,
-    assets: Optional[List[Union[str, IssuedCurrency]]] = None,
+    assets: Optional[List[Amount]] = None,
     in_drops: bool = False,
 ):
     if account_ids is None:
@@ -466,7 +467,7 @@ def balances_data(
 
     if assets is None:
         # XRP and all assets in the assets alias list
-        assets = [["0"] + c.known_iou_assets() for c in chains]
+        assets = [["0"] + c.known_iou_assets() for c in chains]  # type: ignore
 
     result = []
     for chain, chain_name, acc, asset in zip(chains, chain_names, account_ids, assets):
