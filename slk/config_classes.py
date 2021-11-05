@@ -9,7 +9,6 @@ from xrpl.core.keypairs import derive_keypair, generate_seed
 from xrpl.models import Amount
 from xrpl.wallet import Wallet
 
-from slk.chain import Chain
 from slk.common import same_amount_new_value
 
 
@@ -40,11 +39,8 @@ class Ports:
 
 
 class Network:
-    def __init__(
-        self, num_nodes: int, num_validators: int, start_cfg_index: int, chain: Chain
-    ):
+    def __init__(self, num_nodes: int, num_validators: int, start_cfg_index: int):
         self.num_validators = num_validators
-        self.chain = chain
         self.validator_keypairs = self._generate_node_keypairs()
         self.ports = [Ports(start_cfg_index + i) for i in range(num_nodes)]
 
@@ -71,9 +67,8 @@ class SidechainNetwork(Network):
         num_federators: int,
         num_validators: int,
         start_cfg_index: int,
-        chain: Chain,
     ):
-        super().__init__(num_nodes, num_validators, start_cfg_index, chain)
+        super().__init__(num_nodes, num_validators, start_cfg_index)
         self.num_federators = num_federators
         self.federator_keypairs = self._generate_federator_keypairs()
         self.main_account = Wallet.create(CryptoAlgorithm.SECP256K1)
