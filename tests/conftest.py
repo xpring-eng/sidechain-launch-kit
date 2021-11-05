@@ -1,7 +1,7 @@
 import pytest
 from xrpl.models import IssuedCurrencyAmount
 
-import create_config_files
+import slk.create_config_files as create_config_files
 from slk.sidechain_params import _parse_args_helper
 
 """

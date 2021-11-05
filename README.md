@@ -2,7 +2,7 @@
 
 ## Introduction
 
-This directory contains python scripts to tests and explore side chains. 
+This directory contains python scripts to tests and explore side chains.
 
 This document walks through the steps to setup a side chain running on your local
 machine and make your first cross chain transfers.
@@ -64,7 +64,7 @@ To simplify managing library dependencies and the virtual environment, `xrpl-py`
 
 The python scripts need to know the locations of two files and one directory.
 These can be specified either through command line arguments or by setting
-environment variables. 
+environment variables.
 
 1. The location of the rippled executable used for main chain servers. Either
    set the environment variable `RIPPLED_MAINCHAIN_EXE` or use the command line
@@ -80,7 +80,7 @@ environment variables.
    command line switch `--cfgs_dir`. The configuration files do not exist yet.
    There is a script to create these for you. For now, just choose a location
    where the files should live and make sure that directory exists.
-   
+
 Setting environment variables can be very convient. For example, a small script
 can be sourced to set these environment variables when working with side chains.
 
@@ -90,7 +90,7 @@ can be sourced to set these environment variables when working with side chains.
 Assuming rippled is built, the three environment variables are set, and the
 python environment is activated, run the following script:
 ```
-bin/sidechain/python/create_config_files.py --usd
+poetry run python -m slk.create_config_files --usd
 ```
 
 There should now be many configuration files in the directory specified by the
@@ -102,11 +102,11 @@ cross chain assert for USD -> USD transfers.
 There is an interactive shell called `RiplRepl` that can be used to explore
 side chains. It will use the configuration files built above to spin up test
 rippled main chain running in standalone mode as well as 5 side chain federators
-running in regular consensus mode. 
+running in regular consensus mode.
 
 To start the shell, run the following script:
 ```
-bin/sidechain/python/riplrepl.py
+poetry run python riplrepl.py
 ```
 
 The shell will not start until the servers have synced. It may take a minute or
@@ -116,7 +116,7 @@ Once the shell has started, the following message should appear:
 ```
 Welcome to the sidechain test shell.   Type help or ? to list commands.
 
-RiplRepl> 
+RiplRepl>
 ```
 
 Type the command `server_info` to make sure the servers are running. An example output would be:
@@ -140,10 +140,10 @@ Next, type the `balance` command, to see the balances of the accounts in the add
 ```
 RiplRepl> balance
                            balance currency peer limit
-     account                                          
-main root    99,999,989,999.999985      XRP           
-     door             9,999.999940      XRP           
-side door    99,999,999,999.999954      XRP           
+     account
+main root    99,999,989,999.999985      XRP
+     door             9,999.999940      XRP
+side door    99,999,999,999.999954      XRP
 ```
 
 There are two accounts on the main chain: `root` and `door`; and one account on the side chain: `door`. These are not user accounts. Let's add two user accounts, one on the main chain called `alice` and one on the side chain called `bob`. The `new_account` command does this for us.
@@ -162,12 +162,12 @@ makes a payment on one of the chains:
 RiplRepl> pay mainchain root alice 5000
 RiplRepl> balance
                            balance currency peer limit
-     account                                          
-main root    99,999,984,999.999969      XRP           
-     door             9,999.999940      XRP           
-     alice            5,000.000000      XRP           
-side door    99,999,999,999.999954      XRP           
-     bob                  0.000000      XRP      
+     account
+main root    99,999,984,999.999969      XRP
+     door             9,999.999940      XRP
+     alice            5,000.000000      XRP
+side door    99,999,999,999.999954      XRP
+     bob                  0.000000      XRP
 ```
 
 Finally, let's do something specific to side chains: make a cross chain payment.
@@ -177,12 +177,12 @@ The `xchain` command makes a payment between chains:
 RiplRepl> xchain mainchain alice bob 4000
 RiplRepl> balance
                            balance currency peer limit
-     account                                          
-main root    99,999,984,999.999969      XRP           
-     door            13,999.999940      XRP           
-     alice              999.999990      XRP           
-side door    99,999,995,999.999863      XRP           
-     bob              4,000.000000      XRP           
+     account
+main root    99,999,984,999.999969      XRP
+     door            13,999.999940      XRP
+     alice              999.999990      XRP
+side door    99,999,995,999.999863      XRP
+     bob              4,000.000000      XRP
 ```
 
 Note: the account reserve on the side chain is 100 XRP. The cross chain amount
@@ -193,12 +193,12 @@ Making a cross chain transaction from the side chain to the main chain is simila
 RiplRepl> xchain sidechain bob alice 2000
 RiplRepl> balance
                            balance currency peer limit
-     account                                          
-main root    99,999,984,999.999969      XRP           
-     door            11,999.999840      XRP           
-     alice            2,999.999990      XRP           
-side door    99,999,997,999.999863      XRP           
-     bob              1,999.999990      XRP    
+     account
+main root    99,999,984,999.999969      XRP
+     door            11,999.999840      XRP
+     alice            2,999.999990      XRP
+side door    99,999,997,999.999863      XRP
+     bob              1,999.999990      XRP
 ```
 
 If you typed `balance` very quickly, you may catch a cross chain payment in

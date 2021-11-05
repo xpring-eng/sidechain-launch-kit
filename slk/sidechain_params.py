@@ -121,7 +121,7 @@ class SidechainParams:
             self.mainchain_exe = os.environ["RIPPLED_MAINCHAIN_EXE"]
         if args.exe_mainchain:
             self.mainchain_exe = args.exe_mainchain
-
+        # if `self.mainchain_exe` doesn't exist (done this way for typing purposes)
         if not hasattr(self, "mainchain_exe"):
             raise Exception(
                 "Missing mainchain_exe location. Either set the env variable "
