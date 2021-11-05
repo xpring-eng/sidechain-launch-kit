@@ -47,8 +47,6 @@ ED264807102805220DA0F312E71FC2C69E1552C9C5790F6C25E3729DEB573D5860
 """
 
 
-# cfg_type will typically be either 'dog' or 'test', but can be any string. It is only
-# used to create the data directories.
 def generate_cfg_dir(
     *,
     ports: Ports,
@@ -64,7 +62,6 @@ def generate_cfg_dir(
     full_history: bool = False,
     with_hooks: bool = False,
 ) -> str:
-    ips_stanza = get_ips_stanza(fixed_ips, ports.peer_port, main_net)
     disable_shards = "" if with_shards else "# "
     disable_delete = "#" if full_history else ""
     history_line = "full" if full_history else "256"
@@ -72,7 +69,6 @@ def generate_cfg_dir(
     if sidechain_stanza:
         earliest_seq_line = "earliest_seq=1"
     hooks_line = "Hooks" if with_hooks else ""
-    validation_seed_stanza = ""
     validation_seed_stanza = f"\n[validation_seed]\n{validation_seed}\n"
     shard_str = "shards" if with_shards else "no_shards"
     net_str = "main" if main_net else "test"
@@ -85,6 +81,8 @@ def generate_cfg_dir(
 
     for path in ["", "/db", "/shards"]:
         Path(sub_dir + path).mkdir(parents=True, exist_ok=True)
+
+    ips_stanza = get_ips_stanza(fixed_ips, ports.peer_port, main_net)
 
     cfg_str = get_cfg_str(
         ports,
