@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import Dict, Optional, Type
+from typing import Any, Dict, List, Optional, Type
 
 
 class Section:
@@ -15,22 +15,24 @@ class Section:
         return None
 
     def __init__(self: Section, name: str) -> None:
-        super().__setattr__("_name", name)
+        self.init = True
+        self._name = name
         # lines contains all non key-value pairs
-        super().__setattr__("_lines", [])
-        super().__setattr__("_kv_pairs", {})
+        self._lines: List[str] = []
+        self._kv_pairs: Dict[str, str] = {}
+        self.init = False
 
-    def get_name(self: Section):
+    def get_name(self: Section) -> str:
         return self._name
 
-    def add_line(self: Section, line):
+    def add_line(self: Section, line: str) -> None:
         s = line.split("=")
         if len(s) == 2:
             self._kv_pairs[s[0].strip()] = s[1].strip()
         else:
             self._lines.append(line)
 
-    def get_lines(self: Section):
+    def get_lines(self: Section) -> List[str]:
         return self._lines
 
     def get_line(self: Section) -> Optional[str]:
@@ -38,19 +40,21 @@ class Section:
             return self._lines[0]
         return None
 
-    def __getstate__(self: Section):
+    def __getstate__(self: Section) -> Dict[str, Any]:
         return vars(self)
 
-    def __setstate__(self: Section, state):
+    def __setstate__(self: Section, state: Dict[str, Any]) -> None:
         vars(self).update(state)
 
-    def __getattr__(self: Section, name):
+    def __getattr__(self: Section, name: str) -> str:
         try:
             return self._kv_pairs[name]
         except KeyError:
             raise AttributeError(name)
 
-    def __setattr__(self: Section, name, value):
+    def __setattr__(self: Section, name: str, value: str) -> None:
+        if self.init:
+            super().__setattr__(name, value)
         if name in self.__dict__:
             super().__setattr__(name, value)
         else:
@@ -58,12 +62,10 @@ class Section:
 
 
 class ConfigFile:
-    def __init__(self: ConfigFile, *, file_name: Optional[str] = None) -> None:
+    def __init__(self: ConfigFile, *, file_name: str) -> None:
         # parse the file
         self._file_name = file_name
         self._sections: Dict[str, Section] = {}
-        if not file_name:
-            return
 
         cur_section = None
         with open(file_name) as f:
@@ -86,19 +88,19 @@ class ConfigFile:
         if cur_section:
             self.add_section(cur_section)
 
-    def add_section(self, s: Section):
+    def add_section(self: ConfigFile, s: Section) -> None:
         self._sections[s.get_name()] = s
 
-    def get_file_name(self):
+    def get_file_name(self: ConfigFile) -> str:
         return self._file_name
 
-    def __getstate__(self):
+    def __getstate__(self: ConfigFile) -> Dict[str, Any]:
         return vars(self)
 
-    def __setstate__(self, state):
+    def __setstate__(self: ConfigFile, state: Dict[str, Any]) -> None:
         vars(self).update(state)
 
-    def __getattr__(self, name):
+    def __getattr__(self: ConfigFile, name: str) -> Section:
         try:
             return self._sections[name]
         except KeyError:
