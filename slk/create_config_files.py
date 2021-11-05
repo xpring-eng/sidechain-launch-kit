@@ -87,6 +87,9 @@ def generate_cfg_dir(
     else:
         sub_dir = data_dir + f"/{cfg_type}"
 
+    for path in ["", "/db", "/shards"]:
+        Path(sub_dir + path).mkdir(parents=True, exist_ok=True)
+
     cfg_str = get_cfg_str(
         ports,
         history_line,
@@ -105,8 +108,6 @@ def generate_cfg_dir(
         f.write(cfg_str)
 
     validators_str = ""
-    for path in ["", "/db", "/shards"]:
-        Path(sub_dir + path).mkdir(parents=True, exist_ok=True)
     # Add the validators.txt file
     if validators:
         validators_str = "[validators]\n"
