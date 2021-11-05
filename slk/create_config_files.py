@@ -52,12 +52,12 @@ ED264807102805220DA0F312E71FC2C69E1552C9C5790F6C25E3729DEB573D5860
 def generate_cfg_dir(
     *,
     ports: Ports,
-    with_shards: bool,
-    main_net: bool,
+    with_shards: bool = False,
+    main_net: bool = True,
     cfg_type: str,
-    sidechain_stanza: str,
-    sidechain_bootstrap_stanza: str,
-    validation_seed: Optional[str] = None,
+    sidechain_stanza: str = "",
+    sidechain_bootstrap_stanza: str = "",
+    validation_seed: str,
     validators: Optional[List[str]] = None,
     fixed_ips: Optional[List[Ports]] = None,
     data_dir: str,
@@ -73,11 +73,7 @@ def generate_cfg_dir(
         earliest_seq_line = "earliest_seq=1"
     hooks_line = "Hooks" if with_hooks else ""
     validation_seed_stanza = ""
-    if validation_seed:
-        validation_seed_stanza = f"""
-[validation_seed]
-{validation_seed}
-        """
+    validation_seed_stanza = f"\n[validation_seed]\n{validation_seed}\n"
     shard_str = "shards" if with_shards else "no_shards"
     net_str = "main" if main_net else "test"
     if not fixed_ips:
@@ -138,11 +134,7 @@ def generate_multinode_net(
         ports = mainnet.ports[i]
         mainchain_cfg_file = generate_cfg_dir(
             ports=ports,
-            with_shards=False,
-            main_net=True,
             cfg_type=f"mainchain_{i}",
-            sidechain_stanza="",
-            sidechain_bootstrap_stanza="",
             validation_seed=validator_kp.secret_key,
             data_dir=out_dir,
         )
@@ -164,8 +156,6 @@ def generate_multinode_net(
 
         generate_cfg_dir(
             ports=ports,
-            with_shards=False,
-            main_net=True,
             cfg_type=f"sidechain_{i}",
             sidechain_stanza=sidechain_stanza,
             sidechain_bootstrap_stanza=sidechain_bootstrap_stanza,
@@ -174,7 +164,6 @@ def generate_multinode_net(
             fixed_ips=sidenet.ports,
             data_dir=out_dir,
             full_history=True,
-            with_hooks=False,
         )
 
 
