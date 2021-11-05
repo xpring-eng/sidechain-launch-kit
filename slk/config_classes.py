@@ -39,15 +39,15 @@ class Ports:
 
 
 class Network:
-    def __init__(self, num_nodes: int, num_validators: int, start_cfg_index: int):
-        self.num_validators = num_validators
+    def __init__(self, num_nodes: int, start_cfg_index: int):
+        self.num_nodes = num_nodes
         self.validator_keypairs = self._generate_node_keypairs()
-        self.ports = [Ports(start_cfg_index + i) for i in range(num_nodes)]
+        self.ports = [Ports(start_cfg_index + i) for i in range(self.num_nodes)]
 
     def _generate_node_keypairs(self: Network) -> List[Keypair]:
         """generate keypairs suitable for validator keys"""
         result = []
-        for i in range(self.num_validators):
+        for i in range(self.num_nodes):
             seed = generate_seed(None, CryptoAlgorithm.SECP256K1)
             pub_key, priv_key = derive_keypair(seed, True)
             result.append(
@@ -63,12 +63,11 @@ class Network:
 class SidechainNetwork(Network):
     def __init__(
         self,
-        num_nodes: int,
         num_federators: int,
-        num_validators: int,
         start_cfg_index: int,
+        num_nodes: Optional[int] = None,
     ):
-        super().__init__(num_nodes, num_validators, start_cfg_index)
+        super().__init__(num_nodes or num_federators, start_cfg_index)
         self.num_federators = num_federators
         self.federator_keypairs = self._generate_federator_keypairs()
         self.main_account = Wallet.create(CryptoAlgorithm.SECP256K1)
@@ -77,7 +76,6 @@ class SidechainNetwork(Network):
         """generate keypairs suitable for federator keys"""
         result = []
         for i in range(self.num_federators):
-            # TODO: clean this up after the PR gets merged in the C++ code
             wallet = Wallet.create(crypto_algorithm=CryptoAlgorithm.ED25519)
             result.append(
                 Keypair(

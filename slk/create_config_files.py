@@ -180,11 +180,9 @@ def generate_multinode_net(
 
 def main(params: ConfigParams, xchain_assets: Optional[Dict[str, XChainAsset]] = None):
     index = 0
-    mainnet = Network(num_nodes=1, num_validators=1, start_cfg_index=index)
+    mainnet = Network(num_nodes=1, start_cfg_index=index)
     sidenet = SidechainNetwork(
-        num_nodes=5,
         num_federators=5,
-        num_validators=5,
         start_cfg_index=index + 1,
     )
     generate_multinode_net(
