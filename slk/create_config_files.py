@@ -197,56 +197,6 @@ def main(params: ConfigParams, xchain_assets: Optional[Dict[str, XChainAsset]] =
 
     (Path(params.configs_dir) / "logs").mkdir(parents=True, exist_ok=True)
 
-    for with_shards in [True, False]:
-        for is_main_net in [True, False]:
-            for cfg_type in ["dog", "test", "one", "two"]:
-                if not is_main_net and cfg_type not in ["dog", "test"]:
-                    continue
-
-                mainnet = Network(num_nodes=1, num_validators=1, start_cfg_index=index)
-                mainchain_cfg_file = generate_cfg_dir(
-                    data_dir=params.configs_dir,
-                    ports=mainnet.ports[0],
-                    with_shards=with_shards,
-                    main_net=is_main_net,
-                    cfg_type=cfg_type,
-                    sidechain_stanza="",
-                    sidechain_bootstrap_stanza="",
-                    validation_seed=mainnet.validator_keypairs[0].secret_key,
-                )
-
-                sidenet = SidechainNetwork(
-                    num_nodes=1,
-                    num_federators=5,
-                    num_validators=1,
-                    start_cfg_index=index + 1,
-                )
-                signing_key = sidenet.federator_keypairs[0].secret_key
-
-                (
-                    sidechain_stanza,
-                    sizechain_bootstrap_stanza,
-                ) = generate_sidechain_stanza(
-                    mainnet.ports[0],
-                    sidenet.main_account,
-                    sidenet.federator_keypairs,
-                    signing_key,
-                    mainchain_cfg_file,
-                    xchain_assets,
-                )
-
-                generate_cfg_dir(
-                    data_dir=params.configs_dir,
-                    ports=sidenet.ports[0],
-                    with_shards=with_shards,
-                    main_net=is_main_net,
-                    cfg_type=cfg_type,
-                    sidechain_stanza=sidechain_stanza,
-                    sidechain_bootstrap_stanza=sizechain_bootstrap_stanza,
-                    validation_seed=sidenet.validator_keypairs[0].secret_key,
-                )
-                index = index + 2
-
 
 if __name__ == "__main__":
     try:
