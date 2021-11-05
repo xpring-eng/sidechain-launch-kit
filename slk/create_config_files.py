@@ -185,6 +185,8 @@ def main(params: ConfigParams, xchain_assets: Optional[Dict[str, XChainAsset]] =
 
 
 if __name__ == "__main__":
+    # TODO: add support for real sidechains to only generate one federator's config file
+    # since real sidechain networks will have federators running on different machines
     try:
         params = ConfigParams()
     except Exception:
