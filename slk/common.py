@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import binascii
 import sys
-from typing import Any, Dict, List, Type, Union
+from typing import Any, Type, Union
 
 from xrpl.models import Amount, IssuedCurrencyAmount
 from xrpl.wallet import Wallet
@@ -20,11 +20,10 @@ def enable_eprint() -> None:
     EPRINT_ENABLED = True
 
 
-def eprint(*args: List[Any], **kwargs: Dict[str, Any]) -> None:
+def eprint(*args: Any, **kwargs: Any) -> None:
     if not EPRINT_ENABLED:
         return
-    # mypy is bad at handling args/kwargs
-    print(*args, file=sys.stderr, flush=True, **kwargs)  # type: ignore
+    print(*args, file=sys.stderr, flush=True, **kwargs)
 
 
 class Account:

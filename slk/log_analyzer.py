@@ -79,7 +79,9 @@ class LogLine:
             return self.raw_line
 
 
-def convert_log(in_file_name: str, out_file_name: str, *, pure_json=False):
+def convert_log(
+    in_file_name: str, out_file_name: str, *, pure_json: bool = False
+) -> None:
     try:
         prev_lines = None
         with open(in_file_name) as input:
@@ -110,11 +112,11 @@ def convert_log(in_file_name: str, out_file_name: str, *, pure_json=False):
                         else:
                             print(log_line.to_mixed_json(), file=out, flush=True)
     except Exception as e:
-        eprint(f"Excption: {e}")
+        eprint(f"Exception: {e}")
         raise e
 
 
-def parse_args():
+def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(
         description=("python script to convert log files to json")
     )
