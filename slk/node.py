@@ -1,11 +1,14 @@
+from __future__ import annotations
+
 import os
 import subprocess
 import time
-from typing import List, Optional
+from typing import Any, Dict, List, Optional, cast
 
 from xrpl.clients import WebsocketClient
-from xrpl.models import ServerInfo
+from xrpl.models import Request, ServerInfo, Transaction
 from xrpl.transaction import safe_sign_and_submit_transaction
+from xrpl.wallet import Wallet
 
 from slk.config_file import ConfigFile
 
@@ -14,13 +17,13 @@ class Node:
     """Client to send commands to the rippled server"""
 
     def __init__(
-        self,
+        self: Node,
         *,
         config: ConfigFile,
         exe: str,
         command_log: Optional[str] = None,
         name: str,
-    ):
+    ) -> None:
         section = config.port_ws_admin_local
         self.websocket_uri = f"{section.protocol}://{section.ip}:{section.port}"
         self.name = name
@@ -35,16 +38,16 @@ class Node:
                 f.write("# Start \n")
 
     @property
-    def config_file_name(self):
+    def config_file_name(self: Node) -> str:
         return self.config.get_file_name()
 
-    def shutdown(self):
+    def shutdown(self: Node) -> None:
         self.client.close()
 
-    def get_pid(self) -> Optional[int]:
+    def get_pid(self: Node) -> Optional[int]:
         return self.pid
 
-    def request(self, req) -> dict:
+    def request(self: Node, req: Request) -> Dict[str, Any]:
         if not self.client.is_open():
             self.client.open()
         response = self.client.request(req)
@@ -52,26 +55,26 @@ class Node:
             return response.result
         raise Exception("failed transaction", response.result)
 
-    def request_json(self, req) -> dict:
+    def request_json(self: Node, req: Request) -> Dict[str, Any]:
         if not self.client.is_open():
             self.client.open()
         response = self.client.request_json(req)
         if response["status"] == "success":
-            return response["result"]
+            return cast(Dict[str, Any], response["result"])
         raise Exception("failed transaction", response["result"])
 
-    def sign_and_submit(self, txn, wallet) -> dict:
+    def sign_and_submit(self: Node, txn: Transaction, wallet: Wallet) -> Dict[str, Any]:
         if not self.client.is_open():
             self.client.open()
         return safe_sign_and_submit_transaction(txn, wallet, self.client).result
 
     def start_server(
-        self,
+        self: Node,
         extra_args: List[str],
         *,
         standalone: bool = False,
         server_out: str = os.devnull,
-    ):
+    ) -> None:
         to_run = [self.exe, "--conf", self.config_file_name]
         if standalone:
             to_run.append("-a")
@@ -86,7 +89,7 @@ class Node:
             flush=True,
         )
 
-    def stop_server(self, *, server_out: str = os.devnull):
+    def stop_server(self: Node, *, server_out: str = os.devnull) -> None:
         to_run = [self.exe, "--conf", self.config_file_name]
         fout = open(os.devnull, "w")
         subprocess.Popen(to_run + ["stop"], stdout=fout, stderr=subprocess.STDOUT)
@@ -95,7 +98,7 @@ class Node:
         self.process.wait()
         self.pid = -1
 
-    def wait_for_validated_ledger(self):
+    def wait_for_validated_ledger(self: Node) -> None:
         for i in range(600):
             r = self.request(ServerInfo())
             state = None
@@ -127,7 +130,7 @@ class Node:
         raise ValueError("Could not sync server {self.config_file_name}")
 
     # Get a dict of the server_state, validated_ledger_seq, and complete_ledgers
-    def get_brief_server_info(self) -> dict:
+    def get_brief_server_info(self: Node) -> Dict[str, Any]:
         ret = {"server_state": "NA", "ledger_seq": "NA", "complete_ledgers": "NA"}
         if not self.pid or self.pid == -1:
             return ret
