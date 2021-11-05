@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import argparse
 import os
 
@@ -6,7 +8,7 @@ from dotenv import load_dotenv
 load_dotenv()
 
 
-def _parse_args():
+def _parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(
         description=("Create config files for testing sidechains")
     )
@@ -37,7 +39,7 @@ def _parse_args():
 
 
 class ConfigParams:
-    def __init__(self):
+    def __init__(self: ConfigParams) -> None:
         args = _parse_args()
 
         if "RIPPLED_MAINCHAIN_EXE" in os.environ:
