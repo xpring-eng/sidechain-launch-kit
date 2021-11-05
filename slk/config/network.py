@@ -7,7 +7,7 @@ from xrpl.core.addresscodec import encode_account_public_key, encode_node_public
 from xrpl.core.keypairs import derive_keypair, generate_seed
 from xrpl.wallet import Wallet
 
-from slk.config.config_classes import Keypair, Ports
+from slk.config.helper_classes import Keypair, Ports
 
 
 class Network:

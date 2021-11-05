@@ -3,7 +3,7 @@ from typing import Dict, List, Optional, Tuple
 
 from xrpl.wallet import Wallet
 
-from slk.config.config_classes import Keypair, Ports, XChainAsset
+from slk.config.helper_classes import Keypair, Ports, XChainAsset
 
 NODE_SIZE = "medium"
 
