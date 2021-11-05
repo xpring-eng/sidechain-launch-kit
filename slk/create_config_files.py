@@ -26,9 +26,13 @@ from typing import Dict, List, Optional
 from xrpl.models import IssuedCurrencyAmount
 
 from slk.common import eprint
-from slk.config_classes import Network, Ports, SidechainNetwork, XChainAsset
-from slk.config_params import ConfigParams
-from slk.config_strs import generate_sidechain_stanza, get_cfg_str, get_ips_stanza
+from slk.config.config_classes import Network, Ports, SidechainNetwork, XChainAsset
+from slk.config.config_params import ConfigParams
+from slk.config.config_strs import (
+    generate_sidechain_stanza,
+    get_cfg_str,
+    get_ips_stanza,
+)
 
 MAINNET_VALIDATORS = """
 [validator_list_sites]
