@@ -16,6 +16,7 @@ from xrpl.models import (
     XRP,
     AccountTx,
     Amount,
+    Currency,
     IssuedCurrency,
     IssuedCurrencyAmount,
     Memo,
@@ -228,7 +229,7 @@ class SidechainRepl(cmd.Cmd):
                 account_ids.append(c.account_from_alias(nickname))
 
         # currency
-        assets = [[XRP()]] * len(chains)
+        assets: List[List[Currency]] = [[XRP()]] * len(chains)
         in_drops = False
         if len(args) > arg_index:
             asset_alias = args[arg_index]
@@ -249,7 +250,10 @@ class SidechainRepl(cmd.Cmd):
             assets = [[chains[0].asset_from_alias(asset_alias)]]
         else:
             # XRP and all assets in the assets alias list
-            assets = [[XRP()] + c.known_iou_assets() for c in chains]
+            assets = [
+                [cast(Currency, XRP())] + cast(List[Currency], c.known_iou_assets())
+                for c in chains
+            ]
 
         # should be done analyzing all the params
         assert arg_index == len(args)
@@ -346,7 +350,7 @@ class SidechainRepl(cmd.Cmd):
             # TODO: refactor substitute_nicknames to handle the chain name too
             chain_short_name = "main" if chain_name == "mainchain" else "side"
             for res in result:
-                chain.substitute_nicknames(result)
+                chain.substitute_nicknames(res)
                 res["account"] = chain_short_name + " " + res["account"]
             results += result
         print(
@@ -474,7 +478,9 @@ class SidechainRepl(cmd.Cmd):
                 return
             asset = chain.asset_from_alias(asset_alias)
 
-        if ((asset is not None and is_xrp(asset)) or asset is None) and not in_drops:
+        if (
+            (asset is not None and isinstance(asset, XRP)) or asset is None
+        ) and not in_drops:
             amt_value *= 1_000_000
 
         if asset is not None:
@@ -630,7 +636,9 @@ class SidechainRepl(cmd.Cmd):
 
         assert not args
 
-        if ((asset is not None and is_xrp(asset)) or asset is None) and not in_drops:
+        if (
+            (asset is not None and isinstance(asset, XRP)) or asset is None
+        ) and not in_drops:
             amt_value *= 1_000_000
 
         if asset is not None:

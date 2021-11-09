@@ -2,10 +2,9 @@ from __future__ import annotations
 
 import os
 import time
-from collections.abc import Generator
 from contextlib import contextmanager
 from pathlib import Path
-from typing import Any, Callable, Dict, List, Optional, Set, Union, cast
+from typing import Any, Callable, Dict, Generator, List, Optional, Set, Union, cast
 
 from tabulate import tabulate
 from xrpl.models import (
@@ -324,7 +323,7 @@ class Chain:
 
     def get_account_info(
         self: Chain, account: Optional[Account] = None
-    ) -> Union[Dict[str, Any], List[Dict[str, Any]]]:
+    ) -> List[Dict[str, Any]]:
         """
         Return a dictionary of account info. If account is None, treat as a
         wildcard (use address book)
@@ -340,15 +339,17 @@ class Chain:
         except:
             # TODO: better error checking
             # Most likely the account does not exist on the ledger. Give a balance of 0.
-            return {
-                "account": account.account_id,
-                "balance": "0",
-                "flags": 0,
-                "owner_count": 0,
-                "previous_txn_id": "NA",
-                "previous_txn_lgr_seq": -1,
-                "sequence": -1,
-            }
+            return [
+                {
+                    "account": account.account_id,
+                    "balance": "0",
+                    "flags": 0,
+                    "owner_count": 0,
+                    "previous_txn_id": "NA",
+                    "previous_txn_lgr_seq": -1,
+                    "sequence": -1,
+                }
+            ]
         if "account_data" not in result:
             raise ValueError("Bad result from account_info command")
         info = result["account_data"]
@@ -368,7 +369,7 @@ class Chain:
                 new_key = rename_dict[key]
                 info[new_key] = info[key]
                 del info[key]
-        return cast(Dict[str, Any], info)
+        return [cast(Dict[str, Any], info)]
 
     def get_trust_lines(
         self: Chain, account: Account, peer: Optional[Account] = None

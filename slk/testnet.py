@@ -3,9 +3,8 @@
 import glob
 import os
 import time
-from collections.abc import Generator
 from contextlib import contextmanager
-from typing import Any, Dict, List, Optional, Set, Union
+from typing import Any, Dict, Generator, List, Optional, Set, Union
 
 from xrpl.models import FederatorInfo
 
