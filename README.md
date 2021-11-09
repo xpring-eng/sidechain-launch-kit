@@ -106,7 +106,7 @@ running in regular consensus mode.
 
 To start the shell, run the following script:
 ```
-poetry run python riplrepl.py
+poetry run python -m slk.riplrepl
 ```
 
 The shell will not start until the servers have synced. It may take a minute or

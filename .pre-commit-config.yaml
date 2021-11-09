@@ -24,10 +24,10 @@ repos:
         entry: poetry run flake8
         language: system
         types: [python]
-      # - id: mypy
-      #   name: mypy
-      #   entry: poetry run mypy
-      #   args: ["--strict"]
-      #   language: system
-      #   files: slk/
-      #   types: [python]
+      - id: mypy
+        name: mypy
+        entry: poetry run mypy
+        args: ["--strict", "--implicit-reexport"]
+        language: system
+        files: slk/
+        types: [python]
