@@ -47,13 +47,15 @@ class Section:
         vars(self).update(state)
 
     def __getattr__(self: Section, name: str) -> str:
+        if name == "init" or self.init:
+            return super().__getattribute__(name)
         try:
             return self._kv_pairs[name]
         except KeyError:
             raise AttributeError(name)
 
     def __setattr__(self: Section, name: str, value: str) -> None:
-        if self.init:
+        if name == "init" or self.init:
             super().__setattr__(name, value)
         if name in self.__dict__:
             super().__setattr__(name, value)
