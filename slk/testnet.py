@@ -3,6 +3,7 @@
 import glob
 import os
 import time
+from collections.abc import Generator
 from contextlib import contextmanager
 from typing import Any, Dict, List, Optional, Set, Union
 
@@ -72,14 +73,14 @@ class Sidechain(Chain):
 
         self.servers_start(extra_args=extra_args)
 
-    def shutdown(self):
+    def shutdown(self) -> None:
         for a in self.nodes:
             a.shutdown()
 
         self.servers_stop()
 
     @property
-    def standalone(self):
+    def standalone(self) -> bool:
         return False
 
     def num_nodes(self) -> int:
@@ -98,7 +99,7 @@ class Sidechain(Chain):
 
     def federator_info(
         self, server_indexes: Optional[Union[Set[int], List[int]]] = None
-    ):
+    ) -> Dict[int, Dict[str, Any]]:
         # key is server index. value is federator_info result
         result_dict = {}
         if server_indexes is None or len(server_indexes) == 0:
@@ -109,7 +110,7 @@ class Sidechain(Chain):
         return result_dict
 
     # Get a dict of the server_state, validated_ledger_seq, and complete_ledgers
-    def get_brief_server_info(self) -> dict:
+    def get_brief_server_info(self) -> Dict[str, List[Dict[str, Any]]]:
         ret: Dict[str, List[Dict[str, Any]]] = {
             "server_state": [],
             "ledger_seq": [],
@@ -131,19 +132,18 @@ class Sidechain(Chain):
     def is_running(self, index: int) -> bool:
         return index in self.running_server_indexes
 
-    def wait_for_validated_ledger(self):
+    def wait_for_validated_ledger(self) -> None:
         """Don't return until the network has at least one validated ledger"""
         print("")  # adds some spacing after the rippled startup messages
         for i in range(len(self.nodes)):
             self.nodes[i].wait_for_validated_ledger()
-        return
 
     def servers_start(
         self,
         server_indexes: Optional[Union[Set[int], List[int]]] = None,
         *,
         extra_args: Optional[List[List[str]]] = None,
-    ):
+    ) -> None:
         if server_indexes is None:
             server_indexes = [i for i in range(len(self.nodes))]
 
@@ -161,7 +161,9 @@ class Sidechain(Chain):
 
         time.sleep(2)  # give servers time to start
 
-    def servers_stop(self, server_indexes: Optional[Union[Set[int], List[int]]] = None):
+    def servers_stop(
+        self, server_indexes: Optional[Union[Set[int], List[int]]] = None
+    ) -> None:
         if server_indexes is None:
             server_indexes = self.running_server_indexes.copy()
 
@@ -190,7 +192,7 @@ def sidechain_network(
     command_logs: Optional[List[Optional[str]]] = None,
     run_server: Optional[List[bool]] = None,
     extra_args: Optional[List[List[str]]] = None,
-):
+) -> Generator[Chain, None, None]:
     """Start a ripple testnet and return a chain"""
     try:
         chain = None
