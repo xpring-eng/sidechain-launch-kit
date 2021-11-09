@@ -53,7 +53,6 @@ class ConfigParams:
                 "RIPPLED_MAINCHAIN_EXE or use the --exe_mainchain command line switch"
             )
 
-        self.configs_dir = None
         if "RIPPLED_SIDECHAIN_CFG_DIR" in os.environ:
             self.configs_dir = os.environ["RIPPLED_SIDECHAIN_CFG_DIR"]
         if args.cfgs_dir:
@@ -65,6 +64,4 @@ class ConfigParams:
                 "RIPPLED_SIDECHAIN_CFG_DIR or use the --cfgs_dir command line switch"
             )
 
-        self.usd = False
-        if args.usd:
-            self.usd = args.usd
+        self.usd = args.usd or False
