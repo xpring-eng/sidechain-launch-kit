@@ -188,10 +188,6 @@ class Chain:
         """Send the command to the rippled server"""
         return self.node.request(req)
 
-    def request_json(self: Chain, req: Dict[str, Any]) -> Dict[str, Any]:
-        """Send the JSON command to the rippled server"""
-        return self.node.request_json(req)
-
     def send_subscribe(
         self: Chain, req: Subscribe, callback: Callable[[Dict[str, Any]], None]
     ) -> Dict[str, Any]:

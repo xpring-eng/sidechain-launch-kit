@@ -3,7 +3,7 @@ from __future__ import annotations
 import os
 import subprocess
 import time
-from typing import Any, Dict, List, Optional, cast
+from typing import Any, Dict, List, Optional
 
 from xrpl.clients import WebsocketClient
 from xrpl.models import Request, ServerInfo, Transaction
@@ -54,14 +54,6 @@ class Node:
         if response.is_successful():
             return response.result
         raise Exception("failed transaction", response.result)
-
-    def request_json(self: Node, req: Request) -> Dict[str, Any]:
-        if not self.client.is_open():
-            self.client.open()
-        response = self.client.request_json(req)
-        if response["status"] == "success":
-            return cast(Dict[str, Any], response["result"])
-        raise Exception("failed transaction", response["result"])
 
     def sign_and_submit(self: Node, txn: Transaction, wallet: Wallet) -> Dict[str, Any]:
         if not self.client.is_open():
