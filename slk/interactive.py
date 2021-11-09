@@ -40,10 +40,10 @@ def clear_screen() -> None:
 HOOKS_DIR = Path()
 
 
-def set_hooks_dir(n: str) -> None:
+def set_hooks_dir(hooks_dir_to_set: Optional[str]) -> None:
     global HOOKS_DIR
-    if n:
-        HOOKS_DIR = Path(n)
+    if hooks_dir_to_set:
+        HOOKS_DIR = Path(hooks_dir_to_set)
 
 
 _valid_hook_names = ["doubler", "notascam"]
