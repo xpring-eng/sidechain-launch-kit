@@ -15,12 +15,12 @@ class Section:
         return None
 
     def __init__(self: Section, name: str) -> None:
-        self.init = True
+        self._set_init(True)
         self._name = name
         # lines contains all non key-value pairs
         self._lines: List[str] = []
         self._kv_pairs: Dict[str, str] = {}
-        self.init = False
+        self._set_init(False)
 
     def get_name(self: Section) -> str:
         return self._name
@@ -46,18 +46,17 @@ class Section:
     def __setstate__(self: Section, state: Dict[str, Any]) -> None:
         vars(self).update(state)
 
+    def _set_init(self: Section, value: bool) -> None:
+        super().__setattr__("init", value)
+
     def __getattr__(self: Section, name: str) -> str:
-        if name == "init" or self.init:
-            return super().__getattribute__(name)
         try:
             return self._kv_pairs[name]
         except KeyError:
             raise AttributeError(name)
 
     def __setattr__(self: Section, name: str, value: str) -> None:
-        if name == "init" or self.init:
-            super().__setattr__(name, value)
-        if name in self.__dict__:
+        if self.init or name in self.__dict__:
             super().__setattr__(name, value)
         else:
             self._kv_pairs[name] = value

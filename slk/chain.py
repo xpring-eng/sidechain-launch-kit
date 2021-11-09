@@ -270,9 +270,7 @@ class Chain:
             return [d for ass in token for d in self.get_balances(account, ass)]
         if isinstance(token, XRP):
             try:
-                account_info = self.get_account_info(account)
-                # TODO: split get_account_info into two, depending on list vs dict
-                assert isinstance(account_info, dict)
+                account_info = self.get_account_info(account)[0]
                 needed_data = ["account", "balance"]
                 account_info = {
                     "account": account_info["account"],
@@ -330,10 +328,7 @@ class Chain:
         """
         if account is None:
             known_accounts = self.key_manager.known_accounts()
-            return cast(
-                List[Dict[str, Any]],
-                [self.get_account_info(acc) for acc in known_accounts],
-            )
+            return [d for acc in known_accounts for d in self.get_account_info(acc)]
         try:
             result = self.request(AccountInfo(account=account.account_id))
         except:
