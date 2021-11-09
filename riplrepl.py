@@ -10,7 +10,7 @@ from slk.sidechain import multinode_interactive_repl, standalone_interactive_rep
 from slk.sidechain_params import SidechainParams
 
 
-def main():
+def main() -> None:
     try:
         params = SidechainParams(interactive=True)
     except Exception:
