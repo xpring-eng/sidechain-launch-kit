@@ -64,7 +64,9 @@ class Account:
         return binascii.hexlify(self.account_id.encode()).decode("utf-8")
 
 
-def same_amount_new_value(prev_asset: Amount, new_value: Union[int, str]) -> Amount:
+def same_amount_new_value(
+    prev_asset: Amount, new_value: Union[int, str, float]
+) -> Amount:
     if isinstance(prev_asset, str):
         return str(new_value)
     else:
