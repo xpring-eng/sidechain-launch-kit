@@ -9,16 +9,16 @@ from typing import Any, Callable, Dict, List, Optional, Set, Union, cast
 
 from tabulate import tabulate
 from xrpl.models import (
+    XRP,
     AccountInfo,
     AccountLines,
-    Amount,
+    Currency,
     FederatorInfo,
     IssuedCurrency,
     IssuedCurrencyAmount,
     LedgerAccept,
     Request,
     Subscribe,
-    is_xrp,
 )
 from xrpl.models.transactions.transaction import Transaction
 from xrpl.utils import drops_to_xrp
@@ -257,7 +257,7 @@ class Chain:
     def get_balances(
         self: Chain,
         account: Union[Account, List[Account], None] = None,
-        token: Union[Amount, List[Amount]] = "0",
+        token: Union[Currency, List[Currency]] = XRP(),
     ) -> List[Dict[str, Any]]:
         """
         Return a list of dicts of account balances. If account is None, treat as a
@@ -269,7 +269,7 @@ class Chain:
             return [d for acc in account for d in self.get_balances(acc, token)]
         if isinstance(token, list):
             return [d for ass in token for d in self.get_balances(account, ass)]
-        if is_xrp(token):
+        if isinstance(token, XRP):
             try:
                 account_info = self.get_account_info(account)
                 # TODO: split get_account_info into two, depending on list vs dict
@@ -437,7 +437,7 @@ def balances_data(
     chains: List[Chain],
     chain_names: List[str],
     account_ids: Optional[List[Optional[Account]]] = None,
-    assets: Optional[List[Amount]] = None,
+    assets: Optional[List[List[Currency]]] = None,
     in_drops: bool = False,
 ) -> List[Dict[str, Any]]:
     if account_ids is None:
@@ -445,7 +445,10 @@ def balances_data(
 
     if assets is None:
         # XRP and all assets in the assets alias list
-        assets = [["0"] + c.known_iou_assets() for c in chains]
+        assets = [
+            [cast(Currency, XRP())] + cast(List[Currency], c.known_iou_assets())
+            for c in chains
+        ]
 
     result = []
     for chain, chain_name, acc, asset in zip(chains, chain_names, account_ids, assets):

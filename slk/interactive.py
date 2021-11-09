@@ -13,6 +13,7 @@ from tabulate import tabulate
 
 # from slk.transaction import SetHook, Payment, Trust
 from xrpl.models import (
+    XRP,
     AccountTx,
     Amount,
     IssuedCurrency,
@@ -227,7 +228,7 @@ class SidechainRepl(cmd.Cmd):
                 account_ids.append(c.account_from_alias(nickname))
 
         # currency
-        assets = [["0"]] * len(chains)
+        assets = [[XRP()]] * len(chains)
         in_drops = False
         if len(args) > arg_index:
             asset_alias = args[arg_index]
@@ -248,7 +249,7 @@ class SidechainRepl(cmd.Cmd):
             assets = [[chains[0].asset_from_alias(asset_alias)]]
         else:
             # XRP and all assets in the assets alias list
-            assets = [["0"] + c.known_iou_assets() for c in chains]
+            assets = [[XRP()] + c.known_iou_assets() for c in chains]
 
         # should be done analyzing all the params
         assert arg_index == len(args)
