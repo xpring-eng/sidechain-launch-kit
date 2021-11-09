@@ -311,7 +311,7 @@ class Chain:
                 # data frame
                 return []
 
-    def get_balance(self: Chain, account: Account, token: IssuedCurrencyAmount) -> str:
+    def get_balance(self: Chain, account: Account, token: Currency) -> str:
         """Get a balance from a single account in a single token"""
         try:
             result = self.get_balances(account, token)

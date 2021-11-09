@@ -6,7 +6,7 @@ from contextlib import contextmanager
 from typing import Optional
 
 from tabulate import tabulate
-from xrpl.models import Amount, IssuedCurrencyAmount, Subscribe
+from xrpl.models import XRP, Amount, IssuedCurrencyAmount, Subscribe
 
 from slk.chain import Chain, balances_data
 from slk.common import Account, same_amount_new_value
@@ -46,7 +46,10 @@ def wait_for_balance_change(
     )
     for i in range(30):
         new_bal = same_amount_new_value(
-            pre_balance, chain.get_balance(acc, same_amount_new_value(pre_balance, 0))
+            pre_balance,
+            chain.get_balance(
+                acc, XRP() if isinstance(pre_balance, str) else pre_balance
+            ),
         )
         diff = value_diff(new_bal, pre_balance)
         if new_bal != pre_balance:
@@ -64,11 +67,11 @@ def wait_for_balance_change(
             )
     logging.error(
         f"Expected balance to change {acc.account_id = } {pre_balance = } {new_bal = } "
-        f"{diff = } {final_diff = }"
+        f"{diff = } {final_diff = } {acc.nickname = }"
     )
     raise ValueError(
         f"Expected balance to change {acc.account_id = } {pre_balance = } {new_bal = } "
-        f"{diff = } {final_diff = }"
+        f"{diff = } {final_diff = } {acc.nickname = }"
     )
 
 
@@ -93,6 +96,7 @@ def value_diff(bigger: Amount, smaller: Amount) -> Amount:
         assert isinstance(smaller, str)
         return str(int(bigger) - int(smaller))
     else:
+        assert isinstance(smaller, IssuedCurrencyAmount)
         assert bigger.issuer == smaller.issuer
         assert bigger.currency == smaller.currency
         return IssuedCurrencyAmount(
