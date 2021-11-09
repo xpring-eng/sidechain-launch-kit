@@ -20,7 +20,7 @@ UPDATE_SIGNER_LIST = 2
 
 def setup_mainchain(
     mc_chain: Chain, params: SidechainParams, setup_user_accounts: bool = True
-):
+) -> None:
     mc_chain.add_to_keymanager(params.mc_door_account)
     if setup_user_accounts:
         mc_chain.add_to_keymanager(params.user_account)
@@ -119,7 +119,7 @@ def setup_mainchain(
 
 def setup_sidechain(
     sc_chain: Chain, params: SidechainParams, setup_user_accounts: bool = True
-):
+) -> None:
     sc_chain.add_to_keymanager(params.sc_door_account)
     if setup_user_accounts:
         sc_chain.add_to_keymanager(params.user_account)
