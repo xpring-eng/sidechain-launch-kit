@@ -4,7 +4,7 @@ import binascii
 import sys
 from typing import Any, Type, Union
 
-from xrpl.models import Amount, IssuedCurrencyAmount
+from xrpl.models import Amount, IssuedCurrency, IssuedCurrencyAmount
 from xrpl.wallet import Wallet
 
 EPRINT_ENABLED = True
@@ -65,7 +65,7 @@ class Account:
 
 
 def same_amount_new_value(
-    prev_asset: Amount, new_value: Union[int, str, float]
+    prev_asset: Union[IssuedCurrency, str], new_value: Union[int, str, float]
 ) -> Amount:
     if isinstance(prev_asset, str):
         return str(new_value)

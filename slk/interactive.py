@@ -7,13 +7,14 @@ import os
 import pprint
 import time
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Set, Union
+from typing import Any, Dict, List, Optional, Set, Union, cast
 
 from tabulate import tabulate
 
 # from slk.transaction import SetHook, Payment, Trust
 from xrpl.models import (
     AccountTx,
+    Amount,
     IssuedCurrency,
     IssuedCurrencyAmount,
     Memo,
@@ -476,7 +477,7 @@ class SidechainRepl(cmd.Cmd):
             amt_value *= 1_000_000
 
         if asset is not None:
-            amt = IssuedCurrencyAmount(
+            amt: Amount = IssuedCurrencyAmount(
                 value=str(amt_value), issuer=asset.issuer, currency=asset.currency
             )
         else:
@@ -632,8 +633,8 @@ class SidechainRepl(cmd.Cmd):
             amt_value *= 1_000_000
 
         if asset is not None:
-            amt = IssuedCurrencyAmount(
-                value=amt_value, issuer=asset.issuer, currency=asset.currency
+            amt: Amount = IssuedCurrencyAmount(
+                value=str(amt_value), issuer=asset.issuer, currency=asset.currency
             )
         else:
             amt = str(amt_value)
@@ -1018,7 +1019,7 @@ class SidechainRepl(cmd.Cmd):
             return
 
         asset = IssuedCurrencyAmount(
-            value=0,
+            value="0",
             currency=currency,
             issuer=chain.account_from_alias(issuer).account_id,
         )
@@ -1155,7 +1156,10 @@ class SidechainRepl(cmd.Cmd):
             print(f"Error: Invalid amount {amountStr}")
             return
 
-        asset = same_amount_new_value(chain.asset_from_alias(alias), amount)
+        asset = cast(
+            IssuedCurrencyAmount,
+            same_amount_new_value(chain.asset_from_alias(alias), amount),
+        )
         # TODO: resolve error where repl crashes if account doesn't exist
         chain.send_signed(TrustSet(account=account.account_id, limit_amount=asset))
         chain.maybe_ledger_accept()
@@ -1443,17 +1447,19 @@ class SidechainRepl(cmd.Cmd):
         mc_chain = self.mc_chain
         sc_chain = self.sc_chain
         mc_asset = IssuedCurrency(
-            currency="USD", issuer=mc_chain.account_from_alias("root")
+            currency="USD", issuer=mc_chain.account_from_alias("root").account_id
         )
         sc_asset = IssuedCurrency(
-            currency="USD", issuer=sc_chain.account_from_alias("door")
+            currency="USD", issuer=sc_chain.account_from_alias("door").account_id
         )
         mc_chain.add_asset_alias(mc_asset, "rrr")
         sc_chain.add_asset_alias(sc_asset, "ddd")
         mc_chain.send_signed(
             TrustSet(
                 account=mc_chain.account_from_alias("alice").account_id,
-                limit_amount=mc_asset(1_000_000),
+                limit_amount=cast(
+                    IssuedCurrencyAmount, same_amount_new_value(mc_asset, 1_000_000)
+                ),
             )
         )
 
@@ -1481,7 +1487,9 @@ class SidechainRepl(cmd.Cmd):
         mc_chain.send_signed(
             TrustSet(
                 account=mc_chain.account_from_alias("alice").account_id,
-                limit_amount=mc_asset(1_000_000),
+                limit_amount=cast(
+                    IssuedCurrencyAmount, same_amount_new_value(mc_asset, 1_000_000)
+                ),
             )
         )
         mc_chain.maybe_ledger_accept()
@@ -1489,7 +1497,9 @@ class SidechainRepl(cmd.Cmd):
             Payment(
                 account=mc_chain.account_from_alias("root").account_id,
                 destination=mc_chain.account_from_alias("alice").account_id,
-                amount=mc_asset(10_000),
+                amount=cast(
+                    IssuedCurrencyAmount, same_amount_new_value(mc_asset, 10_000)
+                ),
             )
         )
         mc_chain.maybe_ledger_accept()
@@ -1500,7 +1510,9 @@ class SidechainRepl(cmd.Cmd):
         sc_chain.send_signed(
             TrustSet(
                 account=sc_chain.account_from_alias("brad").account_id,
-                limit_amount=sc_asset(1_000_000),
+                limit_amount=cast(
+                    IssuedCurrencyAmount, same_amount_new_value(sc_asset, 1_000_000)
+                ),
             )
         )
 
@@ -1639,7 +1651,9 @@ class SidechainRepl(cmd.Cmd):
             with open(out_file, "a") as f:
                 f.write(f"{json.dumps(v, indent=1)}\n")
 
-        chain.send_subscribe(Subscribe(accounts=[account]), _subscribe_callback)
+        chain.send_subscribe(
+            Subscribe(accounts=[account.account_id]), _subscribe_callback
+        )
 
     def complete_subscribe(
         self: SidechainRepl, text: str, line: str, begidx: int, endidx: int
