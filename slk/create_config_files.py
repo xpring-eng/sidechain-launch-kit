@@ -17,7 +17,7 @@ the environment variable RIPPLED_MAINCHAIN_EXE
 The configs_dir (where the config files will reside) can be set through the command line
 or the environment variable RIPPLED_SIDECHAIN_CFG_DIR
 """
-
+import os
 import sys
 import traceback
 from pathlib import Path
@@ -172,7 +172,7 @@ def main(
     index = 0
     mainnet = Network(num_nodes=1, start_cfg_index=index)
     sidenet = SidechainNetwork(
-        num_federators=5,
+        num_federators=int(os.environ["NUM_FEDERATORS"]),
         start_cfg_index=index + 1,
     )
     generate_multinode_net(
