@@ -3,7 +3,7 @@ import time
 from multiprocessing import Process, Value
 from typing import Dict
 
-from xrpl.models import IssuedCurrencyAmount, Payment, TrustSet
+from xrpl.models import XRP, IssuedCurrencyAmount, Payment, TrustSet
 from xrpl.utils import xrp_to_drops
 
 from slk.chain import Chain
@@ -33,7 +33,7 @@ def simple_xrp_test(mc_chain: Chain, sc_chain: Chain, params: SidechainParams):
     # First txn funds the side chain account
     with tst_context(mc_chain, sc_chain):
         to_send_asset = xrp_to_drops(1000)
-        pre_bal = sc_chain.get_balance(adam, to_send_asset)
+        pre_bal = sc_chain.get_balance(adam, XRP())
         main_to_side_transfer(mc_chain, sc_chain, alice, adam, to_send_asset, params)
         wait_for_balance_change(sc_chain, adam, pre_bal, to_send_asset)
 
@@ -42,7 +42,7 @@ def simple_xrp_test(mc_chain: Chain, sc_chain: Chain, params: SidechainParams):
         for value in range(10, 20, 2):
             with tst_context(mc_chain, sc_chain):
                 to_send_asset = xrp_to_drops(value)
-                pre_bal = sc_chain.get_balance(adam, to_send_asset)
+                pre_bal = sc_chain.get_balance(adam, XRP())
                 main_to_side_transfer(
                     mc_chain, sc_chain, alice, adam, to_send_asset, params
                 )
@@ -53,7 +53,7 @@ def simple_xrp_test(mc_chain: Chain, sc_chain: Chain, params: SidechainParams):
         for value in range(9, 19, 2):
             with tst_context(mc_chain, sc_chain):
                 to_send_asset = xrp_to_drops(value)
-                pre_bal = mc_chain.get_balance(alice, to_send_asset)
+                pre_bal = mc_chain.get_balance(alice, XRP())
                 side_to_main_transfer(
                     mc_chain, sc_chain, adam, alice, to_send_asset, params
                 )

@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import argparse
 import os
 from typing import Optional
@@ -86,14 +88,19 @@ def _parse_args_helper(parser: argparse.ArgumentParser) -> None:
     )
 
 
-def _parse_args():
+def _parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description=("Test and debug sidechains"))
     _parse_args_helper(parser)
     return parser.parse_known_args()[0]
 
 
 class SidechainParams:
-    def __init__(self, *, configs_dir: Optional[str] = None, interactive: bool = False):
+    def __init__(
+        self: SidechainParams,
+        *,
+        configs_dir: Optional[str] = None,
+        interactive: bool = False,
+    ) -> None:
         args = _parse_args()
 
         # set up debug params

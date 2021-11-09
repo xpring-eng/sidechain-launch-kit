@@ -29,7 +29,7 @@ from slk.testnet import sidechain_network
 from slk.xchain_transfer import main_to_side_transfer, side_to_main_transfer
 
 
-def simple_test(mc_chain: Chain, sc_chain: Chain, params: SidechainParams):
+def simple_test(mc_chain: Chain, sc_chain: Chain, params: SidechainParams) -> None:
     try:
         bob = sc_chain.create_account("bob")
         main_to_side_transfer(
@@ -62,7 +62,7 @@ def simple_test(mc_chain: Chain, sc_chain: Chain, params: SidechainParams):
         )
 
 
-def _rm_debug_log(config: ConfigFile, verbose: bool):
+def _rm_debug_log(config: ConfigFile, verbose: bool) -> None:
     try:
         debug_log = config.debug_logfile.get_line()
         if debug_log:
@@ -77,7 +77,7 @@ def _standalone_with_callback(
     params: SidechainParams,
     callback: Callable[[Chain, Chain], None],
     setup_user_accounts: bool = True,
-):
+) -> None:
 
     if params.debug_mainchain:
         input("Start mainchain server and press enter to continue: ")
@@ -107,11 +107,12 @@ def _standalone_with_callback(
 
 def _convert_log_files_to_json(
     to_convert: List[ConfigFile], suffix: str, verbose: bool
-):
+) -> None:
     """Convert the log file to json"""
     for c in to_convert:
         try:
             debug_log = c.debug_logfile.get_line()
+            assert isinstance(debug_log, str)  # for typing
             if not os.path.exists(debug_log):
                 continue
             converted_log = f"{debug_log}.{suffix}"
@@ -128,7 +129,7 @@ def _multinode_with_callback(
     params: SidechainParams,
     callback: Callable[[Chain, Chain], None],
     setup_user_accounts: bool = True,
-):
+) -> None:
 
     mainchain_cfg = ConfigFile(
         file_name=f"{params.configs_dir}/sidechain_testnet/main.no_shards.mainchain_0/"
@@ -178,15 +179,15 @@ def _multinode_with_callback(
             callback(mc_chain, sc_chain)
 
 
-def standalone_test(params: SidechainParams):
-    def callback(mc_chain: Chain, sc_chain: Chain):
+def standalone_test(params: SidechainParams) -> None:
+    def callback(mc_chain: Chain, sc_chain: Chain) -> None:
         simple_test(mc_chain, sc_chain, params)
 
     _standalone_with_callback(params, callback)
 
 
-def multinode_test(params: SidechainParams):
-    def callback(mc_chain: Chain, sc_chain: Chain):
+def multinode_test(params: SidechainParams) -> None:
+    def callback(mc_chain: Chain, sc_chain: Chain) -> None:
         simple_test(mc_chain, sc_chain, params)
 
     _multinode_with_callback(params, callback)
@@ -195,7 +196,9 @@ def multinode_test(params: SidechainParams):
 # The mainchain runs in standalone mode. Most operations - like cross chain
 # payments - will automatically close ledgers. However, some operations, like
 # refunds, need an extra close. This loop automatically closes ledgers.
-def close_mainchain_ledgers(stop_token: Any, params: SidechainParams, sleep_time=4):
+def close_mainchain_ledgers(
+    stop_token: Any, params: SidechainParams, sleep_time: int = 4
+) -> None:
     with single_node_chain(
         config=params.mainchain_config,
         exe=params.mainchain_exe,
@@ -206,8 +209,8 @@ def close_mainchain_ledgers(stop_token: Any, params: SidechainParams, sleep_time
             time.sleep(sleep_time)
 
 
-def standalone_interactive_repl(params: SidechainParams):
-    def callback(mc_chain: Chain, sc_chain: Chain):
+def standalone_interactive_repl(params: SidechainParams) -> None:
+    def callback(mc_chain: Chain, sc_chain: Chain) -> None:
         # process will run while stop token is non-zero
         stop_token = Value("i", 1)
         p = None
@@ -224,8 +227,8 @@ def standalone_interactive_repl(params: SidechainParams):
     _standalone_with_callback(params, callback, setup_user_accounts=False)
 
 
-def multinode_interactive_repl(params: SidechainParams):
-    def callback(mc_chain: Chain, sc_chain: Chain):
+def multinode_interactive_repl(params: SidechainParams) -> None:
+    def callback(mc_chain: Chain, sc_chain: Chain) -> None:
         # process will run while stop token is non-zero
         stop_token = Value("i", 1)
         p = None
@@ -242,7 +245,7 @@ def multinode_interactive_repl(params: SidechainParams):
     _multinode_with_callback(params, callback, setup_user_accounts=False)
 
 
-def main():
+def main() -> None:
     try:
         params = SidechainParams()
     except Exception as e:

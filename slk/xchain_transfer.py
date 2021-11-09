@@ -15,7 +15,7 @@ def _xchain_transfer(
     amt: Amount,
     from_chain_door: Account,
     to_chain_door: Account,
-):
+) -> None:
     memo = Memo(memo_data=dst.account_id_str_as_hex())
     from_chain.send_signed(
         Payment(
@@ -40,7 +40,7 @@ def main_to_side_transfer(
     dst: Account,
     amt: Amount,
     params: SidechainParams,
-):
+) -> None:
     _xchain_transfer(
         mc_chain,
         sc_chain,
@@ -59,7 +59,7 @@ def side_to_main_transfer(
     dst: Account,
     amt: Amount,
     params: SidechainParams,
-):
+) -> None:
     _xchain_transfer(
         sc_chain,
         mc_chain,

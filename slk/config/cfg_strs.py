@@ -1,6 +1,7 @@
 import json
-from typing import Dict, List, Optional, Tuple
+from typing import Any, Dict, List, Optional, Tuple, Union
 
+from xrpl.models import Amount
 from xrpl.wallet import Wallet
 
 from slk.config.helper_classes import Keypair, Ports, XChainAsset
@@ -25,7 +26,9 @@ BOOTSTRAP_FEDERATORS_STANZA_INIT = """
 """
 
 
-def get_ips_stanza(fixed_ips, peer_port, main_net):
+def get_ips_stanza(
+    fixed_ips: Optional[List[Ports]], peer_port: int, main_net: bool
+) -> str:
     ips_stanza = ""
     if fixed_ips:
         ips_stanza = "# Fixed ips for a testnet.\n"
@@ -45,7 +48,7 @@ def get_ips_stanza(fixed_ips, peer_port, main_net):
     return ips_stanza
 
 
-def amt_to_json(amt):
+def amt_to_json(amt: Amount) -> Union[str, Dict[str, Any]]:
     if isinstance(amt, str):
         return amt
     else:
@@ -120,17 +123,17 @@ mainchain_secret={main_account.seed}
 
 
 def get_cfg_str(
-    ports,
-    history_line,
-    sub_dir,
-    earliest_seq_line,
-    disable_delete,
-    ips_stanza,
-    validation_seed_stanza,
-    disable_shards,
-    sidechain_stanza,
-    hooks_line,
-):
+    ports: Ports,
+    history_line: str,
+    sub_dir: str,
+    earliest_seq_line: str,
+    disable_delete: str,
+    ips_stanza: str,
+    validation_seed_stanza: str,
+    disable_shards: str,
+    sidechain_stanza: str,
+    hooks_line: str,
+) -> str:
     db_path = sub_dir + "/db"
     debug_logfile = sub_dir + "/debug.log"
     shard_db_path = sub_dir + "/shards"
@@ -188,7 +191,7 @@ validators.txt
 """
 
 
-def _get_server_stanza():
+def _get_server_stanza() -> str:
     return """[server]
 port_rpc_admin_local
 port_peer
@@ -198,7 +201,7 @@ port_ws_public
 #ssl_cert = /etc/ssl/certs/server.crt"""
 
 
-def _get_ports_stanzas(ports):
+def _get_ports_stanzas(ports: Ports) -> str:
     return f"""[port_rpc_admin_local]
 port = {ports.http_admin_port}
 ip = {THIS_IP}
@@ -223,7 +226,9 @@ protocol = ws
 # protocol = wss"""
 
 
-def _get_node_db_stanza(node_db_path, earliest_seq_line, disable_delete):
+def _get_node_db_stanza(
+    node_db_path: str, earliest_seq_line: str, disable_delete: str
+) -> str:
     return f"""[node_db]
 type=NuDB
 path={node_db_path}
@@ -237,7 +242,7 @@ file_size_mult=2
 {disable_delete}advisory_delete=0"""
 
 
-def _get_features_stanza(hooks_line):
+def _get_features_stanza(hooks_line: str) -> str:
     return f"""[features]
 {hooks_line}
 PayChan

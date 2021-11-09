@@ -34,7 +34,6 @@ jobs:
         run: |
           poetry run flake8 slk tests
 
-      # TODO: add `strict`
       - name: Type-check
         run: |
-          poetry run mypy slk *.py
+          poetry run mypy slk --strict --implicit-reexport

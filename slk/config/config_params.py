@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import argparse
 import os
 
@@ -6,7 +8,7 @@ from dotenv import load_dotenv
 load_dotenv()
 
 
-def _parse_args():
+def _parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(
         description=("Create config files for testing sidechains")
     )
@@ -37,7 +39,7 @@ def _parse_args():
 
 
 class ConfigParams:
-    def __init__(self):
+    def __init__(self: ConfigParams) -> None:
         args = _parse_args()
 
         if "RIPPLED_MAINCHAIN_EXE" in os.environ:
@@ -51,7 +53,6 @@ class ConfigParams:
                 "RIPPLED_MAINCHAIN_EXE or use the --exe_mainchain command line switch"
             )
 
-        self.configs_dir = None
         if "RIPPLED_SIDECHAIN_CFG_DIR" in os.environ:
             self.configs_dir = os.environ["RIPPLED_SIDECHAIN_CFG_DIR"]
         if args.cfgs_dir:
@@ -63,6 +64,4 @@ class ConfigParams:
                 "RIPPLED_SIDECHAIN_CFG_DIR or use the --cfgs_dir command line switch"
             )
 
-        self.usd = False
-        if args.usd:
-            self.usd = args.usd
+        self.usd = args.usd or False

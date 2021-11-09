@@ -126,7 +126,7 @@ def generate_multinode_net(
     mainnet: Network,
     sidenet: SidechainNetwork,
     xchain_assets: Optional[Dict[str, XChainAsset]] = None,
-):
+) -> None:
     mainnet_cfgs = []
     for i in range(len(mainnet.ports)):
         validator_kp = mainnet.validator_keypairs[i]
@@ -166,7 +166,9 @@ def generate_multinode_net(
         )
 
 
-def main(params: ConfigParams, xchain_assets: Optional[Dict[str, XChainAsset]] = None):
+def main(
+    params: ConfigParams, xchain_assets: Optional[Dict[str, XChainAsset]] = None
+) -> None:
     index = 0
     mainnet = Network(num_nodes=1, start_cfg_index=index)
     sidenet = SidechainNetwork(
