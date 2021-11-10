@@ -20,7 +20,7 @@ from typing import Any, Callable, List
 
 from slk.chain.chain import Chain, configs_for_testnet, single_node_chain
 from slk.chain.chain_setup import setup_mainchain, setup_sidechain
-from slk.chain.testnet import sidechain_network
+from slk.chain.sidechain import sidechain_network
 from slk.chain.xchain_transfer import main_to_side_transfer, side_to_main_transfer
 from slk.classes.common import disable_eprint, eprint
 from slk.classes.config_file import ConfigFile
