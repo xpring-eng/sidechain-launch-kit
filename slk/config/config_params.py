@@ -35,6 +35,14 @@ def _parse_args() -> argparse.Namespace:
         ),
     )
 
+    parser.add_argument(
+        "--num_federators",
+        "-nf",
+        help=(
+            "how many federators to create config files for. Must be between 1 and 8."
+        ),
+    )
+
     return parser.parse_known_args()[0]
 
 
@@ -62,6 +70,22 @@ class ConfigParams:
             raise Exception(
                 "Missing configs directory location. Either set the env variable "
                 "RIPPLED_SIDECHAIN_CFG_DIR or use the --cfgs_dir command line switch"
+            )
+
+        if "NUM_FEDERATORS" in os.environ:
+            self.num_federators = int(os.environ["NUM_FEDERATORS"])
+        if args.num_federators:
+            self.num_federators = int(args.num_federators)
+        # if `self.num_federators` doesn't exist (done this way for typing purposes)
+        if not hasattr(self, "num_federators"):
+            raise Exception(
+                "Missing configs directory location. Either set the env variable "
+                "NUM_FEDERATORS or use the --num_federators command line switch"
+            )
+        if self.num_federators < 1 or self.num_federators > 8:
+            raise Exception(
+                "Invalid number of federators. Expected between 1 and 8 "
+                f"(inclusive), received {self.num_federators}"
             )
 
         self.usd = args.usd or False
