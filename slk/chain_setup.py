@@ -59,6 +59,7 @@ def setup_mainchain(
     )
 
     # set the chain's signer list and disable the master key
+    # quorum is 80%
     divide = 4 * len(params.federators)
     by = 5
     quorum = (divide + by - 1) // by
@@ -128,6 +129,7 @@ def setup_sidechain(
     # sc_chain.send_signed(LogLevel('trace', partition='SidechainFederator'))
 
     # set the chain's signer list and disable the master key
+    # quorum is 80%
     divide = 4 * len(params.federators)
     by = 5
     quorum = (divide + by - 1) // by

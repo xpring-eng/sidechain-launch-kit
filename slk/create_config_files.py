@@ -17,7 +17,8 @@ the environment variable RIPPLED_MAINCHAIN_EXE
 The configs_dir (where the config files will reside) can be set through the command line
 or the environment variable RIPPLED_SIDECHAIN_CFG_DIR
 """
-
+import os
+import shutil
 import sys
 import traceback
 from pathlib import Path
@@ -127,6 +128,18 @@ def generate_multinode_net(
     sidenet: SidechainNetwork,
     xchain_assets: Optional[Dict[str, XChainAsset]] = None,
 ) -> None:
+    # clear directory
+    if os.path.exists(out_dir):
+        for filename in os.listdir(out_dir):
+            file_path = os.path.join(out_dir, filename)
+            try:
+                if os.path.isfile(file_path) or os.path.islink(file_path):
+                    os.unlink(file_path)
+                elif os.path.isdir(file_path):
+                    shutil.rmtree(file_path)
+            except Exception as e:
+                print("Failed to delete %s. Reason: %s" % (file_path, e))
+
     mainnet_cfgs = []
     for i in range(len(mainnet.ports)):
         validator_kp = mainnet.validator_keypairs[i]
@@ -172,7 +185,7 @@ def main(
     index = 0
     mainnet = Network(num_nodes=1, start_cfg_index=index)
     sidenet = SidechainNetwork(
-        num_federators=5,
+        num_federators=params.num_federators,
         start_cfg_index=index + 1,
     )
     generate_multinode_net(
