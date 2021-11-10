@@ -5,7 +5,7 @@ from typing import Optional, Union
 
 from xrpl.models import Amount
 
-from slk.common import same_amount_new_value
+from slk.classes.common import same_amount_new_value
 
 
 @dataclass

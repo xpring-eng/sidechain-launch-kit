@@ -27,8 +27,8 @@ from xrpl.models import (
 )
 from xrpl.utils import drops_to_xrp
 
-from slk.chain import Chain, balances_data
-from slk.common import Account, same_amount_new_value
+from slk.chain.chain import Chain, balances_data
+from slk.classes.common import Account, same_amount_new_value
 
 
 def clear_screen() -> None:
@@ -1704,5 +1704,5 @@ class SidechainRepl(cmd.Cmd):
     ##################
 
 
-def repl(mc_chain: Chain, sc_chain: Chain) -> None:
+def start_repl(mc_chain: Chain, sc_chain: Chain) -> None:
     SidechainRepl(mc_chain, sc_chain).cmdloop()

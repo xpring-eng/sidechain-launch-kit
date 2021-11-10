@@ -2,8 +2,8 @@ import time
 
 from xrpl.models import Amount, Memo, Payment
 
-from slk.chain import Chain
-from slk.common import Account
+from slk.chain.chain import Chain
+from slk.classes.common import Account
 from slk.sidechain_params import SidechainParams
 
 

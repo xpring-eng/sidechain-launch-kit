@@ -4,10 +4,10 @@
 import sys
 import traceback
 
-import slk.interactive as interactive
-from slk.common import disable_eprint, eprint
+from slk.classes.common import disable_eprint, eprint
 from slk.sidechain import multinode_interactive_repl, standalone_interactive_repl
 from slk.sidechain_params import SidechainParams
+from slk.sidechain_repl import set_hooks_dir
 
 
 def main() -> None:
@@ -17,7 +17,7 @@ def main() -> None:
         eprint(traceback.format_exc())
         sys.exit(1)
 
-    interactive.set_hooks_dir(params.hooks_dir)
+    set_hooks_dir(params.hooks_dir)
 
     if params.verbose:
         print("eprint enabled")
