@@ -16,9 +16,10 @@ import os
 import sys
 import time
 from multiprocessing import Process, Value
+from pathlib import Path
 from typing import Any, Callable, List
 
-from slk.chain.chain import Chain, configs_for_testnet, single_node_chain
+from slk.chain.chain import Chain, single_node_chain
 from slk.chain.chain_setup import setup_mainchain, setup_sidechain
 from slk.chain.sidechain import sidechain_network
 from slk.chain.xchain_transfer import main_to_side_transfer, side_to_main_transfer
@@ -60,6 +61,19 @@ def simple_test(mc_chain: Chain, sc_chain: Chain, params: SidechainParams) -> No
             "final.json",
             params.verbose,
         )
+
+
+def _configs_for_testnet(config_file_prefix: str) -> List[ConfigFile]:
+    p = Path(config_file_prefix)
+    dir = p.parent
+    file = p.name
+    file_names = []
+    for f in os.listdir(dir):
+        cfg = os.path.join(dir, f, "rippled.cfg")
+        if f.startswith(file) and os.path.exists(cfg):
+            file_names.append(cfg)
+    file_names.sort()
+    return [ConfigFile(file_name=f) for f in file_names]
 
 
 def _rm_debug_log(config: ConfigFile, verbose: bool) -> None:
@@ -150,7 +164,7 @@ def _multinode_with_callback(
         if params.with_pauses:
             input("Pausing after mainchain setup (press enter to continue)")
 
-        testnet_configs = configs_for_testnet(
+        testnet_configs = _configs_for_testnet(
             f"{params.configs_dir}/sidechain_testnet/sidechain_"
         )
         for c in testnet_configs:

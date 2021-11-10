@@ -3,7 +3,6 @@ from __future__ import annotations
 import os
 import time
 from contextlib import contextmanager
-from pathlib import Path
 from typing import Any, Callable, Dict, Generator, List, Optional, Set, Union, cast
 
 from xrpl.models import (
@@ -369,16 +368,3 @@ def single_node_chain(
             chain.shutdown()
         if run_server and server_running:
             node.stop_server()
-
-
-def configs_for_testnet(config_file_prefix: str) -> List[ConfigFile]:
-    p = Path(config_file_prefix)
-    dir = p.parent
-    file = p.name
-    file_names = []
-    for f in os.listdir(dir):
-        cfg = os.path.join(dir, f, "rippled.cfg")
-        if f.startswith(file) and os.path.exists(cfg):
-            file_names.append(cfg)
-    file_names.sort()
-    return [ConfigFile(file_name=f) for f in file_names]
