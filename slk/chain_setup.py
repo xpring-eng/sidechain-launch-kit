@@ -1,6 +1,3 @@
-import os
-
-from dotenv import load_dotenv
 from xrpl.models import (
     AccountSet,
     AccountSetFlag,
@@ -15,8 +12,6 @@ from xrpl.utils import xrp_to_drops
 
 from slk.chain import Chain
 from slk.sidechain_params import SidechainParams
-
-load_dotenv()
 
 MAINCHAIN_DOOR_KEEPER = 0
 SIDECHAIN_DOOR_KEEPER = 1
@@ -64,8 +59,9 @@ def setup_mainchain(
     )
 
     # set the chain's signer list and disable the master key
+    # quorum is 80%
     divide = 4 * len(params.federators)
-    by = int(os.environ["NUM_FEDERATORS"])
+    by = 5
     quorum = (divide + by - 1) // by
     mc_chain.send_signed(
         SignerListSet(
@@ -133,8 +129,9 @@ def setup_sidechain(
     # sc_chain.send_signed(LogLevel('trace', partition='SidechainFederator'))
 
     # set the chain's signer list and disable the master key
+    # quorum is 80%
     divide = 4 * len(params.federators)
-    by = int(os.environ["NUM_FEDERATORS"])
+    by = 5
     quorum = (divide + by - 1) // by
     sc_chain.send_signed(
         SignerListSet(
