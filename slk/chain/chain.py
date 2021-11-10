@@ -11,7 +11,6 @@ from xrpl.models import (
     AccountLines,
     Currency,
     FederatorInfo,
-    IssuedCurrency,
     IssuedCurrencyAmount,
     LedgerAccept,
     Request,
@@ -20,38 +19,14 @@ from xrpl.models import (
 from xrpl.models.transactions.transaction import Transaction
 from xrpl.utils import drops_to_xrp
 
-from slk.chain.asset_aliases import AssetAliases
-from slk.chain.key_manager import KeyManager
+from slk.chain.chain_base import ChainBase
 from slk.chain.node import Node
 from slk.classes.common import Account
 from slk.classes.config_file import ConfigFile
 
 
-class Chain:
+class Chain(ChainBase):
     """Representation of one chain (mainchain/sidechain)"""
-
-    def __init__(
-        self: Chain,
-        node: Node,
-    ) -> None:
-        self.node = node
-
-        self.key_manager = KeyManager()
-        self.asset_aliases = AssetAliases()
-
-        root_account = Account(
-            nickname="root",
-            account_id="rHb9CJAWyB4rj91VRWn96DkukG4bwdtyTh",
-            seed="snoPBrXtMeMyMHUVTgbuqAfg1SUTb",
-        )
-        self.key_manager.add(root_account)
-
-    @property
-    def standalone(self: Chain) -> bool:
-        return True
-
-    def shutdown(self: Chain) -> None:
-        self.node.shutdown()
 
     def send_signed(self: Chain, txn: Transaction) -> Dict[str, Any]:
         """Sign then send the given transaction"""
@@ -73,16 +48,10 @@ class Chain:
         self.node.client.on("transaction", callback)
         return self.node.request(req)
 
-    def get_pids(self: Chain) -> List[int]:
-        if pid := self.node.get_pid():
-            return [pid]
-        return []
-
-    def get_running_status(self: Chain) -> List[bool]:
-        if self.node.get_pid():
-            return [True]
-        else:
-            return [False]
+    def maybe_ledger_accept(self: Chain) -> None:
+        if not self.standalone:
+            return
+        self.request(LedgerAccept())
 
     # Get a dict of the server_state, validated_ledger_seq, and complete_ledgers
     def get_brief_server_info(self: Chain) -> Dict[str, List[Any]]:
@@ -90,19 +59,6 @@ class Chain:
         for (k, v) in self.node.get_brief_server_info().items():
             ret[k] = [v]
         return ret
-
-    def servers_start(
-        self: Chain,
-        server_indexes: Optional[Union[Set[int], List[int]]] = None,
-        *,
-        extra_args: Optional[List[List[str]]] = None,
-    ) -> None:
-        raise ValueError("Cannot start stand alone server")
-
-    def servers_stop(
-        self: Chain, server_indexes: Optional[Union[Set[int], List[int]]] = None
-    ) -> None:
-        raise ValueError("Cannot stop stand alone server")
 
     def federator_info(
         self: Chain, server_indexes: Optional[Union[Set[int], List[int]]] = None
@@ -114,21 +70,52 @@ class Chain:
             result_dict[0] = self.node.request(FederatorInfo())
         return result_dict
 
-    def get_configs(self: Chain) -> List[ConfigFile]:
-        return [self.node.config]
-
-    def create_account(self: Chain, name: str) -> Account:
-        """Create an account. Use the name as the alias."""
-        assert not self.key_manager.is_alias(name)
-
-        account = Account.create(name)
-        self.key_manager.add(account)
-        return account
-
-    def maybe_ledger_accept(self: Chain) -> None:
-        if not self.standalone:
-            return
-        self.request(LedgerAccept())
+    def get_account_info(
+        self: Chain, account: Optional[Account] = None
+    ) -> List[Dict[str, Any]]:
+        """
+        Return a dictionary of account info. If account is None, treat as a
+        wildcard (use address book)
+        """
+        if account is None:
+            known_accounts = self.key_manager.known_accounts()
+            return [d for acc in known_accounts for d in self.get_account_info(acc)]
+        try:
+            result = self.request(AccountInfo(account=account.account_id))
+        except:
+            # TODO: better error checking
+            # Most likely the account does not exist on the ledger. Give a balance of 0.
+            return [
+                {
+                    "account": account.account_id,
+                    "balance": "0",
+                    "flags": 0,
+                    "owner_count": 0,
+                    "previous_txn_id": "NA",
+                    "previous_txn_lgr_seq": -1,
+                    "sequence": -1,
+                }
+            ]
+        if "account_data" not in result:
+            raise ValueError("Bad result from account_info command")
+        info = result["account_data"]
+        for dk in ["LedgerEntryType", "index"]:
+            del info[dk]
+        rename_dict = {
+            "Account": "account",
+            "Balance": "balance",
+            "Flags": "flags",
+            "OwnerCount": "owner_count",
+            "PreviousTxnID": "previous_txn_id",
+            "PreviousTxnLgrSeq": "previous_txn_lgr_seq",
+            "Sequence": "sequence",
+        }
+        for key in rename_dict:
+            if key in info:
+                new_key = rename_dict[key]
+                info[new_key] = info[key]
+                del info[key]
+        return [cast(Dict[str, Any], info)]
 
     def get_balances(
         self: Chain,
@@ -196,53 +183,6 @@ class Chain:
         except:
             return "0"
 
-    def get_account_info(
-        self: Chain, account: Optional[Account] = None
-    ) -> List[Dict[str, Any]]:
-        """
-        Return a dictionary of account info. If account is None, treat as a
-        wildcard (use address book)
-        """
-        if account is None:
-            known_accounts = self.key_manager.known_accounts()
-            return [d for acc in known_accounts for d in self.get_account_info(acc)]
-        try:
-            result = self.request(AccountInfo(account=account.account_id))
-        except:
-            # TODO: better error checking
-            # Most likely the account does not exist on the ledger. Give a balance of 0.
-            return [
-                {
-                    "account": account.account_id,
-                    "balance": "0",
-                    "flags": 0,
-                    "owner_count": 0,
-                    "previous_txn_id": "NA",
-                    "previous_txn_lgr_seq": -1,
-                    "sequence": -1,
-                }
-            ]
-        if "account_data" not in result:
-            raise ValueError("Bad result from account_info command")
-        info = result["account_data"]
-        for dk in ["LedgerEntryType", "index"]:
-            del info[dk]
-        rename_dict = {
-            "Account": "account",
-            "Balance": "balance",
-            "Flags": "flags",
-            "OwnerCount": "owner_count",
-            "PreviousTxnID": "previous_txn_id",
-            "PreviousTxnLgrSeq": "previous_txn_lgr_seq",
-            "Sequence": "sequence",
-        }
-        for key in rename_dict:
-            if key in info:
-                new_key = rename_dict[key]
-                info[new_key] = info[key]
-                del info[key]
-        return [cast(Dict[str, Any], info)]
-
     def get_trust_lines(
         self: Chain, account: Account, peer: Optional[Account] = None
     ) -> List[Dict[str, Any]]:
@@ -264,46 +204,6 @@ class Chain:
             account_line["peer"] = account_line["account"]
             account_line["account"] = address
         return cast(List[Dict[str, Any]], account_lines)
-
-    def substitute_nicknames(
-        self: Chain, items: Dict[str, Any], cols: List[str] = ["account", "peer"]
-    ) -> None:
-        """Substitutes in-place account IDs for nicknames"""
-        for c in cols:
-            if c not in items:
-                continue
-            items[c] = self.key_manager.alias_or_account_id(items[c])
-
-    def add_to_keymanager(self: Chain, account: Account) -> None:
-        self.key_manager.add(account)
-
-    def is_alias(self: Chain, name: str) -> bool:
-        return self.key_manager.is_alias(name)
-
-    def account_from_alias(self: Chain, name: str) -> Account:
-        return self.key_manager.account_from_alias(name)
-
-    def known_accounts(self: Chain) -> List[Account]:
-        return self.key_manager.known_accounts()
-
-    def known_asset_aliases(self: Chain) -> List[str]:
-        return self.asset_aliases.known_aliases()
-
-    def known_iou_assets(self: Chain) -> List[IssuedCurrency]:
-        return self.asset_aliases.known_assets()
-
-    def is_asset_alias(self: Chain, name: str) -> bool:
-        return self.asset_aliases.is_alias(name)
-
-    def add_asset_alias(self: Chain, asset: IssuedCurrency, name: str) -> None:
-        self.asset_aliases.add(asset, name)
-
-    def asset_from_alias(self: Chain, name: str) -> IssuedCurrency:
-        return self.asset_aliases.asset_from_alias(name)
-
-    def get_node(self: Chain, i: Optional[int] = None) -> Node:
-        assert i is None
-        return self.node
 
 
 def balances_data(
