@@ -11,7 +11,6 @@ from xrpl.models import (
     AccountLines,
     Currency,
     FederatorInfo,
-    IssuedCurrency,
     IssuedCurrencyAmount,
     LedgerAccept,
     Request,
@@ -20,38 +19,14 @@ from xrpl.models import (
 from xrpl.models.transactions.transaction import Transaction
 from xrpl.utils import drops_to_xrp
 
-from slk.chain.asset_aliases import AssetAliases
-from slk.chain.key_manager import KeyManager
+from slk.chain.chain_base import ChainBase
 from slk.chain.node import Node
 from slk.classes.common import Account
 from slk.classes.config_file import ConfigFile
 
 
-class Chain:
+class Chain(ChainBase):
     """Representation of one chain (mainchain/sidechain)"""
-
-    def __init__(
-        self: Chain,
-        node: Node,
-    ) -> None:
-        self.node = node
-
-        self.key_manager = KeyManager()
-        self.asset_aliases = AssetAliases()
-
-        root_account = Account(
-            nickname="root",
-            account_id="rHb9CJAWyB4rj91VRWn96DkukG4bwdtyTh",
-            seed="snoPBrXtMeMyMHUVTgbuqAfg1SUTb",
-        )
-        self.key_manager.add(root_account)
-
-    @property
-    def standalone(self: Chain) -> bool:
-        return True
-
-    def shutdown(self: Chain) -> None:
-        self.node.shutdown()
 
     def send_signed(self: Chain, txn: Transaction) -> Dict[str, Any]:
         """Sign then send the given transaction"""
@@ -73,36 +48,12 @@ class Chain:
         self.node.client.on("transaction", callback)
         return self.node.request(req)
 
-    def get_pids(self: Chain) -> List[int]:
-        if pid := self.node.get_pid():
-            return [pid]
-        return []
-
-    def get_running_status(self: Chain) -> List[bool]:
-        if self.node.get_pid():
-            return [True]
-        else:
-            return [False]
-
     # Get a dict of the server_state, validated_ledger_seq, and complete_ledgers
     def get_brief_server_info(self: Chain) -> Dict[str, List[Any]]:
         ret = {}
         for (k, v) in self.node.get_brief_server_info().items():
             ret[k] = [v]
         return ret
-
-    def servers_start(
-        self: Chain,
-        server_indexes: Optional[Union[Set[int], List[int]]] = None,
-        *,
-        extra_args: Optional[List[List[str]]] = None,
-    ) -> None:
-        raise ValueError("Cannot start stand alone server")
-
-    def servers_stop(
-        self: Chain, server_indexes: Optional[Union[Set[int], List[int]]] = None
-    ) -> None:
-        raise ValueError("Cannot stop stand alone server")
 
     def federator_info(
         self: Chain, server_indexes: Optional[Union[Set[int], List[int]]] = None
@@ -113,17 +64,6 @@ class Chain:
         if server_indexes is not None and 0 in server_indexes:
             result_dict[0] = self.node.request(FederatorInfo())
         return result_dict
-
-    def get_configs(self: Chain) -> List[ConfigFile]:
-        return [self.node.config]
-
-    def create_account(self: Chain, name: str) -> Account:
-        """Create an account. Use the name as the alias."""
-        assert not self.key_manager.is_alias(name)
-
-        account = Account.create(name)
-        self.key_manager.add(account)
-        return account
 
     def maybe_ledger_accept(self: Chain) -> None:
         if not self.standalone:
@@ -264,46 +204,6 @@ class Chain:
             account_line["peer"] = account_line["account"]
             account_line["account"] = address
         return cast(List[Dict[str, Any]], account_lines)
-
-    def substitute_nicknames(
-        self: Chain, items: Dict[str, Any], cols: List[str] = ["account", "peer"]
-    ) -> None:
-        """Substitutes in-place account IDs for nicknames"""
-        for c in cols:
-            if c not in items:
-                continue
-            items[c] = self.key_manager.alias_or_account_id(items[c])
-
-    def add_to_keymanager(self: Chain, account: Account) -> None:
-        self.key_manager.add(account)
-
-    def is_alias(self: Chain, name: str) -> bool:
-        return self.key_manager.is_alias(name)
-
-    def account_from_alias(self: Chain, name: str) -> Account:
-        return self.key_manager.account_from_alias(name)
-
-    def known_accounts(self: Chain) -> List[Account]:
-        return self.key_manager.known_accounts()
-
-    def known_asset_aliases(self: Chain) -> List[str]:
-        return self.asset_aliases.known_aliases()
-
-    def known_iou_assets(self: Chain) -> List[IssuedCurrency]:
-        return self.asset_aliases.known_assets()
-
-    def is_asset_alias(self: Chain, name: str) -> bool:
-        return self.asset_aliases.is_alias(name)
-
-    def add_asset_alias(self: Chain, asset: IssuedCurrency, name: str) -> None:
-        self.asset_aliases.add(asset, name)
-
-    def asset_from_alias(self: Chain, name: str) -> IssuedCurrency:
-        return self.asset_aliases.asset_from_alias(name)
-
-    def get_node(self: Chain, i: Optional[int] = None) -> Node:
-        assert i is None
-        return self.node
 
 
 def balances_data(
