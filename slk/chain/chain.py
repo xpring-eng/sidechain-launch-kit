@@ -1,9 +1,6 @@
 from __future__ import annotations
 
-import os
-import time
-from contextlib import contextmanager
-from typing import Any, Callable, Dict, Generator, List, Optional, Set, Union, cast
+from typing import Any, Callable, Dict, List, Optional, Set, Union, cast
 
 from xrpl.models import (
     XRP,
@@ -20,9 +17,7 @@ from xrpl.models.transactions.transaction import Transaction
 from xrpl.utils import drops_to_xrp
 
 from slk.chain.chain_base import ChainBase
-from slk.chain.node import Node
 from slk.classes.common import Account
-from slk.classes.config_file import ConfigFile
 
 
 class Chain(ChainBase):
@@ -236,35 +231,3 @@ def balances_data(
             chain_res["account"] = chain_short_name + " " + chain_res["account"]
         result += chain_result
     return result
-
-
-# Start a chain with a single node
-@contextmanager
-def single_node_chain(
-    *,
-    config: ConfigFile,
-    command_log: Optional[str] = None,
-    server_out: str = os.devnull,
-    run_server: bool = True,
-    exe: str,
-    extra_args: Optional[List[str]] = None,
-) -> Generator[Chain, None, None]:
-    """Start a ripple server and return a chain"""
-    if extra_args is None:
-        extra_args = []
-    server_running = False
-    chain = None
-    node = Node(config=config, command_log=command_log, exe=exe, name="mainchain")
-    try:
-        if run_server:
-            node.start_server(extra_args, standalone=True, server_out=server_out)
-            server_running = True
-            time.sleep(1.5)  # give process time to startup
-
-        chain = Chain(node=node)
-        yield chain
-    finally:
-        if chain:
-            chain.shutdown()
-        if run_server and server_running:
-            node.stop_server()
