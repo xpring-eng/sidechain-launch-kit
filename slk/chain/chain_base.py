@@ -10,6 +10,12 @@ from slk.chain.node import Node
 from slk.classes.common import Account
 from slk.classes.config_file import ConfigFile
 
+ROOT_ACCOUNT = Account(
+    nickname="root",
+    account_id="rHb9CJAWyB4rj91VRWn96DkukG4bwdtyTh",
+    seed="snoPBrXtMeMyMHUVTgbuqAfg1SUTb",
+)
+
 
 class ChainBase:
     """Representation of one chain (mainchain/sidechain)"""
@@ -23,12 +29,7 @@ class ChainBase:
         self.key_manager = KeyManager()
         self.asset_aliases = AssetAliases()
 
-        root_account = Account(
-            nickname="root",
-            account_id="rHb9CJAWyB4rj91VRWn96DkukG4bwdtyTh",
-            seed="snoPBrXtMeMyMHUVTgbuqAfg1SUTb",
-        )
-        self.key_manager.add(root_account)
+        self.key_manager.add(ROOT_ACCOUNT)
 
     @property
     def standalone(self: ChainBase) -> bool:
