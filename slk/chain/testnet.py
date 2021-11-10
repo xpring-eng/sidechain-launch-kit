@@ -9,7 +9,7 @@ from typing import Any, Dict, Generator, List, Optional, Set, Union
 
 from xrpl.models import FederatorInfo
 
-from slk.chain import Chain
+from slk.chain.chain import Chain
 from slk.config_file import ConfigFile
 from slk.node import Node
 

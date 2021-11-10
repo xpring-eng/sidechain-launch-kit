@@ -18,15 +18,15 @@ import time
 from multiprocessing import Process, Value
 from typing import Any, Callable, List
 
-from slk.chain import Chain, configs_for_testnet, single_node_chain
-from slk.chain_setup import setup_mainchain, setup_sidechain
+from slk.chain.chain import Chain, configs_for_testnet, single_node_chain
+from slk.chain.chain_setup import setup_mainchain, setup_sidechain
+from slk.chain.testnet import sidechain_network
+from slk.chain.xchain_transfer import main_to_side_transfer, side_to_main_transfer
 from slk.common import disable_eprint, eprint
 from slk.config_file import ConfigFile
 from slk.sidechain_params import SidechainParams
 from slk.sidechain_repl import set_hooks_dir, start_repl
-from slk.testnet import sidechain_network
 from slk.utils.log_analyzer import convert_log
-from slk.xchain_transfer import main_to_side_transfer, side_to_main_transfer
 
 
 def simple_test(mc_chain: Chain, sc_chain: Chain, params: SidechainParams) -> None:

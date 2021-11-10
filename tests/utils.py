@@ -8,7 +8,7 @@ from typing import Optional
 from tabulate import tabulate
 from xrpl.models import XRP, Amount, IssuedCurrencyAmount, Subscribe
 
-from slk.chain import Chain, balances_data
+from slk.chain.chain import Chain, balances_data
 from slk.common import Account, same_amount_new_value
 
 MC_SUBSCRIBE_QUEUE = []

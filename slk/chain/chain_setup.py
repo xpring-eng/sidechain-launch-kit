@@ -10,7 +10,7 @@ from xrpl.models import (
 )
 from xrpl.utils import xrp_to_drops
 
-from slk.chain import Chain
+from slk.chain.chain import Chain
 from slk.sidechain_params import SidechainParams
 
 MAINCHAIN_DOOR_KEEPER = 0

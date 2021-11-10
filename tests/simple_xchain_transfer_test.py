@@ -6,7 +6,8 @@ from typing import Dict
 from xrpl.models import XRP, IssuedCurrencyAmount, Payment, TrustSet
 from xrpl.utils import xrp_to_drops
 
-from slk.chain import Chain
+from slk.chain.chain import Chain
+from slk.chain.xchain_transfer import main_to_side_transfer, side_to_main_transfer
 from slk.common import disable_eprint, eprint, same_amount_new_value
 from slk.sidechain import (
     _convert_log_files_to_json,
@@ -15,7 +16,6 @@ from slk.sidechain import (
     close_mainchain_ledgers,
 )
 from slk.sidechain_params import SidechainParams
-from slk.xchain_transfer import main_to_side_transfer, side_to_main_transfer
 from tests.utils import (
     mc_connect_subscription,
     sc_connect_subscription,
