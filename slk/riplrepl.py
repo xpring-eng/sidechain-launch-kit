@@ -4,7 +4,7 @@
 import sys
 import traceback
 
-from slk.common import disable_eprint, eprint
+from slk.classes.common import disable_eprint, eprint
 from slk.sidechain import multinode_interactive_repl, standalone_interactive_repl
 from slk.sidechain_params import SidechainParams
 from slk.sidechain_repl import set_hooks_dir

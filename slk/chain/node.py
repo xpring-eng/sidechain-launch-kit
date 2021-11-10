@@ -10,7 +10,7 @@ from xrpl.models import Request, ServerInfo, Transaction
 from xrpl.transaction import safe_sign_and_submit_transaction
 from xrpl.wallet import Wallet
 
-from slk.config_file import ConfigFile
+from slk.classes.config_file import ConfigFile
 
 
 class Node:

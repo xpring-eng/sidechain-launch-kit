@@ -11,7 +11,7 @@ from xrpl.models import FederatorInfo
 
 from slk.chain.chain import Chain
 from slk.chain.node import Node
-from slk.config_file import ConfigFile
+from slk.classes.config_file import ConfigFile
 
 
 class Sidechain(Chain):

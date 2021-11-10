@@ -28,7 +28,7 @@ from xrpl.models import (
 from xrpl.utils import drops_to_xrp
 
 from slk.chain.chain import Chain, balances_data
-from slk.common import Account, same_amount_new_value
+from slk.classes.common import Account, same_amount_new_value
 
 
 def clear_screen() -> None:

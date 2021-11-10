@@ -8,7 +8,7 @@ from xrpl.utils import xrp_to_drops
 
 from slk.chain.chain import Chain
 from slk.chain.xchain_transfer import main_to_side_transfer, side_to_main_transfer
-from slk.common import disable_eprint, eprint, same_amount_new_value
+from slk.classes.common import disable_eprint, eprint, same_amount_new_value
 from slk.sidechain import (
     _convert_log_files_to_json,
     _multinode_with_callback,

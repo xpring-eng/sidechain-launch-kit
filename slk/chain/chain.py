@@ -23,8 +23,8 @@ from xrpl.models.transactions.transaction import Transaction
 from xrpl.utils import drops_to_xrp
 
 from slk.chain.node import Node
-from slk.common import Account
-from slk.config_file import ConfigFile
+from slk.classes.common import Account
+from slk.classes.config_file import ConfigFile
 
 
 class KeyManager:

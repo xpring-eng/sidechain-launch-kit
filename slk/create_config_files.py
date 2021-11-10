@@ -26,7 +26,7 @@ from typing import Dict, List, Optional
 
 from xrpl.models import IssuedCurrencyAmount
 
-from slk.common import eprint
+from slk.classes.common import eprint
 from slk.config.cfg_strs import generate_sidechain_stanza, get_cfg_str, get_ips_stanza
 from slk.config.config_params import ConfigParams
 from slk.config.helper_classes import Ports, XChainAsset

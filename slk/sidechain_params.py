@@ -6,8 +6,8 @@ from typing import Optional
 
 from dotenv import load_dotenv
 
-from slk.common import Account
-from slk.config_file import ConfigFile
+from slk.classes.common import Account
+from slk.classes.config_file import ConfigFile
 
 load_dotenv()
 
