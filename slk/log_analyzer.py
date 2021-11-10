@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+from __future__ import annotations
 
 import argparse
 import json
@@ -32,7 +33,7 @@ class LogLine:
                 """
     )
 
-    def __init__(self, line: str):
+    def __init__(self: LogLine, line: str) -> None:
         self.raw_line = line
         self.json_data = None
 
@@ -53,7 +54,7 @@ class LogLine:
         except Exception as e:
             eprint(f"init exception: {e} line: {line}")
 
-    def to_mixed_json(self) -> str:
+    def to_mixed_json(self: LogLine) -> str:
         """return a pretty printed string as mixed json"""
         try:
             r = f"{self.timestamp} {self.module}:{self.level} {self.msg}"
@@ -64,7 +65,7 @@ class LogLine:
             eprint(f"Using raw line: {self.raw_line}")
             return self.raw_line
 
-    def to_pure_json(self) -> str:
+    def to_pure_json(self: LogLine) -> str:
         """return a pretty printed string as pure json"""
         try:
             dict = {}

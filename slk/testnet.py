@@ -1,4 +1,5 @@
 """Bring up a rippled sidechain network from a set of config files with fixed ips."""
+from __future__ import annotations
 
 import glob
 import os
@@ -17,14 +18,14 @@ class Sidechain(Chain):
     # If run_server is None, run all the servers.
     # This is useful to help debugging
     def __init__(
-        self,
+        self: Sidechain,
         exe: str,
         configs: List[ConfigFile],
         *,
         command_logs: Optional[List[Optional[str]]] = None,
         run_server: Optional[List[bool]] = None,
         extra_args: Optional[List[List[str]]] = None,
-    ):
+    ) -> None:
         if not configs:
             raise ValueError("Must specify at least one config")
 
@@ -72,32 +73,32 @@ class Sidechain(Chain):
 
         self.servers_start(extra_args=extra_args)
 
-    def shutdown(self) -> None:
+    def shutdown(self: Sidechain) -> None:
         for a in self.nodes:
             a.shutdown()
 
         self.servers_stop()
 
     @property
-    def standalone(self) -> bool:
+    def standalone(self: Sidechain) -> bool:
         return False
 
-    def num_nodes(self) -> int:
+    def num_nodes(self: Sidechain) -> int:
         return len(self.nodes)
 
     # TODO: type this better
-    def get_node(self, i: Optional[int] = None) -> Node:
+    def get_node(self: Sidechain, i: Optional[int] = None) -> Node:
         assert i is not None
         return self.nodes[i]
 
-    def get_configs(self) -> List[ConfigFile]:
+    def get_configs(self: Sidechain) -> List[ConfigFile]:
         return [c.config for c in self.nodes]
 
-    def get_pids(self) -> List[int]:
+    def get_pids(self: Sidechain) -> List[int]:
         return [pid for c in self.nodes if (pid := c.get_pid()) is not None]
 
     def federator_info(
-        self, server_indexes: Optional[Union[Set[int], List[int]]] = None
+        self: Sidechain, server_indexes: Optional[Union[Set[int], List[int]]] = None
     ) -> Dict[int, Dict[str, Any]]:
         # key is server index. value is federator_info result
         result_dict = {}
@@ -109,7 +110,7 @@ class Sidechain(Chain):
         return result_dict
 
     # Get a dict of the server_state, validated_ledger_seq, and complete_ledgers
-    def get_brief_server_info(self) -> Dict[str, List[Dict[str, Any]]]:
+    def get_brief_server_info(self: Sidechain) -> Dict[str, List[Dict[str, Any]]]:
         ret: Dict[str, List[Dict[str, Any]]] = {
             "server_state": [],
             "ledger_seq": [],
@@ -125,20 +126,20 @@ class Sidechain(Chain):
     # servers being shut down through the `servers_stop` interface. If a server
     # crashes, or is started or stopped through other means, an incorrect status
     # may be reported.
-    def get_running_status(self) -> List[bool]:
+    def get_running_status(self: Sidechain) -> List[bool]:
         return [i in self.running_server_indexes for i in range(len(self.nodes))]
 
-    def is_running(self, index: int) -> bool:
+    def is_running(self: Sidechain, index: int) -> bool:
         return index in self.running_server_indexes
 
-    def wait_for_validated_ledger(self) -> None:
+    def wait_for_validated_ledger(self: Sidechain) -> None:
         """Don't return until the network has at least one validated ledger"""
         print("")  # adds some spacing after the rippled startup messages
         for i in range(len(self.nodes)):
             self.nodes[i].wait_for_validated_ledger()
 
     def servers_start(
-        self,
+        self: Sidechain,
         server_indexes: Optional[Union[Set[int], List[int]]] = None,
         *,
         extra_args: Optional[List[List[str]]] = None,
@@ -161,7 +162,7 @@ class Sidechain(Chain):
         time.sleep(2)  # give servers time to start
 
     def servers_stop(
-        self, server_indexes: Optional[Union[Set[int], List[int]]] = None
+        self: Sidechain, server_indexes: Optional[Union[Set[int], List[int]]] = None
     ) -> None:
         if server_indexes is None:
             server_indexes = self.running_server_indexes.copy()

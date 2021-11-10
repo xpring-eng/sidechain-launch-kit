@@ -11,7 +11,7 @@ from slk.config.helper_classes import Keypair, Ports
 
 
 class Network:
-    def __init__(self, num_nodes: int, start_cfg_index: int):
+    def __init__(self: Network, num_nodes: int, start_cfg_index: int) -> None:
         self.num_nodes = num_nodes
         self.validator_keypairs = self._generate_node_keypairs()
         self.ports = [Ports(start_cfg_index + i) for i in range(self.num_nodes)]
@@ -34,11 +34,11 @@ class Network:
 
 class SidechainNetwork(Network):
     def __init__(
-        self,
+        self: SidechainNetwork,
         num_federators: int,
         start_cfg_index: int,
         num_nodes: Optional[int] = None,
-    ):
+    ) -> None:
         super().__init__(num_nodes or num_federators, start_cfg_index)
         self.num_federators = num_federators
         self.federator_keypairs = self._generate_federator_keypairs()

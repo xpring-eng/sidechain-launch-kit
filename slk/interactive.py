@@ -76,7 +76,7 @@ class SidechainRepl(cmd.Cmd):
     def preloop(self: SidechainRepl) -> None:
         clear_screen()
 
-    def __init__(self: SidechainRepl, mc_chain: Chain, sc_chain: Chain):
+    def __init__(self: SidechainRepl, mc_chain: Chain, sc_chain: Chain) -> None:
         super().__init__()
         assert mc_chain.is_alias("door") and sc_chain.is_alias("door")
         self.mc_chain = mc_chain
