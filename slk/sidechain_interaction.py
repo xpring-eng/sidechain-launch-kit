@@ -25,8 +25,8 @@ from slk.chain.sidechain import sidechain_network
 from slk.chain.xchain_transfer import main_to_side_transfer, side_to_main_transfer
 from slk.classes.common import disable_eprint, eprint
 from slk.classes.config_file import ConfigFile
+from slk.repl import set_hooks_dir, start_repl
 from slk.sidechain_params import SidechainParams
-from slk.sidechain_repl import set_hooks_dir, start_repl
 from slk.utils.log_analyzer import convert_log
 
 
