@@ -48,6 +48,11 @@ class Chain(ChainBase):
         self.node.client.on("transaction", callback)
         return self.node.request(req)
 
+    def maybe_ledger_accept(self: Chain) -> None:
+        if not self.standalone:
+            return
+        self.request(LedgerAccept())
+
     # Get a dict of the server_state, validated_ledger_seq, and complete_ledgers
     def get_brief_server_info(self: Chain) -> Dict[str, List[Any]]:
         ret = {}
@@ -65,10 +70,52 @@ class Chain(ChainBase):
             result_dict[0] = self.node.request(FederatorInfo())
         return result_dict
 
-    def maybe_ledger_accept(self: Chain) -> None:
-        if not self.standalone:
-            return
-        self.request(LedgerAccept())
+    def get_account_info(
+        self: Chain, account: Optional[Account] = None
+    ) -> List[Dict[str, Any]]:
+        """
+        Return a dictionary of account info. If account is None, treat as a
+        wildcard (use address book)
+        """
+        if account is None:
+            known_accounts = self.key_manager.known_accounts()
+            return [d for acc in known_accounts for d in self.get_account_info(acc)]
+        try:
+            result = self.request(AccountInfo(account=account.account_id))
+        except:
+            # TODO: better error checking
+            # Most likely the account does not exist on the ledger. Give a balance of 0.
+            return [
+                {
+                    "account": account.account_id,
+                    "balance": "0",
+                    "flags": 0,
+                    "owner_count": 0,
+                    "previous_txn_id": "NA",
+                    "previous_txn_lgr_seq": -1,
+                    "sequence": -1,
+                }
+            ]
+        if "account_data" not in result:
+            raise ValueError("Bad result from account_info command")
+        info = result["account_data"]
+        for dk in ["LedgerEntryType", "index"]:
+            del info[dk]
+        rename_dict = {
+            "Account": "account",
+            "Balance": "balance",
+            "Flags": "flags",
+            "OwnerCount": "owner_count",
+            "PreviousTxnID": "previous_txn_id",
+            "PreviousTxnLgrSeq": "previous_txn_lgr_seq",
+            "Sequence": "sequence",
+        }
+        for key in rename_dict:
+            if key in info:
+                new_key = rename_dict[key]
+                info[new_key] = info[key]
+                del info[key]
+        return [cast(Dict[str, Any], info)]
 
     def get_balances(
         self: Chain,
@@ -135,53 +182,6 @@ class Chain(ChainBase):
             return cast(str, result[0]["balance"])
         except:
             return "0"
-
-    def get_account_info(
-        self: Chain, account: Optional[Account] = None
-    ) -> List[Dict[str, Any]]:
-        """
-        Return a dictionary of account info. If account is None, treat as a
-        wildcard (use address book)
-        """
-        if account is None:
-            known_accounts = self.key_manager.known_accounts()
-            return [d for acc in known_accounts for d in self.get_account_info(acc)]
-        try:
-            result = self.request(AccountInfo(account=account.account_id))
-        except:
-            # TODO: better error checking
-            # Most likely the account does not exist on the ledger. Give a balance of 0.
-            return [
-                {
-                    "account": account.account_id,
-                    "balance": "0",
-                    "flags": 0,
-                    "owner_count": 0,
-                    "previous_txn_id": "NA",
-                    "previous_txn_lgr_seq": -1,
-                    "sequence": -1,
-                }
-            ]
-        if "account_data" not in result:
-            raise ValueError("Bad result from account_info command")
-        info = result["account_data"]
-        for dk in ["LedgerEntryType", "index"]:
-            del info[dk]
-        rename_dict = {
-            "Account": "account",
-            "Balance": "balance",
-            "Flags": "flags",
-            "OwnerCount": "owner_count",
-            "PreviousTxnID": "previous_txn_id",
-            "PreviousTxnLgrSeq": "previous_txn_lgr_seq",
-            "Sequence": "sequence",
-        }
-        for key in rename_dict:
-            if key in info:
-                new_key = rename_dict[key]
-                info[new_key] = info[key]
-                del info[key]
-        return [cast(Dict[str, Any], info)]
 
     def get_trust_lines(
         self: Chain, account: Account, peer: Optional[Account] = None
