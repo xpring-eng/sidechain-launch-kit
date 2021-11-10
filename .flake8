@@ -6,9 +6,8 @@ docstring-convention=google
 # D205 and D415 don't like multi-line summary statements, which is annoying.
 # E203 and W503 don't interact well with black
 # D100, D101, D102, D103, D104, D105, D107, D403, DAR101, DAR201, DAR301, DAR401 are asking for better docstrings, TODO: remove this and add docstrings everywhere
-# ANN001, ANN002, ANN003, ANN101, ANN201, ANN202, ANN204 are asking for more typing, TODO: remove this and make sure everything is typed properly
 # E722 is mad about bare "except" - TODO: resolve this when I know the repo better
-ignore = D205,D212,D415,E203,W503,D100,D101,D102,D103,D104,D105,D107,D403,DAR101,DAR201,DAR301,DAR401,ANN001,ANN002,ANN003,ANN101,ANN201,ANN202,ANN204,E722
+ignore = D205,D212,D415,E203,W503,D100,D101,D102,D103,D104,D105,D107,D403,DAR101,DAR201,DAR301,DAR401,E722
 
 # This is the line length that black uses
 # https://black.readthedocs.io/en/stable/the_black_code_style.html#line-length

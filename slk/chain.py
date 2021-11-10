@@ -156,7 +156,7 @@ class Chain:
     def __init__(
         self: Chain,
         node: Node,
-    ):
+    ) -> None:
         self.node = node
 
         self.key_manager = KeyManager()
