@@ -18,12 +18,12 @@ import time
 from multiprocessing import Process, Value
 from typing import Any, Callable, List
 
-import slk.interactive as interactive
 from slk.chain import Chain, configs_for_testnet, single_node_chain
 from slk.chain_setup import setup_mainchain, setup_sidechain
 from slk.common import disable_eprint, eprint
 from slk.config_file import ConfigFile
 from slk.sidechain_params import SidechainParams
+from slk.sidechain_repl import set_hooks_dir, start_repl
 from slk.testnet import sidechain_network
 from slk.utils.log_analyzer import convert_log
 from slk.xchain_transfer import main_to_side_transfer, side_to_main_transfer
@@ -218,7 +218,7 @@ def standalone_interactive_repl(params: SidechainParams) -> None:
             p = Process(target=close_mainchain_ledgers, args=(stop_token, params))
             p.start()
         try:
-            interactive.repl(mc_chain, sc_chain)
+            start_repl(mc_chain, sc_chain)
         finally:
             if p:
                 stop_token.value = 0
@@ -236,7 +236,7 @@ def multinode_interactive_repl(params: SidechainParams) -> None:
             p = Process(target=close_mainchain_ledgers, args=(stop_token, params))
             p.start()
         try:
-            interactive.repl(mc_chain, sc_chain)
+            start_repl(mc_chain, sc_chain)
         finally:
             if p:
                 stop_token.value = 0
@@ -252,7 +252,7 @@ def main() -> None:
         eprint(str(e))
         sys.exit(1)
 
-    interactive.set_hooks_dir(params.hooks_dir)
+    set_hooks_dir(params.hooks_dir)
 
     if params.quiet:
         print("Disabling eprint")

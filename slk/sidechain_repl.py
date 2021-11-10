@@ -1704,5 +1704,5 @@ class SidechainRepl(cmd.Cmd):
     ##################
 
 
-def repl(mc_chain: Chain, sc_chain: Chain) -> None:
+def start_repl(mc_chain: Chain, sc_chain: Chain) -> None:
     SidechainRepl(mc_chain, sc_chain).cmdloop()
