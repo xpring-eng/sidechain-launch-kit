@@ -3,10 +3,8 @@ from __future__ import annotations
 import os
 import time
 from contextlib import contextmanager
-from pathlib import Path
 from typing import Any, Callable, Dict, Generator, List, Optional, Set, Union, cast
 
-from tabulate import tabulate
 from xrpl.models import (
     XRP,
     AccountInfo,
@@ -22,132 +20,11 @@ from xrpl.models import (
 from xrpl.models.transactions.transaction import Transaction
 from xrpl.utils import drops_to_xrp
 
+from slk.chain.asset_aliases import AssetAliases
+from slk.chain.key_manager import KeyManager
 from slk.chain.node import Node
 from slk.classes.common import Account
 from slk.classes.config_file import ConfigFile
-
-
-class KeyManager:
-    def __init__(self: KeyManager) -> None:
-        self._aliases: Dict[str, Account] = {}  # alias -> account
-        self._accounts: Dict[str, Account] = {}  # account id -> account
-
-    def add(self: KeyManager, account: Account) -> None:
-        self._aliases[account.nickname] = account
-        self._accounts[account.account_id] = account
-
-    def is_alias(self: KeyManager, name: str) -> bool:
-        return name in self._aliases
-
-    def is_account(self: KeyManager, account: str) -> bool:
-        return account in self._accounts
-
-    def account_from_alias(self: KeyManager, name: str) -> Account:
-        assert name in self._aliases
-        return self._aliases[name]
-
-    def known_accounts(self: KeyManager) -> List[Account]:
-        return list(self._accounts.values())
-
-    def get_account(self: KeyManager, account: str) -> Account:
-        return self._accounts[account]
-
-    def account_id_dict(self: KeyManager) -> Dict[str, Account]:
-        return self._accounts
-
-    def alias_or_account_id(self: KeyManager, account_id: Union[Account, str]) -> str:
-        """return the alias if it exists, otherwise return the id"""
-        if isinstance(account_id, Account):
-            return account_id.nickname
-
-        if account_id in self._accounts:
-            return self._accounts[account_id].nickname
-        return account_id
-
-    def alias_to_account_id(self: KeyManager, alias: str) -> Optional[str]:
-        if alias in self._aliases:
-            return self._aliases[alias].account_id
-        return None
-
-    def to_string(self: KeyManager, nickname: Optional[str] = None) -> str:
-        data = []
-        if nickname is not None:
-            if nickname in self._aliases:
-                account_id = self._aliases[nickname].account_id
-            else:
-                account_id = "NA"
-            data.append(
-                {
-                    "name": nickname,
-                    "address": account_id,
-                }
-            )
-        else:
-            for (k, v) in self._aliases.items():
-                data.append(
-                    {
-                        "name": k,
-                        "address": v.account_id,
-                    }
-                )
-        return tabulate(
-            data,
-            headers="keys",
-            tablefmt="presto",
-        )
-
-
-class AssetAliases:
-    def __init__(self: AssetAliases) -> None:
-        self._aliases: Dict[str, IssuedCurrency] = {}  # alias -> IssuedCurrency
-
-    def add(self: AssetAliases, asset: IssuedCurrency, name: str) -> None:
-        self._aliases[name] = asset
-
-    def is_alias(self: AssetAliases, name: str) -> bool:
-        return name in self._aliases
-
-    def asset_from_alias(self: AssetAliases, name: str) -> IssuedCurrency:
-        assert name in self._aliases
-        return self._aliases[name]
-
-    def known_aliases(self: AssetAliases) -> List[str]:
-        return list(self._aliases.keys())
-
-    def known_assets(self: AssetAliases) -> List[IssuedCurrency]:
-        return list(self._aliases.values())
-
-    def to_string(self: AssetAliases, nickname: Optional[str] = None) -> str:
-        data = []
-        if nickname:
-            if nickname in self._aliases:
-                v = self._aliases[nickname]
-                currency = v.currency
-                issuer = v.issuer if v.issuer else ""
-            else:
-                currency = "NA"
-                issuer = "NA"
-            data.append(
-                {
-                    "name": nickname,
-                    "currency": currency,
-                    "issuer": issuer,
-                }
-            )
-        else:
-            for (k, v) in self._aliases.items():
-                data.append(
-                    {
-                        "name": k,
-                        "currency": v.currency,
-                        "issuer": v.issuer if v.issuer else "",
-                    }
-                )
-        return tabulate(
-            data,
-            headers="keys",
-            tablefmt="presto",
-        )
 
 
 class Chain:
@@ -491,16 +368,3 @@ def single_node_chain(
             chain.shutdown()
         if run_server and server_running:
             node.stop_server()
-
-
-def configs_for_testnet(config_file_prefix: str) -> List[ConfigFile]:
-    p = Path(config_file_prefix)
-    dir = p.parent
-    file = p.name
-    file_names = []
-    for f in os.listdir(dir):
-        cfg = os.path.join(dir, f, "rippled.cfg")
-        if f.startswith(file) and os.path.exists(cfg):
-            file_names.append(cfg)
-    file_names.sort()
-    return [ConfigFile(file_name=f) for f in file_names]
