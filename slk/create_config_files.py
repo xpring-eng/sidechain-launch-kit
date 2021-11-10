@@ -129,15 +129,16 @@ def generate_multinode_net(
     xchain_assets: Optional[Dict[str, XChainAsset]] = None,
 ) -> None:
     # clear directory
-    for filename in os.listdir(out_dir):
-        file_path = os.path.join(out_dir, filename)
-        try:
-            if os.path.isfile(file_path) or os.path.islink(file_path):
-                os.unlink(file_path)
-            elif os.path.isdir(file_path):
-                shutil.rmtree(file_path)
-        except Exception as e:
-            print("Failed to delete %s. Reason: %s" % (file_path, e))
+    if os.path.exists(out_dir):
+        for filename in os.listdir(out_dir):
+            file_path = os.path.join(out_dir, filename)
+            try:
+                if os.path.isfile(file_path) or os.path.islink(file_path):
+                    os.unlink(file_path)
+                elif os.path.isdir(file_path):
+                    shutil.rmtree(file_path)
+            except Exception as e:
+                print("Failed to delete %s. Reason: %s" % (file_path, e))
 
     mainnet_cfgs = []
     for i in range(len(mainnet.ports)):
