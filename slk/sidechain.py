@@ -23,9 +23,9 @@ from slk.chain import Chain, configs_for_testnet, single_node_chain
 from slk.chain_setup import setup_mainchain, setup_sidechain
 from slk.common import disable_eprint, eprint
 from slk.config_file import ConfigFile
-from slk.log_analyzer import convert_log
 from slk.sidechain_params import SidechainParams
 from slk.testnet import sidechain_network
+from slk.utils.log_analyzer import convert_log
 from slk.xchain_transfer import main_to_side_transfer, side_to_main_transfer
 
 
