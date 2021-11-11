@@ -18,39 +18,6 @@ run correctly.
 Checkout the `sidechain` branch from the rippled repository, and follow the
 usual process to build rippled.
 
-### Set up Python environment
-
-To make it easy to manage your Python environment with `xrpl-py`, including switching between versions, install `pyenv` and follow these steps:
-
-* Install [`pyenv`](https://github.com/pyenv/pyenv):
-
-        brew install pyenv
-
-    For other installation options, see the [`pyenv` README](https://github.com/pyenv/pyenv#installation).
-
-* Use `pyenv` to install the optimized version for `xrpl-py` (currently 3.9.1):
-
-        pyenv install 3.9.1
-
-* Set the [global](https://github.com/pyenv/pyenv/blob/master/COMMANDS.md#pyenv-global) version of Python with `pyenv`:
-
-        pyenv global 3.9.1
-
-### Set up shell environment
-
-To enable autocompletion and other functionality from your shell, add `pyenv` to your environment.
-
-These steps assume that you're using a [Zsh](http://zsh.sourceforge.net/) shell. For other shells, see the [`pyenv` README](https://github.com/pyenv/pyenv#basic-github-checkout).
-
-
-* Add `pyenv init` to your Zsh shell:
-
-        echo -e 'if command -v pyenv 1>/dev/null 2>&1; then\n  eval "$(pyenv init -)"\nfi' >> ~/.zshrc
-
-* Source or restart your terminal:
-
-        . ~/.zshrc
-
 ### Manage dependencies and virtual environments
 
 To simplify managing library dependencies and the virtual environment, `xrpl-py` uses [`poetry`](https://python-poetry.org/docs).
