@@ -1235,18 +1235,6 @@ class SidechainRepl(cmd.Cmd):
     ##################
 
     ##################
-    # quit
-    def do_quit(self: SidechainRepl, line: str) -> bool:
-        print("Thank you for using RiplRepl. Goodbye.\n\n")
-        return True
-
-    def help_quit(self: SidechainRepl) -> None:
-        print("Exit the program.")
-
-    # quit
-    ##################
-
-    ##################
     # setup_accounts
 
     def do_setup_accounts(self: SidechainRepl, line: str) -> None:
@@ -1342,18 +1330,6 @@ class SidechainRepl(cmd.Cmd):
         )
 
     # setup_ious
-    ##################
-
-    ##################
-    # q
-
-    def do_q(self: SidechainRepl, line: str) -> bool:
-        return self.do_quit(line)
-
-    def help_q(self: SidechainRepl) -> None:
-        return self.help_quit()
-
-    # q
     ##################
 
     ##################
@@ -1505,6 +1481,30 @@ class SidechainRepl(cmd.Cmd):
         )
 
     # subscribe
+    ##################
+
+    ##################
+    # quit
+    def do_quit(self: SidechainRepl, line: str) -> bool:
+        print("Thank you for using RiplRepl. Goodbye.\n\n")
+        return True
+
+    def help_quit(self: SidechainRepl) -> None:
+        print("Exit the program.")
+
+    # quit
+    ##################
+
+    ##################
+    # q
+
+    def do_q(self: SidechainRepl, line: str) -> bool:
+        return self.do_quit(line)
+
+    def help_q(self: SidechainRepl) -> None:
+        return self.help_quit()
+
+    # q
     ##################
 
     ##################
