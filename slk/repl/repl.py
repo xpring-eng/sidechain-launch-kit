@@ -140,6 +140,14 @@ class SidechainRepl(cmd.Cmd):
 
         return chains, chain_names
 
+    def _get_chain_arg(self: SidechainRepl, arg: str) -> Optional[Chain]:
+        if arg not in ["mainchain", "sidechain"]:
+            print('Error: First argument must specify the chain. Type "help" for help.')
+            return None
+        if arg == "mainchain":
+            return self.mc_chain
+        return self.sc_chain
+
     ##################
     # addressbook
     def do_addressbook(self: SidechainRepl, line: str) -> None:
@@ -398,15 +406,9 @@ class SidechainRepl(cmd.Cmd):
             elif unit == "drops":
                 in_drops = True
 
-        chain = None
-        if args[0] not in ["mainchain", "sidechain"]:
-            print('Error: First argument must specify the chain. Type "help" for help.')
+        chain = self._get_chain_arg(args[0])
+        if not chain:
             return
-
-        if args[0] == "mainchain":
-            chain = self.mc_chain
-        else:
-            chain = self.sc_chain
 
         src_nickname = args[1]
         if src_nickname == "door":
@@ -821,16 +823,9 @@ class SidechainRepl(cmd.Cmd):
             )
             return
 
-        chain = None
-
-        if args[0] not in ["mainchain", "sidechain"]:
-            print('Error: The first argument must be "mainchain" or "sidechain".')
+        chain = self._get_chain_arg(args[0])
+        if not chain:
             return
-
-        if args[0] == "mainchain":
-            chain = self.mc_chain
-        else:
-            chain = self.sc_chain
         args.pop(0)
 
         for alias in args:
@@ -871,16 +866,9 @@ class SidechainRepl(cmd.Cmd):
             )
             return
 
-        chain = None
-
-        if args[0] not in ["mainchain", "sidechain"]:
-            print('Error: The first argument must be "mainchain" or "sidechain".')
+        chain = self._get_chain_arg(args[0])
+        if not chain:
             return
-
-        if args[0] == "mainchain":
-            chain = self.mc_chain
-        else:
-            chain = self.sc_chain
         args.pop(0)
 
         (alias, currency, issuer) = args
@@ -985,16 +973,9 @@ class SidechainRepl(cmd.Cmd):
             )
             return
 
-        chain = None
-
-        if args[0] not in ["mainchain", "sidechain"]:
-            print('Error: The first argument must be "mainchain" or "sidechain".')
+        chain = self._get_chain_arg(args[0])
+        if not chain:
             return
-
-        if args[0] == "mainchain":
-            chain = self.mc_chain
-        else:
-            chain = self.sc_chain
         args.pop(0)
 
         (alias, accountStr, amountStr) = args
@@ -1070,14 +1051,9 @@ class SidechainRepl(cmd.Cmd):
 
         chain = None
 
-        if args[0] not in ["mainchain", "sidechain"]:
-            print('Error: The first argument must be "mainchain" or "sidechain".')
+        chain = self._get_chain_arg(args[0])
+        if not chain:
             return
-
-        if args[0] == "mainchain":
-            chain = self.mc_chain
-        else:
-            chain = self.sc_chain
         args.pop(0)
 
         assert not args
@@ -1319,14 +1295,9 @@ class SidechainRepl(cmd.Cmd):
 
         chain = None
 
-        if args[0] not in ["mainchain", "sidechain"]:
-            print('Error: The first argument must be "mainchain" or "sidechain".')
+        chain = self._get_chain_arg(args[0])
+        if not chain:
             return
-
-        if args[0] == "mainchain":
-            chain = self.mc_chain
-        else:
-            chain = self.sc_chain
         args.pop(0)
 
         accountStr = args[0]
@@ -1395,16 +1366,9 @@ class SidechainRepl(cmd.Cmd):
             )
             return
 
-        chain = None
-
-        if args[0] not in ["mainchain", "sidechain"]:
-            print('Error: The first argument must be "mainchain" or "sidechain".')
+        chain = self._get_chain_arg(args[0])
+        if not chain:
             return
-
-        if args[0] == "mainchain":
-            chain = self.mc_chain
-        else:
-            chain = self.sc_chain
         args.pop(0)
 
         accountStr = args[0]
