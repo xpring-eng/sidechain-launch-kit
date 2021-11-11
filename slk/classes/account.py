@@ -36,14 +36,38 @@ class Account:
     # Accounts are equal if they represent the same account on the ledger
     # I.e. only check the account_id field for equality.
     def __eq__(self: Account, lhs: Any) -> bool:
+        """
+        Returns whether an Account and something else are equal.
+
+        Accounts are equal if they represent the same account on the ledger
+        I.e. only check the account_id field for equality.
+
+        Args:
+            lhs: The object with which to compare for equality.
+        """
         if not isinstance(lhs, self.__class__):
             return False
         return self.account_id == lhs.account_id
 
     def __ne__(self: Account, lhs: Any) -> bool:
-        return not self.__eq__(lhs)
+        """
+        Returns whether an Account and something else are not equal.
+
+        Accounts are equal if they represent the same account on the ledger
+        I.e. only check the account_id field for equality.
+
+        Args:
+            lhs: The object with which to compare for equality.
+        """
+        return not self == lhs
 
     def __str__(self: Account) -> str:
+        """
+        Get a string representation of an Account.
+
+        Return:
+            A string representation of the Account.
+        """
         if self.nickname is not None:
             return self.nickname
         return self.account_id
