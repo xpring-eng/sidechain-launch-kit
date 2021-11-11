@@ -20,7 +20,7 @@ usual process to build rippled.
 
 ### Manage dependencies and virtual environments
 
-To simplify managing library dependencies and the virtual environment, `xrpl-py` uses [`poetry`](https://python-poetry.org/docs).
+To simplify managing library dependencies and the virtual environment, this package uses [`poetry`](https://python-poetry.org/docs).
 
 * [Install `poetry`](https://python-poetry.org/docs/#osx-linux-bashonwindows-install-instructions):
 
