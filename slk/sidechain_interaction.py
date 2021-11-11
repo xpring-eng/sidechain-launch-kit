@@ -19,9 +19,9 @@ from multiprocessing import Process, Value
 from pathlib import Path
 from typing import Any, Callable, List
 
-from slk.chain.chain import Chain, single_node_chain
+from slk.chain.chain import Chain
 from slk.chain.chain_setup import setup_mainchain, setup_sidechain
-from slk.chain.sidechain import sidechain_network
+from slk.chain.context_managers import sidechain_network, single_node_chain
 from slk.chain.xchain_transfer import main_to_side_transfer, side_to_main_transfer
 from slk.classes.common import disable_eprint, eprint
 from slk.classes.config_file import ConfigFile
@@ -65,12 +65,12 @@ def simple_test(mc_chain: Chain, sc_chain: Chain, params: SidechainParams) -> No
 
 def _configs_for_testnet(config_file_prefix: str) -> List[ConfigFile]:
     p = Path(config_file_prefix)
-    dir = p.parent
-    file = p.name
+    folder = p.parent
+    file_name = p.name
     file_names = []
-    for f in os.listdir(dir):
-        cfg = os.path.join(dir, f, "rippled.cfg")
-        if f.startswith(file) and os.path.exists(cfg):
+    for f in os.listdir(folder):
+        cfg = os.path.join(folder, f, "rippled.cfg")
+        if f.startswith(file_name) and os.path.exists(cfg):
             file_names.append(cfg)
     file_names.sort()
     return [ConfigFile(file_name=f) for f in file_names]
