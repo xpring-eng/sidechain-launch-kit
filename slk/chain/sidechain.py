@@ -19,8 +19,8 @@ class Sidechain(Chain):
     def __init__(
         self: Sidechain,
         exe: str,
-        configs: List[ConfigFile],
         *,
+        configs: List[ConfigFile],
         command_logs: Optional[List[Optional[str]]] = None,
         run_server: Optional[List[bool]] = None,
         extra_args: Optional[List[List[str]]] = None,
@@ -39,15 +39,18 @@ class Sidechain(Chain):
         self.running_server_indexes: Set[int] = set()
 
         if run_server is None:
-            run_server = []
-        run_server += [True] * (len(configs) - len(run_server))
-
-        self.run_server = run_server
+            self.run_server = []
+        else:
+            self.run_server = run_server.copy()
+        # fill up the rest of run_server (so there's an element for each node)
+        self.run_server += [True] * (len(configs) - len(self.run_server))
 
         if command_logs is None:
-            command_logs = []
-        command_logs += [None] * (len(configs) - len(command_logs))
-        # TODO: figure out what all these Nones do
+            node_logs: List[Optional[str]] = []
+        else:
+            node_logs = node_logs.copy()
+        # fill up the rest of node_logs (so there's an element for each node)
+        node_logs += [None] * (len(configs) - len(node_logs))
 
         # remove the old database directories.
         # we want tests to start from the same empty state every time
@@ -61,7 +64,7 @@ class Sidechain(Chain):
                     os.unlink(f)
 
         node_num = 0
-        for config, log in zip(configs, command_logs):
+        for config, log in zip(configs, node_logs):
             node = Node(
                 config=config, command_log=log, exe=exe, name=f"sidechain {node_num}"
             )

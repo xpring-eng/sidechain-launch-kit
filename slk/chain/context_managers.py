@@ -57,7 +57,7 @@ def sidechain_network(
     try:
         chain = Sidechain(
             exe,
-            configs,
+            configs=configs,
             command_logs=command_logs,
             run_server=run_server,
             extra_args=extra_args,
