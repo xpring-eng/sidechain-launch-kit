@@ -23,13 +23,15 @@ from xrpl.models import (
     Payment,
     Subscribe,
     TrustSet,
-    is_xrp,
 )
-from xrpl.utils import drops_to_xrp
 
 from slk.chain.chain import Chain, balances_data
 from slk.classes.common import Account, same_amount_new_value
-from slk.repl.repl_functionality import get_account_info, get_server_info
+from slk.repl.repl_functionality import (
+    get_account_info,
+    get_federator_info,
+    get_server_info,
+)
 
 
 def clear_screen() -> None:
@@ -770,83 +772,22 @@ class SidechainRepl(cmd.Cmd):
         except:
             f'Error: federator_info bad arguments: {args}. Type "help" for help.'
 
-        def get_fed_info_table(
-            info_dict: Dict[int, Dict[str, Any]]
-        ) -> List[Dict[str, Any]]:
-            data = []
-            for (k, v) in info_dict.items():
-                new_dict = {}
-                info = v["info"]
-                new_dict["public_key"] = info["public_key"]
-                mc = info["mainchain"]
-                sc = info["sidechain"]
-                new_dict["main last_sent_seq"] = mc["last_transaction_sent_seq"]
-                new_dict["side last_sent_seq"] = sc["last_transaction_sent_seq"]
-                new_dict["main seq"] = mc["sequence"]
-                new_dict["side seq"] = sc["sequence"]
-                new_dict["main num_pending"] = len(mc["pending_transactions"])
-                new_dict["side num_pending"] = len(sc["pending_transactions"])
-                new_dict["main sync_state"] = (
-                    mc["listener_info"]["state"]
-                    if "state" in mc["listener_info"]
-                    else None
-                )
-                new_dict["side sync_state"] = (
-                    sc["listener_info"]["state"]
-                    if "state" in sc["listener_info"]
-                    else None
-                )
-                data.append(new_dict)
-            return data
-
-        def get_pending_tx_info(
-            info_dict: Dict[int, Dict[str, Any]], verbose: bool = False
-        ) -> List[Dict[str, Any]]:
-            data = []
-            for (k, v) in info_dict.items():
-                for chain in ["mainchain", "sidechain"]:
-                    short_chain_name = chain[:4] + " " + str(k)
-                    pending = v["info"][chain]["pending_transactions"]
-                    for t in pending:
-                        amt = t["amount"]
-                        if is_xrp(amt):
-                            amt = drops_to_xrp(amt)
-                        if not verbose:
-                            pending_info = {
-                                "chain": short_chain_name,
-                                "amount": amt,
-                                "dest_acct": t["destination_account"],
-                                "hash": t["hash"],
-                                "num_sigs": len(t["signatures"]),
-                            }
-                            data.append(pending_info)
-                        else:
-                            for sig in t["signatures"]:
-                                pending_info = {
-                                    "chain": short_chain_name,
-                                    "amount": amt,
-                                    "dest_acct": t["destination_account"],
-                                    "hash": t["hash"],
-                                    "num_sigs": len(t["signatures"]),
-                                    "sigs": sig["public_key"],
-                                }
-            return data
-
         info_dict = self.sc_chain.federator_info(indexes)
         if raw:
             pprint.pprint(info_dict)
             return
 
+        info_table, pending_tx_data = get_federator_info(info_dict, verbose)
+
         print(
             tabulate(
-                get_fed_info_table(info_dict),
+                info_table,
                 headers="keys",
                 tablefmt="presto",
             )
         )
         # pending
         print("")  # newline separation
-        pending_tx_data = get_pending_tx_info(info_dict, verbose)
         if len(pending_tx_data) > 0:
             tabulate(
                 pending_tx_data,

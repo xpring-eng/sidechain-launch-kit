@@ -1,5 +1,8 @@
 import os
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Optional, Tuple
+
+from xrpl.models import is_xrp
+from xrpl.utils import drops_to_xrp
 
 from slk.chain.chain import Chain
 from slk.classes.common import Account
@@ -76,3 +79,67 @@ def get_server_info(
         for chain, name in zip(chains, chain_names)
     ]
     return result_from_dicts(*data_dicts)
+
+
+def get_federator_info(
+    info_dict: Dict[int, Dict[str, Any]], verbose: bool = False
+) -> Tuple[List[Dict[str, Any]], List[Dict[str, Any]]]:
+    def get_fed_info_table(
+        info_dict: Dict[int, Dict[str, Any]]
+    ) -> List[Dict[str, Any]]:
+        data = []
+        for (k, v) in info_dict.items():
+            new_dict = {}
+            info = v["info"]
+            new_dict["public_key"] = info["public_key"]
+            mc = info["mainchain"]
+            sc = info["sidechain"]
+            new_dict["main last_sent_seq"] = mc["last_transaction_sent_seq"]
+            new_dict["side last_sent_seq"] = sc["last_transaction_sent_seq"]
+            new_dict["main seq"] = mc["sequence"]
+            new_dict["side seq"] = sc["sequence"]
+            new_dict["main num_pending"] = len(mc["pending_transactions"])
+            new_dict["side num_pending"] = len(sc["pending_transactions"])
+            new_dict["main sync_state"] = (
+                mc["listener_info"]["state"] if "state" in mc["listener_info"] else None
+            )
+            new_dict["side sync_state"] = (
+                sc["listener_info"]["state"] if "state" in sc["listener_info"] else None
+            )
+            data.append(new_dict)
+        return data
+
+    def get_pending_tx_info(
+        info_dict: Dict[int, Dict[str, Any]], verbose: bool = False
+    ) -> List[Dict[str, Any]]:
+        data = []
+        for (k, v) in info_dict.items():
+            for chain in ["mainchain", "sidechain"]:
+                short_chain_name = chain[:4] + " " + str(k)
+                pending = v["info"][chain]["pending_transactions"]
+                for t in pending:
+                    amt = t["amount"]
+                    if is_xrp(amt):
+                        amt = drops_to_xrp(amt)
+                    if not verbose:
+                        pending_info = {
+                            "chain": short_chain_name,
+                            "amount": amt,
+                            "dest_acct": t["destination_account"],
+                            "hash": t["hash"],
+                            "num_sigs": len(t["signatures"]),
+                        }
+                        data.append(pending_info)
+                    else:
+                        for sig in t["signatures"]:
+                            pending_info = {
+                                "chain": short_chain_name,
+                                "amount": amt,
+                                "dest_acct": t["destination_account"],
+                                "hash": t["hash"],
+                                "num_sigs": len(t["signatures"]),
+                                "sigs": sig["public_key"],
+                            }
+        return data
+
+    return get_fed_info_table(info_dict), get_pending_tx_info(info_dict, verbose)
