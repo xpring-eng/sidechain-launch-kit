@@ -29,7 +29,7 @@ from xrpl.utils import drops_to_xrp
 
 from slk.chain.chain import Chain, balances_data
 from slk.classes.common import Account, same_amount_new_value
-from slk.repl.repl_functionality import get_account_info
+from slk.repl.repl_functionality import get_account_info, get_server_info
 
 
 def clear_screen() -> None:
@@ -57,13 +57,6 @@ def _file_to_hex(filename: Path) -> str:
     with open(filename, "rb") as f:
         content = f.read()
     return binascii.hexlify(content).decode("utf8")
-
-
-def _removesuffix(phrase: str, suffix: str) -> str:
-    if suffix and phrase.endswith(suffix):
-        return phrase[: -len(suffix)]
-    else:
-        return phrase[:]
 
 
 class SidechainRepl(cmd.Cmd):
@@ -703,45 +696,6 @@ class SidechainRepl(cmd.Cmd):
     ##################
     # server_info
     def do_server_info(self: SidechainRepl, line: str) -> None:
-        def data_dict(chain: Chain, chain_name: str) -> Dict[str, Any]:
-            # get the server_info data for a specific chain
-            # TODO: refactor get_brief_server_info to make this method less clunky
-            filenames = [c.get_file_name() for c in chain.get_configs()]
-            chains = []
-            for i in range(len(filenames)):
-                chains.append(f"{chain_name} {i}")
-            data: Dict[str, Any] = {"node": chains}
-            data.update(
-                {
-                    "pid": chain.get_pids(),
-                    "config": filenames,
-                    "running": chain.get_running_status(),
-                }
-            )
-            bsi = chain.get_brief_server_info()
-            data.update(bsi)
-            return data
-
-        def result_from_dicts(
-            d1: Dict[str, Any], d2: Optional[Dict[str, Any]] = None
-        ) -> List[Dict[str, Any]]:
-            # combine the info from the chains, refactor dict for tabulate
-            data = []
-            for i in range(len(d1["node"])):
-                new_dict = {key: d1[key][i] for key in d1}
-                data.append(new_dict)
-            if d2 is not None:
-                for i in range(len(d2["node"])):
-                    new_dict = {key: d2[key][i] for key in d2}
-                    data.append(new_dict)
-            # shorten config filenames for space
-            all_filenames = [d["config"] for d in data]
-            cp = os.path.commonprefix(all_filenames)
-            short_filenames = [os.path.relpath(f, cp) for f in all_filenames]
-            for i in range(len(data)):
-                data[i]["config"] = short_filenames[i]
-            return data
-
         args = line.split()
         if len(args) > 1:
             print(
@@ -761,11 +715,8 @@ class SidechainRepl(cmd.Cmd):
                 chains = [self.sc_chain]
             args.pop(0)
 
-        data_dicts = [
-            data_dict(chain, _removesuffix(name, "chain"))
-            for chain, name in zip(chains, chain_names)
-        ]
-        result = result_from_dicts(*data_dicts)
+        result = get_server_info(chains, chain_names)
+
         print(
             tabulate(
                 result,
