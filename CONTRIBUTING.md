@@ -17,7 +17,7 @@ not needed for that script.
 
 ### Set up Python environment
 
-To make it easy to manage your Python environment with `xrpl-py`, including switching between versions, install `pyenv` and follow these steps:
+To make it easy to manage your Python environment, including switching between versions, install `pyenv` and follow these steps:
 
 * Install [`pyenv`](https://github.com/pyenv/pyenv):
 
@@ -25,13 +25,13 @@ To make it easy to manage your Python environment with `xrpl-py`, including swit
 
     For other installation options, see the [`pyenv` README](https://github.com/pyenv/pyenv#installation).
 
-* Use `pyenv` to install the optimized version for `xrpl-py` (currently 3.9.1):
+* Use `pyenv` to install the optimized version (currently 3.8.0):
 
-        pyenv install 3.9.1
+        pyenv install 3.8.0
 
 * Set the [global](https://github.com/pyenv/pyenv/blob/master/COMMANDS.md#pyenv-global) version of Python with `pyenv`:
 
-        pyenv global 3.9.1
+        pyenv global 3.8.0
 
 ### Set up shell environment
 
