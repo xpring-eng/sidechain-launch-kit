@@ -104,6 +104,14 @@ class SidechainParams:
         configs_dir: Optional[str] = None,
         interactive: bool = False,
     ) -> None:
+        """
+        Process command-line args for spinning up a sidechain.
+
+        Args:
+            configs_dir: Pass the config folder directly in. Usually passed in via
+                command args/env vars.
+            interactive: Whether the REPL should be started.
+        """
         args = _parse_args()
 
         # set up debug params

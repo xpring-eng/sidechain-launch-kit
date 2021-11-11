@@ -10,6 +10,14 @@ class Account:
     """Account in the XRPL"""
 
     def __init__(self: Account, *, account_id: str, nickname: str, seed: str) -> None:
+        """
+        Initialize an account.
+
+        Args:
+            account_id: The account address.
+            nickname: The shortened nickname for the account.
+            seed: The seed for the wallet for the account.
+        """
         self.account_id = account_id
         self.nickname = nickname
         self.seed = seed

@@ -24,6 +24,16 @@ class Sidechain(Chain):
         command_logs: Optional[List[Optional[str]]] = None,
         run_server: Optional[List[bool]] = None,
     ) -> None:
+        """
+        Initialize a Sidechain.
+
+        Args:
+            exe: The location of the rippled exe.
+            configs: The config files associated with this chain.
+            command_logs: The location of the log files.
+            run_server: Whether to start each of the servers.
+            extra_args: Extra args to pass into starting the server.
+        """
         if not configs:
             raise ValueError("Must specify at least one config")
 

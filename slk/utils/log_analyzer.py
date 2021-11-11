@@ -34,6 +34,12 @@ class LogLine:
     )
 
     def __init__(self: LogLine, line: str) -> None:
+        """
+        Initialize a log line.
+
+        Args:
+            line: the text of the log line.
+        """
         self.raw_line = line
         self.json_data = None
 

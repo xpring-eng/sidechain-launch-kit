@@ -73,6 +73,13 @@ class SidechainRepl(cmd.Cmd):
         clear_screen()
 
     def __init__(self: SidechainRepl, mc_chain: Chain, sc_chain: Chain) -> None:
+        """
+        Initialize the sidechain REPL.
+
+        Args:
+            mc_chain: The Chain representing the mainchain.
+            sc_chain: The Chain representing the sidechain.
+        """
         super().__init__()
         assert mc_chain.is_alias("door") and sc_chain.is_alias("door")
         self.mc_chain = mc_chain

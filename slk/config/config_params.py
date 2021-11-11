@@ -45,6 +45,7 @@ def _parse_args() -> argparse.Namespace:
 
 class ConfigParams:
     def __init__(self: ConfigParams) -> None:
+        """Process command-line args for creating the config files."""
         args = _parse_args()
 
         if "RIPPLED_SIDECHAIN_CFG_DIR" in _ENV_VARS:

@@ -15,6 +15,12 @@ class Section:
         return None
 
     def __init__(self: Section, name: str) -> None:
+        """
+        Initialize a section of the config file.
+
+        Args:
+            name: The name of the section.
+        """
         self._set_init(True)
         self._name = name
         # lines contains all non key-value pairs
@@ -64,6 +70,12 @@ class Section:
 
 class ConfigFile:
     def __init__(self: ConfigFile, *, file_name: str) -> None:
+        """
+        Parse a config file and initialize the ConfigFile object.
+
+        Args:
+            file_name: The name/location of the config file.
+        """
         # parse the file
         self._file_name = file_name
         self._sections: Dict[str, Section] = {}

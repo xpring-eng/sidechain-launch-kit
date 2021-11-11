@@ -25,6 +25,15 @@ class Node:
         command_log: Optional[str] = None,
         name: str,
     ) -> None:
+        """
+        Initialize a Node.
+
+        Args:
+            config: The config file associated with this node.
+            exe: The location of the rippled exe.
+            command_log: The location of the log file.
+            name: The name of the node (used for printing purposes).
+        """
         section = config.port_ws_admin_local
         self.websocket_uri = f"{section.protocol}://{section.ip}:{section.port}"
         self.ip = section.ip
@@ -39,6 +48,7 @@ class Node:
         if self.command_log is not None:
             with open(self.command_log, "w") as f:
                 f.write("# Start \n")
+        # TODO: actually use `command_log`
 
     @property
     def config_file_name(self: Node) -> str:
