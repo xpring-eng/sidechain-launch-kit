@@ -7,7 +7,7 @@ import os
 import pprint
 import time
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Set, Union, cast
+from typing import Any, Dict, List, Optional, Set, Tuple, Union, cast
 
 from tabulate import tabulate
 
@@ -124,6 +124,22 @@ class SidechainRepl(cmd.Cmd):
         else:
             return [c for c in known_assets if c.startswith(text)]
 
+    def _get_chain_args(
+        self: SidechainRepl, args: List[str]
+    ) -> Tuple[List[Chain], List[str]]:
+        chains = [self.mc_chain, self.sc_chain]
+        chain_names = ["mainchain", "sidechain"]
+
+        if args and args[0] in chain_names:
+            chain_names = [args[0]]
+            if args[0] == "mainchain":
+                chains = [self.mc_chain]
+            else:
+                chains = [self.sc_chain]
+            args.pop(0)
+
+        return chains, chain_names
+
     ##################
     # addressbook
     def do_addressbook(self: SidechainRepl, line: str) -> None:
@@ -135,17 +151,8 @@ class SidechainRepl(cmd.Cmd):
             )
             return
 
-        chains = [self.mc_chain, self.sc_chain]
-        chain_names = ["mainchain", "sidechain"]
+        chains, chain_names = self._get_chain_args(args)
         nickname = None
-
-        if args and args[0] in ["mainchain", "sidechain"]:
-            chain_names = [args[0]]
-            if args[0] == "mainchain":
-                chains = [self.mc_chain]
-            else:
-                chains = [self.sc_chain]
-            args.pop(0)
 
         if args:
             nickname = args[0]
@@ -201,15 +208,7 @@ class SidechainRepl(cmd.Cmd):
             return
 
         # which chain
-        chains = [self.mc_chain, self.sc_chain]
-        chain_names = ["mainchain", "sidechain"]
-        if args and args[arg_index] in ["mainchain", "sidechain"]:
-            chain_names = [args[0]]
-            arg_index += 1
-            if chain_names[0] == "mainchain":
-                chains = [self.mc_chain]
-            else:
-                chains = [self.sc_chain]
+        chains, chain_names = self._get_chain_args(args)
 
         # account
         account_ids: List[Optional[Account]] = [None] * len(chains)
@@ -315,15 +314,7 @@ class SidechainRepl(cmd.Cmd):
                 "help."
             )
             return
-        chains = [self.mc_chain, self.sc_chain]
-        chain_names = ["mainchain", "sidechain"]
-        if args and args[0] in ["mainchain", "sidechain"]:
-            chain_names = [args[0]]
-            args.pop(0)
-            if chain_names[0] == "mainchain":
-                chains = [self.mc_chain]
-            else:
-                chains = [self.sc_chain]
+        chains, chain_names = self._get_chain_args(args)
 
         account_ids: List[Optional[Account]] = [None] * len(chains)
         if args:
@@ -706,16 +697,7 @@ class SidechainRepl(cmd.Cmd):
             )
             return
 
-        chains = [self.mc_chain, self.sc_chain]
-        chain_names = ["mainchain", "sidechain"]
-
-        if args and args[0] in ["mainchain", "sidechain"]:
-            chain_names = [args[0]]
-            if args[0] == "mainchain":
-                chains = [self.mc_chain]
-            else:
-                chains = [self.sc_chain]
-            args.pop(0)
+        chains, chain_names = self._get_chain_args(args)
 
         result = get_server_info(chains, chain_names)
 
@@ -954,18 +936,9 @@ class SidechainRepl(cmd.Cmd):
             print('Error: Too many arguments to ious command. Type "help" for help.')
             return
 
-        chains = [self.mc_chain, self.sc_chain]
-        chain_names = ["mainchain", "sidechain"]
+        chains, chain_names = self._get_chain_args(args)
+
         nickname = None
-
-        if args and args[0] in ["mainchain", "sidechain"]:
-            chain_names = [args[0]]
-            if args[0] == "mainchain":
-                chains = [self.mc_chain]
-            else:
-                chains = [self.sc_chain]
-            args.pop(0)
-
         if args:
             nickname = args[0]
 
