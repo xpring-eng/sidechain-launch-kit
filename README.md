@@ -30,25 +30,31 @@ To simplify managing library dependencies and the virtual environment, this pack
 ### Environment variables
 
 The python scripts need to know the locations of two files and one directory.
-These can be specified either through command line arguments or by setting
-environment variables.
+These can be specified through command line arguments, by adding variables in
+the `.env` file, or by setting environment variables.
 
 1. The location of the rippled executable used for main chain servers. Either
-   set the environment variable `RIPPLED_MAINCHAIN_EXE` or use the command line
-   switch `--exe_mainchain`. Until a new RPC is integrated into the main branch
-   (this will happen very soon), use the code built from the sidechain branch as
-   the main chain exe.
+   set the environment variable `RIPPLED_MAINCHAIN_EXE` (in your system or in
+   the `.env` file) or use the command line switch `--exe_mainchain`. Until a
+   new RPC is integrated into the main branch (this will happen very soon),
+   use the code built from the sidechain branch as the main chain exe.
 2. The location of the rippled executable used for side chain servers. Either
-   set the environment variable `RIPPLED_SIDECHAIN_EXE` or use the command line
-   switch `--exe_sidechain`. This should be the rippled executable built from
-   the sidechain branch.
+   set the environment variable `RIPPLED_SIDECHAIN_EXE` (in your system or in
+   the `.env` file) or use the command line switch `--exe_sidechain`. This
+   should be the rippled executable built from the sidechain branch.
 3. The location of the directory that has the rippled configuration files.
-   Either set the environment variable `RIPPLED_SIDECHAIN_CFG_DIR` or use the
-   command line switch `--cfgs_dir`. The configuration files do not exist yet.
-   There is a script to create these for you. For now, just choose a location
-   where the files should live and make sure that directory exists.
+   Either set the environment variable `RIPPLED_SIDECHAIN_CFG_DIR` (in your
+   system or in the `.env` file) or use the command line switch `--cfgs_dir`.
+   The configuration files do not exist yet. There is a script to create these
+   for you. For now, just choose a location  where the files should live and
+   make sure that directory exists.
+4. The number of federators to have in the sidechain. This must be a number
+   between 1 and 8. Either set the environment variable `NUM_FEDERATORS` (in
+   your system or in the `.env` file) or use the command line switch
+   `--num_federators`. The script that creates the config files uses this
+   number to create the right config files for that number of federators.
 
-Setting environment variables can be very convient. For example, a small script
+Setting environment variables can be very convenient. For example, a small script
 can be sourced to set these environment variables when working with side chains.
 
 
