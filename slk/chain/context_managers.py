@@ -5,6 +5,7 @@ from typing import Generator, List, Optional
 
 from slk.chain.chain import Chain
 from slk.chain.node import Node
+from slk.chain.sidechain import Sidechain
 from slk.classes.config_file import ConfigFile
 
 
@@ -38,3 +39,32 @@ def single_node_chain(
             chain.shutdown()
         if run_server and server_running:
             node.stop_server()
+
+
+# TODO: rename this method to better represent what it does
+# Start a chain for a network with the config files matched by
+# `config_file_prefix*/rippled.cfg`
+@contextmanager
+def sidechain_network(
+    *,
+    exe: str,
+    configs: List[ConfigFile],
+    command_logs: Optional[List[Optional[str]]] = None,
+    run_server: Optional[List[bool]] = None,
+    extra_args: Optional[List[List[str]]] = None,
+) -> Generator[Chain, None, None]:
+    """Start a ripple testnet and return a chain"""
+    try:
+        chain = None
+        chain = Sidechain(
+            exe,
+            configs,
+            command_logs=command_logs,
+            run_server=run_server,
+            extra_args=extra_args,
+        )
+        chain.wait_for_validated_ledger()
+        yield chain
+    finally:
+        if chain:
+            chain.shutdown()

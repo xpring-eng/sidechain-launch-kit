@@ -4,8 +4,7 @@ from __future__ import annotations
 import glob
 import os
 import time
-from contextlib import contextmanager
-from typing import Any, Dict, Generator, List, Optional, Set, Union
+from typing import Any, Dict, List, Optional, Set, Union
 
 from xrpl.models import FederatorInfo
 
@@ -179,32 +178,3 @@ class Sidechain(Chain):
             node = self.nodes[i]
             node.stop_server()
             self.running_server_indexes.discard(i)
-
-
-# TODO: rename this method to better represent what it does
-# Start a chain for a network with the config files matched by
-# `config_file_prefix*/rippled.cfg`
-@contextmanager
-def sidechain_network(
-    *,
-    exe: str,
-    configs: List[ConfigFile],
-    command_logs: Optional[List[Optional[str]]] = None,
-    run_server: Optional[List[bool]] = None,
-    extra_args: Optional[List[List[str]]] = None,
-) -> Generator[Chain, None, None]:
-    """Start a ripple testnet and return a chain"""
-    try:
-        chain = None
-        chain = Sidechain(
-            exe,
-            configs,
-            command_logs=command_logs,
-            run_server=run_server,
-            extra_args=extra_args,
-        )
-        chain.wait_for_validated_ledger()
-        yield chain
-    finally:
-        if chain:
-            chain.shutdown()

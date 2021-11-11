@@ -21,8 +21,7 @@ from typing import Any, Callable, List
 
 from slk.chain.chain import Chain
 from slk.chain.chain_setup import setup_mainchain, setup_sidechain
-from slk.chain.context_managers import single_node_chain
-from slk.chain.sidechain import sidechain_network
+from slk.chain.context_managers import sidechain_network, single_node_chain
 from slk.chain.xchain_transfer import main_to_side_transfer, side_to_main_transfer
 from slk.classes.common import disable_eprint, eprint
 from slk.classes.config_file import ConfigFile
