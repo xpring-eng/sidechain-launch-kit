@@ -65,12 +65,12 @@ def simple_test(mc_chain: Chain, sc_chain: Chain, params: SidechainParams) -> No
 
 def _configs_for_testnet(config_file_prefix: str) -> List[ConfigFile]:
     p = Path(config_file_prefix)
-    dir = p.parent
-    file = p.name
+    folder = p.parent
+    file_name = p.name
     file_names = []
-    for f in os.listdir(dir):
-        cfg = os.path.join(dir, f, "rippled.cfg")
-        if f.startswith(file) and os.path.exists(cfg):
+    for f in os.listdir(folder):
+        cfg = os.path.join(folder, f, "rippled.cfg")
+        if f.startswith(file_name) and os.path.exists(cfg):
             file_names.append(cfg)
     file_names.sort()
     return [ConfigFile(file_name=f) for f in file_names]
