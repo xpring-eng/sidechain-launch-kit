@@ -29,6 +29,7 @@ from xrpl.utils import drops_to_xrp
 
 from slk.chain.chain import Chain, balances_data
 from slk.classes.common import Account, same_amount_new_value
+from slk.repl.repl_functionality import get_account_info
 
 
 def clear_screen() -> None:
@@ -342,17 +343,8 @@ class SidechainRepl(cmd.Cmd):
 
         assert not args
 
-        results: List[Dict[str, Any]] = []
-        for chain, chain_name, acc in zip(chains, chain_names, account_ids):
-            result = chain.get_account_info(acc)
-            # TODO: figure out how to get this to work for both lists and individual
-            # accounts
-            # TODO: refactor substitute_nicknames to handle the chain name too
-            chain_short_name = "main" if chain_name == "mainchain" else "side"
-            for res in result:
-                chain.substitute_nicknames(res)
-                res["account"] = chain_short_name + " " + res["account"]
-            results += result
+        results = get_account_info(chains, chain_names, account_ids)
+
         print(
             tabulate(
                 results,
