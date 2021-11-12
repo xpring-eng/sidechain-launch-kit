@@ -1,17 +1,10 @@
 ## Introduction
 
-See the instructions [here](README.md) for how to install
-the necessary dependencies and run an interactive shell that will spin up a set
-of federators on your local machine and allow you to transfer assets between the
-main chain and a side chain.
+See the instructions [here](README.md) for how to install the necessary dependencies and run an interactive shell that will spin up a set of federators on your local machine and allow you to transfer assets between the main chain and a side chain.
 
-For all these scripts, make sure the `RIPPLED_MAINCHAIN_EXE`,
-`RIPPLED_SIDECHAIN_EXE`, and `RIPPLED_SIDECHAIN_CFG_DIR` environment variables
-are correctly set, and the side chain configuration files exist. Also make sure the python
-dependencies are installed and the virtual environment is activated.
+For all these scripts, make sure the `RIPPLED_MAINCHAIN_EXE`, `RIPPLED_SIDECHAIN_EXE`, `RIPPLED_SIDECHAIN_CFG_DIR`, and `NUM_FEDERATORS` environment variables are correctly set, and the side chain configuration files exist.
 
-Note: the unit tests do not use the configuration files, so the `RIPPLED_SIDECHAIN_CFG_DIR` is
-not needed for that script.
+Note: the unit tests do not use the configuration files, so the `RIPPLED_SIDECHAIN_CFG_DIR` is not needed for that script.
 
 ## Dev Env Setup
 
@@ -39,7 +32,6 @@ To enable autocompletion and other functionality from your shell, add `pyenv` to
 
 These steps assume that you're using a [Zsh](http://zsh.sourceforge.net/) shell. For other shells, see the [`pyenv` README](https://github.com/pyenv/pyenv#basic-github-checkout).
 
-
 * Add `pyenv init` to your Zsh shell:
 
         echo -e 'if command -v pyenv 1>/dev/null 2>&1; then\n  eval "$(pyenv init -)"\nfi' >> ~/.zshrc
@@ -50,11 +42,7 @@ These steps assume that you're using a [Zsh](http://zsh.sourceforge.net/) shell.
 
 ## Unit tests
 
-The "tests" directory contains a simple unit test. It take several minutes to
-run, and will create the necessary configuration files, start a test main chain
-in standalone mode, and a test side chain with 5 federators, and do some simple
-cross chain transactions. Side chains do not yet have extensive tests. Testing
-is being actively worked on.
+The "tests" directory contains a simple unit test. It take several minutes to run, and will create the necessary configuration files, start a test main chain in standalone mode, and a test side chain with 5 federators, and do some simple cross-chain transactions. Side chains do not yet have extensive tests. Testing is being actively worked on.
 
 To run the tests, change directories to the `bin/sidechain/python/tests` directory and type:
 ```
@@ -82,27 +70,13 @@ simple_xchain_transfer_test.py .                                         [100%]
 ## Scripts
 ### riplrepl.py
 
-This is an interactive shell for experimenting with side chains. It will spin up
-a test main chain running in standalone mode, and a test side chain with five
-federators - all running on the local machine. There are commands to make
-payments within a chain, make cross chain payments, check balances, check server
-info, and check federator info. There is a simple "help" system, but more
-documentation is needed for this tool (or more likely we need to replace this
-with some web front end).
+This is an interactive shell for experimenting with side chains. It will spin up a test main chain running in standalone mode, and a test side chain with five federators - all running on the local machine. There are commands to make payments within a chain, make cross-chain payments, check balances, check server info, and check federator info. There is a simple "help" system, but more documentation is needed for this tool (or more likely we need to replace this with some web front end).
 
-Note: a "repl" is another name for an interactive shell. It stands for
-"read-eval-print-loop". It is pronounced "rep-ul".
+Note: a "repl" is another name for an interactive shell. It stands for "read-eval-print-loop". It is pronounced "rep-ul".
 
 ### create_config_file.py
 
-This is a script used to create the config files needed to run a test side chain
-on your local machine. To run this, make sure the rippled is built,
-`RIPPLED_MAINCHAIN_EXE`, `RIPPLED_SIDECHAIN_EXE`, and
-`RIPPLED_SIDECHAIN_CFG_DIR` environment variables are correctly set, and the
-side chain configuration files exist. Also make sure the python dependencies are
-installed and the virtual environment is activated. Running this will create
-config files in the directory specified by the `RIPPLED_SIDECHAIN_CFG_DIR`
-environment variable.
+This is a script used to create the config files needed to run a test side chain on your local machine. To run this, make sure the rippled is built, `RIPPLED_MAINCHAIN_EXE`, `RIPPLED_SIDECHAIN_EXE`, `RIPPLED_SIDECHAIN_CFG_DIR`, and `NUM_FEDERATORS` environment variables are correctly set, and the side chain configuration files exist. Also make sure the python dependencies are installed and the virtual environment is activated. Running this will create config files in the directory specified by the `RIPPLED_SIDECHAIN_CFG_DIR` environment variable.
 
 ### log_analyzer.py
 
@@ -112,12 +86,7 @@ This is a script used to take structured log files and convert them to json for 
 
 ### sidechain.py
 
-A python module that can be used to write python scripts to interact with
-side chains. This is used to write unit tests and the interactive shell. To write
-a standalone script, look at how the tests are written in
-`test/simple_xchain_transfer_test.py`. The idea is to call
-`sidechain._multinode_with_callback`, which sets up the two chains, and place
-your code in the callback. For example:
+A python module that can be used to write python scripts to interact with side chains. This is used to write unit tests and the interactive shell. To write a standalone script, look at how the tests are written in `test/simple_xchain_transfer_test.py`. The idea is to call `sidechain._multinode_with_callback`, which sets up the two chains, and place your code in the callback. For example:
 
 ```
 def multinode_test(params: Params):
@@ -129,15 +98,9 @@ def multinode_test(params: Params):
                                        setup_user_accounts=False)
 ```
 
-The functions `sidechain.main_to_side_transfer` and
-`sidechain.side_to_main_transfer` can be used as convenience functions to initiate
-cross chain transfers. Of course, these transactions can also be initiated with
-a payment to the door account with the memo data set to the destination account
-on the destination chain (which is what those convenience functions do under the
-hood).
+The functions `sidechain.main_to_side_transfer` and `sidechain.side_to_main_transfer` can be used as convenience functions to initiate cross chain transfers. Of course, these transactions can also be initiated with a payment to the door account with the memo data set to the destination account on the destination chain (which is what those convenience functions do under the hood).
 
-Transactions execute asynchonously. Use the function
-`test_utils.wait_for_balance_change` to ensure a transaction has completed.
+Transactions execute asynchonously. Use the function `test_utils.wait_for_balance_change` to ensure a transaction has completed.
 
 ### transaction.py
 
