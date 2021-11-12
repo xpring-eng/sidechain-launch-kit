@@ -78,13 +78,13 @@ Note: a "repl" is another name for an interactive shell. It stands for "read-eva
 
 This is a script used to create the config files needed to run a test side chain on your local machine. To run this, make sure the rippled is built, `RIPPLED_MAINCHAIN_EXE`, `RIPPLED_SIDECHAIN_EXE`, `RIPPLED_SIDECHAIN_CFG_DIR`, and `NUM_FEDERATORS` environment variables are correctly set, and the side chain configuration files exist. Also make sure the python dependencies are installed and the virtual environment is activated. Running this will create config files in the directory specified by the `RIPPLED_SIDECHAIN_CFG_DIR` environment variable.
 
-### log_analyzer.py
+### utils/log_analyzer.py
 
 This is a script used to take structured log files and convert them to json for easier debugging.
 
 ## Python modules
 
-### sidechain.py
+### sidechain_interaction.py
 
 A python module that can be used to write python scripts to interact with side chains. This is used to write unit tests and the interactive shell. To write a standalone script, look at how the tests are written in `test/simple_xchain_transfer_test.py`. The idea is to call `sidechain._multinode_with_callback`, which sets up the two chains, and place your code in the callback. For example:
 
@@ -102,69 +102,18 @@ The functions `sidechain.main_to_side_transfer` and `sidechain.side_to_main_tran
 
 Transactions execute asynchonously. Use the function `test_utils.wait_for_balance_change` to ensure a transaction has completed.
 
-### transaction.py
+### chain/chain.py
 
-A python module for transactions. Currently there are transactions for:
+Python module for an application. An application is responsible for local network (or single server) and an address book that maps aliases to accounts.
 
-* Payment
-* Trust (trust set)
-* SetRegularKey
-* SignerLisetSet
-* AccountSet
-* Offer
-* Ticket
-* Hook (experimental - useful paying with the hook amendment from XRPL Labs).
-
-Typically, a transaction is submitted through the call operator on an `App` object. For example, to make a payment from the account `alice` to the account `bob` for 500 XRP:
-```
-    mc_app(Payment(account=alice, destination=bob, amount=xrp_to_drops(500)))
-```
-(where mc_app is an App object representing the main chain).
-
-### command.py
-
-A python module for RPC commands. Currently there are commands for:
-* PathFind
-* Sign
-* LedgerAccept (for standalone mode)
-* Stop
-* LogLevel
-* WalletPropose
-* ValidationCreate
-* AccountInfo
-* AccountLines
-* AccountTx
-* BookOffers
-* BookSubscription
-* ServerInfo
-* FederatorInfo
-* Subscribe
-
-### common.py
-
-Python module for common ledger objects, including:
-* Account
-* Asset
-* Path
-* Pathlist
-
-### app.py
-
-Python module for an application. An application is responsible for local
-network (or single server) and an address book that maps aliases to accounts.
-
-### config_file.py
+### classes/config_file.py
 
 Python module representing a config file that is read from disk.
 
-### interactive.py
+### repl.py
 
 Python module with the implementation of the RiplRepl interactive shell.
 
-### ripple_client.py
+### chain/sidechain.py
 
-A python module representing a rippled server.
-
-### testnet.py
-
-A python module representing a rippled testnet running on the local machine.
+A Python module representing a sidechain running on the local machine.
