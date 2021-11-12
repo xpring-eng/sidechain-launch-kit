@@ -54,6 +54,7 @@ def sidechain_network(
     extra_args: Optional[List[List[str]]] = None,
 ) -> Generator[Chain, None, None]:
     """Start a ripple testnet and return a chain"""
+    chain = None
     try:
         chain = Sidechain(
             exe,

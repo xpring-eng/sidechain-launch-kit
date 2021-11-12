@@ -56,11 +56,14 @@ class Sidechain(Chain):
         # we want tests to start from the same empty state every time
         for config in configs:
             db_path = config.database_path.get_line()
+            print("db_path", db_path, db_path and os.path.isdir(db_path))
             if db_path and os.path.isdir(db_path):
                 files = glob.glob(f"{db_path}/**", recursive=True)
+                print("db files", files)
                 for f in files:
                     if os.path.isdir(f):
                         continue
+                    print("Unlinking", f)
                     os.unlink(f)
 
         node_num = 0
