@@ -44,26 +44,28 @@ These steps assume that you're using a [Zsh](http://zsh.sourceforge.net/) shell.
 
 The "tests" directory contains a simple unit test. It take several minutes to run, and will create the necessary configuration files, start a test main chain in standalone mode, and a test side chain with 5 federators, and do some simple cross-chain transactions. Side chains do not yet have extensive tests. Testing is being actively worked on.
 
-To run the tests, change directories to the `bin/sidechain/python/tests` directory and type:
+To run the tests, type:
 ```
-pytest
+poetry run pytest tests
 ```
 
 To capture logging information and to set the log level (to help with debugging), type this instead:
 ```
-pytest --log-file=log.txt --log-file-level=info
+poetry run pytest tests --full-trace --log-file=log.txt --log-file-level=info
 ```
 
 The response should be something like the following:
 ```
 ============================= test session starts ==============================
-platform linux -- Python 3.8.5, pytest-6.2.5, py-1.10.0, pluggy-1.0.0
-rootdir: /home/swd/projs/ripple/mine/bin/sidechain/python/tests
+platform darwin -- Python 3.9.1, pytest-6.2.5, py-1.11.0, pluggy-1.0.0
+rootdir: /Users/mvadari/Documents/sidechain-launch-kit
+plugins: anyio-3.3.4
 collected 1 item
 
-simple_xchain_transfer_test.py .                                         [100%]
+tests/simple_xchain_transfer_test.py .                              [100%]
 
-======================== 1 passed in 215.20s (0:03:35) =========================
+======================== 1 passed in 221.90s (0:03:41) =========================
+
 
 ```
 
