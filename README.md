@@ -22,6 +22,10 @@ To simplify managing library dependencies and the virtual environment, this pack
 
         curl -sSL https://raw.githubusercontent.com/python-poetry/poetry/master/get-poetry.py | python - poetry install
 
+* Install Python dependencies in the virtual env:
+
+        poetry install
+
 ### Environment variables
 
 The python scripts need to know the locations of two files and one directory. These can be specified through command line arguments, by adding variables in the `.env` file, or by setting environment variables.
