@@ -72,7 +72,7 @@ class Node:
         print(f"Starting server {self.name}")
         fout = open(server_out, "w")
         self.process = subprocess.Popen(
-            to_run + extra_args, stdout=fout, stderr=subprocess.STDOUT
+            ["sudo"] + to_run + extra_args, stdout=fout, stderr=subprocess.STDOUT
         )
         self.pid = self.process.pid
         print(
@@ -83,7 +83,9 @@ class Node:
     def stop_server(self: Node, *, server_out: str = os.devnull) -> None:
         to_run = [self.exe, "--conf", self.config_file_name]
         fout = open(os.devnull, "w")
-        subprocess.Popen(to_run + ["stop"], stdout=fout, stderr=subprocess.STDOUT)
+        subprocess.Popen(
+            ["sudo"] + to_run + ["stop"], stdout=fout, stderr=subprocess.STDOUT
+        )
 
         assert self.process is not None
         self.process.wait()
