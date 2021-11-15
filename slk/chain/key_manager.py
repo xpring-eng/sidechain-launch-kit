@@ -4,7 +4,7 @@ from typing import Dict, List, Optional, Union
 
 from tabulate import tabulate
 
-from slk.classes.common import Account
+from slk.classes.account import Account
 
 
 class KeyManager:

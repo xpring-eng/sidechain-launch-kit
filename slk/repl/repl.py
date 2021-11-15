@@ -25,7 +25,7 @@ from xrpl.models import (
 )
 
 from slk.chain.chain import Chain
-from slk.classes.common import Account
+from slk.classes.account import Account
 from slk.repl.repl_functionality import (
     get_account_info,
     get_balances_data,

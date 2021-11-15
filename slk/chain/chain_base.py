@@ -7,7 +7,7 @@ from xrpl.models import IssuedCurrency
 from slk.chain.asset_aliases import AssetAliases
 from slk.chain.key_manager import KeyManager
 from slk.chain.node import Node
-from slk.classes.common import Account
+from slk.classes.account import Account
 from slk.classes.config_file import ConfigFile
 
 ROOT_ACCOUNT = Account(

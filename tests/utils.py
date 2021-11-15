@@ -9,7 +9,7 @@ from tabulate import tabulate
 from xrpl.models import XRP, Amount, IssuedCurrencyAmount, Subscribe
 
 from slk.chain.chain import Chain
-from slk.classes.common import Account
+from slk.classes.account import Account
 from slk.repl.repl_functionality import get_balances_data
 
 MC_SUBSCRIBE_QUEUE = []

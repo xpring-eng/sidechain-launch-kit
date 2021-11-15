@@ -15,7 +15,7 @@ from xrpl.models import (
 from xrpl.utils import drops_to_xrp
 
 from slk.chain.chain import Chain
-from slk.classes.common import Account
+from slk.classes.account import Account
 
 
 def _removesuffix(phrase: str, suffix: str) -> str:
