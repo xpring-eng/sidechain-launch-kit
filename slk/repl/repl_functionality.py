@@ -1,11 +1,19 @@
 import os
-from typing import Any, Dict, List, Optional, Tuple
+import time
+from typing import Any, Dict, List, Optional, Tuple, cast
 
-from xrpl.models import is_xrp
+from xrpl.models import (
+    IssuedCurrency,
+    IssuedCurrencyAmount,
+    Memo,
+    Payment,
+    TrustSet,
+    is_xrp,
+)
 from xrpl.utils import drops_to_xrp
 
 from slk.chain.chain import Chain
-from slk.classes.common import Account
+from slk.classes.common import Account, same_amount_new_value
 
 
 def _removesuffix(phrase: str, suffix: str) -> str:
@@ -143,3 +151,69 @@ def get_federator_info(
         return data
 
     return get_fed_info_table(info_dict), get_pending_tx_info(info_dict, verbose)
+
+
+def set_up_ious(mc_chain: Chain, sc_chain: Chain) -> None:
+    mc_asset = IssuedCurrency(
+        currency="USD", issuer=mc_chain.account_from_alias("root").account_id
+    )
+    sc_asset = IssuedCurrency(
+        currency="USD", issuer=sc_chain.account_from_alias("door").account_id
+    )
+    mc_chain.add_asset_alias(mc_asset, "rrr")
+    sc_chain.add_asset_alias(sc_asset, "ddd")
+    mc_chain.send_signed(
+        TrustSet(
+            account=mc_chain.account_from_alias("alice").account_id,
+            limit_amount=cast(
+                IssuedCurrencyAmount, same_amount_new_value(mc_asset, 1_000_000)
+            ),
+        )
+    )
+
+    # create brad account on the side chain and set the trust line
+    memos = [
+        Memo.from_dict(
+            {"MemoData": sc_chain.account_from_alias("brad").account_id_str_as_hex()}
+        )
+    ]
+    mc_chain.send_signed(
+        Payment(
+            account=mc_chain.account_from_alias("alice").account_id,
+            destination=mc_chain.account_from_alias("door").account_id,
+            amount=str(3000 * 1_000_000),
+            memos=memos,
+        )
+    )
+    mc_chain.maybe_ledger_accept()
+
+    # create a trust line to alice and pay her USD/rrr
+    mc_chain.send_signed(
+        TrustSet(
+            account=mc_chain.account_from_alias("alice").account_id,
+            limit_amount=cast(
+                IssuedCurrencyAmount, same_amount_new_value(mc_asset, 1_000_000)
+            ),
+        )
+    )
+    mc_chain.maybe_ledger_accept()
+    mc_chain.send_signed(
+        Payment(
+            account=mc_chain.account_from_alias("root").account_id,
+            destination=mc_chain.account_from_alias("alice").account_id,
+            amount=cast(IssuedCurrencyAmount, same_amount_new_value(mc_asset, 10_000)),
+        )
+    )
+    mc_chain.maybe_ledger_accept()
+
+    time.sleep(2)
+
+    # create a trust line for brad
+    sc_chain.send_signed(
+        TrustSet(
+            account=sc_chain.account_from_alias("brad").account_id,
+            limit_amount=cast(
+                IssuedCurrencyAmount, same_amount_new_value(sc_asset, 1_000_000)
+            ),
+        )
+    )

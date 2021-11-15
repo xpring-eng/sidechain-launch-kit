@@ -17,7 +17,6 @@ from xrpl.models import (
     AccountTx,
     Amount,
     Currency,
-    IssuedCurrency,
     IssuedCurrencyAmount,
     Memo,
     Payment,
@@ -31,6 +30,7 @@ from slk.repl.repl_functionality import (
     get_account_info,
     get_federator_info,
     get_server_info,
+    set_up_ious,
 )
 
 
@@ -1206,77 +1206,7 @@ class SidechainRepl(cmd.Cmd):
     # setup_ious
 
     def do_setup_ious(self: SidechainRepl, line: str) -> None:
-        mc_chain = self.mc_chain
-        sc_chain = self.sc_chain
-        mc_asset = IssuedCurrency(
-            currency="USD", issuer=mc_chain.account_from_alias("root").account_id
-        )
-        sc_asset = IssuedCurrency(
-            currency="USD", issuer=sc_chain.account_from_alias("door").account_id
-        )
-        mc_chain.add_asset_alias(mc_asset, "rrr")
-        sc_chain.add_asset_alias(sc_asset, "ddd")
-        mc_chain.send_signed(
-            TrustSet(
-                account=mc_chain.account_from_alias("alice").account_id,
-                limit_amount=cast(
-                    IssuedCurrencyAmount, same_amount_new_value(mc_asset, 1_000_000)
-                ),
-            )
-        )
-
-        # create brad account on the side chain and set the trust line
-        memos = [
-            Memo.from_dict(
-                {
-                    "MemoData": sc_chain.account_from_alias(
-                        "brad"
-                    ).account_id_str_as_hex()
-                }
-            )
-        ]
-        mc_chain.send_signed(
-            Payment(
-                account=mc_chain.account_from_alias("alice").account_id,
-                destination=mc_chain.account_from_alias("door").account_id,
-                amount=str(3000 * 1_000_000),
-                memos=memos,
-            )
-        )
-        mc_chain.maybe_ledger_accept()
-
-        # create a trust line to alice and pay her USD/rrr
-        mc_chain.send_signed(
-            TrustSet(
-                account=mc_chain.account_from_alias("alice").account_id,
-                limit_amount=cast(
-                    IssuedCurrencyAmount, same_amount_new_value(mc_asset, 1_000_000)
-                ),
-            )
-        )
-        mc_chain.maybe_ledger_accept()
-        mc_chain.send_signed(
-            Payment(
-                account=mc_chain.account_from_alias("root").account_id,
-                destination=mc_chain.account_from_alias("alice").account_id,
-                amount=cast(
-                    IssuedCurrencyAmount, same_amount_new_value(mc_asset, 10_000)
-                ),
-            )
-        )
-        mc_chain.maybe_ledger_accept()
-
-        time.sleep(2)
-
-        # create a trust line for brad
-        sc_chain.send_signed(
-            TrustSet(
-                account=sc_chain.account_from_alias("brad").account_id,
-                limit_amount=cast(
-                    IssuedCurrencyAmount, same_amount_new_value(sc_asset, 1_000_000)
-                ),
-            )
-        )
+        return set_up_ious(self.mc_chain, self.sc_chain)
 
     # setup_ious
     ##################
