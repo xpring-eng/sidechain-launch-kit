@@ -978,17 +978,17 @@ class SidechainRepl(cmd.Cmd):
             return
         args.pop(0)
 
-        (alias, accountStr, amountStr) = args
+        (alias, account_str, amountStr) = args
 
         if not chain.is_asset_alias(alias):
             print(f"Error: The alias {alias} does not exists.")
             return
 
-        if not chain.is_alias(accountStr):
-            print(f"Error: The issuer {accountStr} is not part of the address book.")
+        if not chain.is_alias(account_str):
+            print(f"Error: The issuer {account_str} is not part of the address book.")
             return
 
-        account = chain.account_from_alias(accountStr)
+        account = chain.account_from_alias(account_str)
 
         amount: Optional[Union[int, float]] = None
         try:
@@ -1230,7 +1230,7 @@ class SidechainRepl(cmd.Cmd):
             return
         args.pop(0)
 
-        accountStr = args[0]
+        account_str = args[0]
         args.pop(0)
 
         out_file = None
@@ -1240,11 +1240,11 @@ class SidechainRepl(cmd.Cmd):
 
         assert not args
 
-        if not chain.is_alias(accountStr):
-            print(f"Error: The issuer {accountStr} is not part of the address book.")
+        if not chain.is_alias(account_str):
+            print(f"Error: The issuer {account_str} is not part of the address book.")
             return
 
-        account = chain.account_from_alias(accountStr)
+        account = chain.account_from_alias(account_str)
 
         result = json.dumps(
             chain.request(AccountTx(account=account.account_id)), indent=1
@@ -1301,7 +1301,7 @@ class SidechainRepl(cmd.Cmd):
             return
         args.pop(0)
 
-        accountStr = args[0]
+        account_str = args[0]
         args.pop(0)
 
         out_file = args[0]
@@ -1309,11 +1309,11 @@ class SidechainRepl(cmd.Cmd):
 
         assert not args
 
-        if not chain.is_alias(accountStr):
-            print(f"Error: The issuer {accountStr} is not part of the address book.")
+        if not chain.is_alias(account_str):
+            print(f"Error: The issuer {account_str} is not part of the address book.")
             return
 
-        account = chain.account_from_alias(accountStr)
+        account = chain.account_from_alias(account_str)
 
         def _subscribe_callback(v: Dict[str, Any]) -> None:
             with open(out_file, "a") as f:
