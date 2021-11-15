@@ -7,7 +7,7 @@ import os
 import pprint
 import time
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Set, Union, cast
+from typing import Any, Dict, List, Optional, Set, Tuple, Union, cast
 
 from tabulate import tabulate
 
@@ -17,18 +17,23 @@ from xrpl.models import (
     AccountTx,
     Amount,
     Currency,
-    IssuedCurrency,
     IssuedCurrencyAmount,
     Memo,
     Payment,
     Subscribe,
     TrustSet,
-    is_xrp,
 )
-from xrpl.utils import drops_to_xrp
 
-from slk.chain.chain import Chain, balances_data
+from slk.chain.chain import Chain
 from slk.classes.common import Account, same_amount_new_value
+from slk.repl.repl_functionality import (
+    get_account_info,
+    get_balances_data,
+    get_federator_info,
+    get_server_info,
+    set_up_accounts,
+    set_up_ious,
+)
 
 
 def clear_screen() -> None:
@@ -58,13 +63,6 @@ def _file_to_hex(filename: Path) -> str:
     return binascii.hexlify(content).decode("utf8")
 
 
-def _removesuffix(phrase: str, suffix: str) -> str:
-    if suffix and phrase.endswith(suffix):
-        return phrase[: -len(suffix)]
-    else:
-        return phrase[:]
-
-
 class SidechainRepl(cmd.Cmd):
     """Simple repl for interacting with side chains"""
 
@@ -81,6 +79,9 @@ class SidechainRepl(cmd.Cmd):
         assert mc_chain.is_alias("door") and sc_chain.is_alias("door")
         self.mc_chain = mc_chain
         self.sc_chain = sc_chain
+
+    ##################
+    # complete helpers
 
     def _complete_chain(self: SidechainRepl, text: str, line: str) -> List[str]:
         if not text:
@@ -128,6 +129,38 @@ class SidechainRepl(cmd.Cmd):
         else:
             return [c for c in known_assets if c.startswith(text)]
 
+    # complete helpers
+    ##################
+
+    ##################
+    # do helpers
+    def _get_chain_args(
+        self: SidechainRepl, args: List[str]
+    ) -> Tuple[List[Chain], List[str]]:
+        chains = [self.mc_chain, self.sc_chain]
+        chain_names = ["mainchain", "sidechain"]
+
+        if args and args[0] in chain_names:
+            chain_names = [args[0]]
+            if args[0] == "mainchain":
+                chains = [self.mc_chain]
+            else:
+                chains = [self.sc_chain]
+            args.pop(0)
+
+        return chains, chain_names
+
+    def _get_chain_arg(self: SidechainRepl, arg: str) -> Optional[Chain]:
+        if arg not in ["mainchain", "sidechain"]:
+            print('Error: First argument must specify the chain. Type "help" for help.')
+            return None
+        if arg == "mainchain":
+            return self.mc_chain
+        return self.sc_chain
+
+    # do helpers
+    ##################
+
     ##################
     # addressbook
     def do_addressbook(self: SidechainRepl, line: str) -> None:
@@ -139,17 +172,8 @@ class SidechainRepl(cmd.Cmd):
             )
             return
 
-        chains = [self.mc_chain, self.sc_chain]
-        chain_names = ["mainchain", "sidechain"]
+        chains, chain_names = self._get_chain_args(args)
         nickname = None
-
-        if args and args[0] in ["mainchain", "sidechain"]:
-            chain_names = [args[0]]
-            if args[0] == "mainchain":
-                chains = [self.mc_chain]
-            else:
-                chains = [self.sc_chain]
-            args.pop(0)
 
         if args:
             nickname = args[0]
@@ -205,15 +229,7 @@ class SidechainRepl(cmd.Cmd):
             return
 
         # which chain
-        chains = [self.mc_chain, self.sc_chain]
-        chain_names = ["mainchain", "sidechain"]
-        if args and args[arg_index] in ["mainchain", "sidechain"]:
-            chain_names = [args[0]]
-            arg_index += 1
-            if chain_names[0] == "mainchain":
-                chains = [self.mc_chain]
-            else:
-                chains = [self.sc_chain]
+        chains, chain_names = self._get_chain_args(args)
 
         # account
         account_ids: List[Optional[Account]] = [None] * len(chains)
@@ -258,7 +274,7 @@ class SidechainRepl(cmd.Cmd):
         # should be done analyzing all the params
         assert arg_index == len(args)
 
-        result = balances_data(chains, chain_names, account_ids, assets, in_drops)
+        result = get_balances_data(chains, chain_names, account_ids, assets, in_drops)
         print(
             tabulate(
                 result,
@@ -319,15 +335,7 @@ class SidechainRepl(cmd.Cmd):
                 "help."
             )
             return
-        chains = [self.mc_chain, self.sc_chain]
-        chain_names = ["mainchain", "sidechain"]
-        if args and args[0] in ["mainchain", "sidechain"]:
-            chain_names = [args[0]]
-            args.pop(0)
-            if chain_names[0] == "mainchain":
-                chains = [self.mc_chain]
-            else:
-                chains = [self.sc_chain]
+        chains, chain_names = self._get_chain_args(args)
 
         account_ids: List[Optional[Account]] = [None] * len(chains)
         if args:
@@ -342,17 +350,8 @@ class SidechainRepl(cmd.Cmd):
 
         assert not args
 
-        results: List[Dict[str, Any]] = []
-        for chain, chain_name, acc in zip(chains, chain_names, account_ids):
-            result = chain.get_account_info(acc)
-            # TODO: figure out how to get this to work for both lists and individual
-            # accounts
-            # TODO: refactor substitute_nicknames to handle the chain name too
-            chain_short_name = "main" if chain_name == "mainchain" else "side"
-            for res in result:
-                chain.substitute_nicknames(res)
-                res["account"] = chain_short_name + " " + res["account"]
-            results += result
+        results = get_account_info(chains, chain_names, account_ids)
+
         print(
             tabulate(
                 results,
@@ -412,23 +411,9 @@ class SidechainRepl(cmd.Cmd):
             args[4]: units (XRP if not specified)
         """
 
-        in_drops = False
-        if args and args[-1] in ["xrp", "drops"]:
-            unit = args[-1]
-            if unit == "xrp":
-                in_drops = False
-            elif unit == "drops":
-                in_drops = True
-
-        chain = None
-        if args[0] not in ["mainchain", "sidechain"]:
-            print('Error: First argument must specify the chain. Type "help" for help.')
+        chain = self._get_chain_arg(args[0])
+        if not chain:
             return
-
-        if args[0] == "mainchain":
-            chain = self.mc_chain
-        else:
-            chain = self.sc_chain
 
         src_nickname = args[1]
         if src_nickname == "door":
@@ -454,6 +439,21 @@ class SidechainRepl(cmd.Cmd):
             return
         dst_account = chain.account_from_alias(dst_nickname)
 
+        asset = None
+        in_drops = False
+
+        if len(args) > 4:
+            asset_alias = args[4]
+            if asset_alias in ["xrp", "drops"]:
+                if asset_alias == "xrp":
+                    in_drops = False
+                elif asset_alias == "drops":
+                    in_drops = True
+            if not chain.is_asset_alias(asset_alias):
+                print(f"Error: {args[4]} is an invalid asset alias.")
+                return
+            asset = chain.asset_from_alias(asset_alias)
+
         amt_value: Optional[Union[int, float]] = None
         try:
             amt_value = int(args[3])
@@ -468,15 +468,6 @@ class SidechainRepl(cmd.Cmd):
         if amt_value is None:
             print(f"Error: {args[3]} is an invalid amount.")
             return
-
-        asset = None
-
-        if len(args) > 4:
-            asset_alias = args[4]
-            if not chain.is_asset_alias(asset_alias):
-                print(f"Error: {args[4]} is an invalid asset alias.")
-                return
-            asset = chain.asset_from_alias(asset_alias)
 
         if (
             (asset is not None and isinstance(asset, XRP)) or asset is None
@@ -561,15 +552,6 @@ class SidechainRepl(cmd.Cmd):
             args[4]: units (XRP if not specified)
         """
 
-        in_drops = False
-        if args and args[-1] in ["xrp", "drops"]:
-            unit = args[-1]
-            if unit == "xrp":
-                in_drops = False
-            elif unit == "drops":
-                in_drops = True
-            args.pop()
-
         chain = None
         if args[0] not in ["mainchain", "sidechain"]:
             print('Error: First argument must specify the chain. Type "help" for help.')
@@ -581,9 +563,8 @@ class SidechainRepl(cmd.Cmd):
         else:
             chain = self.sc_chain
             other_chain = self.mc_chain
-        args.pop(0)
 
-        nickname = args[0]
+        nickname = args[1]
         if nickname == "door":
             print(
                 'Error: The "door" account can not be used as the source of cross '
@@ -594,9 +575,8 @@ class SidechainRepl(cmd.Cmd):
             print(f"Error: {nickname} is not in the address book")
             return
         src_account = chain.account_from_alias(nickname)
-        args.pop(0)
 
-        nickname = args[0]
+        nickname = args[2]
         if nickname == "door":
             print(
                 'Error: The "door" account can not be used as the destination of cross '
@@ -607,34 +587,35 @@ class SidechainRepl(cmd.Cmd):
             print(f"Error: {nickname} is not in the address book")
             return
         dst_account = other_chain.account_from_alias(nickname)
-        args.pop(0)
 
         amt_value: Optional[Union[int, float]] = None
-        try:
-            amt_value = int(args[0])
-        except:
-            try:
-                if not in_drops:
-                    amt_value = float(args[0])
-            except:
-                pass
-
-        if amt_value is None:
-            print(f"Error: {args[0]} is an invalid amount.")
-            return
-        args.pop(0)
-
+        in_drops = False
         asset = None
 
-        if args:
-            asset_alias = args[0]
-            args.pop(0)
+        if len(args) > 4:
+            asset_alias = args[4]
+            if asset_alias in ["xrp", "drops"]:
+                if asset_alias == "xrp":
+                    in_drops = False
+                elif asset_alias == "drops":
+                    in_drops = True
             if not chain.is_asset_alias(asset_alias):
                 print(f"Error: {asset_alias} is an invalid asset alias.")
                 return
             asset = chain.asset_from_alias(asset_alias)
 
-        assert not args
+        try:
+            amt_value = int(args[3])
+        except:
+            try:
+                if not in_drops:
+                    amt_value = float(args[3])
+            except:
+                pass
+
+        if amt_value is None:
+            print(f"Error: {args[3]} is an invalid amount.")
+            return
 
         if (
             (asset is not None and isinstance(asset, XRP)) or asset is None
@@ -648,7 +629,6 @@ class SidechainRepl(cmd.Cmd):
         else:
             amt = str(amt_value)
 
-        assert not args
         memos = [Memo(memo_data=dst_account.account_id_str_as_hex())]
         door_account = chain.account_from_alias("door")
         chain.send_signed(
@@ -711,45 +691,6 @@ class SidechainRepl(cmd.Cmd):
     ##################
     # server_info
     def do_server_info(self: SidechainRepl, line: str) -> None:
-        def data_dict(chain: Chain, chain_name: str) -> Dict[str, Any]:
-            # get the server_info data for a specific chain
-            # TODO: refactor get_brief_server_info to make this method less clunky
-            filenames = [c.get_file_name() for c in chain.get_configs()]
-            chains = []
-            for i in range(len(filenames)):
-                chains.append(f"{chain_name} {i}")
-            data: Dict[str, Any] = {"node": chains}
-            data.update(
-                {
-                    "pid": chain.get_pids(),
-                    "config": filenames,
-                    "running": chain.get_running_status(),
-                }
-            )
-            bsi = chain.get_brief_server_info()
-            data.update(bsi)
-            return data
-
-        def result_from_dicts(
-            d1: Dict[str, Any], d2: Optional[Dict[str, Any]] = None
-        ) -> List[Dict[str, Any]]:
-            # combine the info from the chains, refactor dict for tabulate
-            data = []
-            for i in range(len(d1["node"])):
-                new_dict = {key: d1[key][i] for key in d1}
-                data.append(new_dict)
-            if d2 is not None:
-                for i in range(len(d2["node"])):
-                    new_dict = {key: d2[key][i] for key in d2}
-                    data.append(new_dict)
-            # shorten config filenames for space
-            all_filenames = [d["config"] for d in data]
-            cp = os.path.commonprefix(all_filenames)
-            short_filenames = [os.path.relpath(f, cp) for f in all_filenames]
-            for i in range(len(data)):
-                data[i]["config"] = short_filenames[i]
-            return data
-
         args = line.split()
         if len(args) > 1:
             print(
@@ -758,22 +699,10 @@ class SidechainRepl(cmd.Cmd):
             )
             return
 
-        chains = [self.mc_chain, self.sc_chain]
-        chain_names = ["mainchain", "sidechain"]
+        chains, chain_names = self._get_chain_args(args)
 
-        if args and args[0] in ["mainchain", "sidechain"]:
-            chain_names = [args[0]]
-            if args[0] == "mainchain":
-                chains = [self.mc_chain]
-            else:
-                chains = [self.sc_chain]
-            args.pop(0)
+        result = get_server_info(chains, chain_names)
 
-        data_dicts = [
-            data_dict(chain, _removesuffix(name, "chain"))
-            for chain, name in zip(chains, chain_names)
-        ]
-        result = result_from_dicts(*data_dicts)
         print(
             tabulate(
                 result,
@@ -827,83 +756,22 @@ class SidechainRepl(cmd.Cmd):
         except:
             f'Error: federator_info bad arguments: {args}. Type "help" for help.'
 
-        def get_fed_info_table(
-            info_dict: Dict[int, Dict[str, Any]]
-        ) -> List[Dict[str, Any]]:
-            data = []
-            for (k, v) in info_dict.items():
-                new_dict = {}
-                info = v["info"]
-                new_dict["public_key"] = info["public_key"]
-                mc = info["mainchain"]
-                sc = info["sidechain"]
-                new_dict["main last_sent_seq"] = mc["last_transaction_sent_seq"]
-                new_dict["side last_sent_seq"] = sc["last_transaction_sent_seq"]
-                new_dict["main seq"] = mc["sequence"]
-                new_dict["side seq"] = sc["sequence"]
-                new_dict["main num_pending"] = len(mc["pending_transactions"])
-                new_dict["side num_pending"] = len(sc["pending_transactions"])
-                new_dict["main sync_state"] = (
-                    mc["listener_info"]["state"]
-                    if "state" in mc["listener_info"]
-                    else None
-                )
-                new_dict["side sync_state"] = (
-                    sc["listener_info"]["state"]
-                    if "state" in sc["listener_info"]
-                    else None
-                )
-                data.append(new_dict)
-            return data
-
-        def get_pending_tx_info(
-            info_dict: Dict[int, Dict[str, Any]], verbose: bool = False
-        ) -> List[Dict[str, Any]]:
-            data = []
-            for (k, v) in info_dict.items():
-                for chain in ["mainchain", "sidechain"]:
-                    short_chain_name = chain[:4] + " " + str(k)
-                    pending = v["info"][chain]["pending_transactions"]
-                    for t in pending:
-                        amt = t["amount"]
-                        if is_xrp(amt):
-                            amt = drops_to_xrp(amt)
-                        if not verbose:
-                            pending_info = {
-                                "chain": short_chain_name,
-                                "amount": amt,
-                                "dest_acct": t["destination_account"],
-                                "hash": t["hash"],
-                                "num_sigs": len(t["signatures"]),
-                            }
-                            data.append(pending_info)
-                        else:
-                            for sig in t["signatures"]:
-                                pending_info = {
-                                    "chain": short_chain_name,
-                                    "amount": amt,
-                                    "dest_acct": t["destination_account"],
-                                    "hash": t["hash"],
-                                    "num_sigs": len(t["signatures"]),
-                                    "sigs": sig["public_key"],
-                                }
-            return data
-
         info_dict = self.sc_chain.federator_info(indexes)
         if raw:
             pprint.pprint(info_dict)
             return
 
+        info_table, pending_tx_data = get_federator_info(info_dict, verbose)
+
         print(
             tabulate(
-                get_fed_info_table(info_dict),
+                info_table,
                 headers="keys",
                 tablefmt="presto",
             )
         )
         # pending
         print("")  # newline separation
-        pending_tx_data = get_pending_tx_info(info_dict, verbose)
         if len(pending_tx_data) > 0:
             tabulate(
                 pending_tx_data,
@@ -955,16 +823,9 @@ class SidechainRepl(cmd.Cmd):
             )
             return
 
-        chain = None
-
-        if args[0] not in ["mainchain", "sidechain"]:
-            print('Error: The first argument must be "mainchain" or "sidechain".')
+        chain = self._get_chain_arg(args[0])
+        if not chain:
             return
-
-        if args[0] == "mainchain":
-            chain = self.mc_chain
-        else:
-            chain = self.sc_chain
         args.pop(0)
 
         for alias in args:
@@ -1005,16 +866,9 @@ class SidechainRepl(cmd.Cmd):
             )
             return
 
-        chain = None
-
-        if args[0] not in ["mainchain", "sidechain"]:
-            print('Error: The first argument must be "mainchain" or "sidechain".')
+        chain = self._get_chain_arg(args[0])
+        if not chain:
             return
-
-        if args[0] == "mainchain":
-            chain = self.mc_chain
-        else:
-            chain = self.sc_chain
         args.pop(0)
 
         (alias, currency, issuer) = args
@@ -1070,18 +924,9 @@ class SidechainRepl(cmd.Cmd):
             print('Error: Too many arguments to ious command. Type "help" for help.')
             return
 
-        chains = [self.mc_chain, self.sc_chain]
-        chain_names = ["mainchain", "sidechain"]
+        chains, chain_names = self._get_chain_args(args)
+
         nickname = None
-
-        if args and args[0] in ["mainchain", "sidechain"]:
-            chain_names = [args[0]]
-            if args[0] == "mainchain":
-                chains = [self.mc_chain]
-            else:
-                chains = [self.sc_chain]
-            args.pop(0)
-
         if args:
             nickname = args[0]
 
@@ -1128,29 +973,22 @@ class SidechainRepl(cmd.Cmd):
             )
             return
 
-        chain = None
-
-        if args[0] not in ["mainchain", "sidechain"]:
-            print('Error: The first argument must be "mainchain" or "sidechain".')
+        chain = self._get_chain_arg(args[0])
+        if not chain:
             return
-
-        if args[0] == "mainchain":
-            chain = self.mc_chain
-        else:
-            chain = self.sc_chain
         args.pop(0)
 
-        (alias, accountStr, amountStr) = args
+        (alias, account_str, amountStr) = args
 
         if not chain.is_asset_alias(alias):
             print(f"Error: The alias {alias} does not exists.")
             return
 
-        if not chain.is_alias(accountStr):
-            print(f"Error: The issuer {accountStr} is not part of the address book.")
+        if not chain.is_alias(account_str):
+            print(f"Error: The issuer {account_str} is not part of the address book.")
             return
 
-        account = chain.account_from_alias(accountStr)
+        account = chain.account_from_alias(account_str)
 
         amount: Optional[Union[int, float]] = None
         try:
@@ -1213,14 +1051,9 @@ class SidechainRepl(cmd.Cmd):
 
         chain = None
 
-        if args[0] not in ["mainchain", "sidechain"]:
-            print('Error: The first argument must be "mainchain" or "sidechain".')
+        chain = self._get_chain_arg(args[0])
+        if not chain:
             return
-
-        if args[0] == "mainchain":
-            chain = self.mc_chain
-        else:
-            chain = self.sc_chain
         args.pop(0)
 
         assert not args
@@ -1351,100 +1184,10 @@ class SidechainRepl(cmd.Cmd):
     ##################
 
     ##################
-    # hook
-
-    # TODO: re-add hook functionality
-    # def do_hook(self: SidechainRepl, line: str) -> None:
-    #     args = line.split()
-    #     if len(args) != 2:
-    #         print(
-    #             f'Error: hook command takes two arguments. Type "help" for help.'
-    #         )
-    #         return
-    #     nickname = args[0]
-    #     args.pop(0)
-    #     hook_name = args[0]
-    #     args.pop(0)
-    #     assert not args
-
-    #     if nickname == 'door':
-    #         print(f'Error: Cannot set hooks on the "door" account.')
-    #         return
-
-    #     if not self.sc_chain.is_alias(nickname):
-    #         print(f'Error: {nickname} is not in the address book')
-    #         return
-
-    #     src_account = self.sc_chain.account_from_alias(nickname)
-
-    #     if hook_name not in _valid_hook_names:
-    #         print(
-    #             f'{hook_name} is not a valid hook. Valid hooks are: '
-    #             f'{_valid_hook_names}'
-    #         )
-    #         return
-
-    #     hook_file = HOOKS_DIR / hook_name / f'{hook_name}.wasm'
-    #     if not os.path.isfile(hook_file):
-    #         print(f'Error: The hook file {hook_file} does not exist.')
-    #         return
-    #     create_code = _file_to_hex(hook_file)
-    #     self.sc_chain.send_signed(
-    #         SetHook(account=src_account.account_id, create_code=create_code)
-    #     )
-    #     self.sc_chain.maybe_ledger_accept()
-
-    # def complete_hook(
-    #     self: SidechainRepl, text: str, line: str, begidx: int, endidx: int
-    # ) -> List[str]:
-    #     args = line.split()
-    #     arg_num = len(args)
-    #     if not text:
-    #         arg_num += 1
-    #     if arg_num == 2:  # account
-    #         return self._complete_account(text, line, chain_name='sidechain')
-    #     elif arg_num == 3:  # hook
-    #         if not text:
-    #             return _valid_hook_names
-    #         return [c for c in _valid_hook_names if c.startswith(text)]
-    #     return []
-
-    # def help_hook(self: SidechainRepl) -> None:
-    #     print('\n'.join([
-    #         'hook account hook_name',
-    #         'Set a hook on a sidechain account',
-    #     ]))
-
-    # hook
-    ##################
-
-    ##################
-    # quit
-    def do_quit(self: SidechainRepl, line: str) -> bool:
-        print("Thank you for using RiplRepl. Goodbye.\n\n")
-        return True
-
-    def help_quit(self: SidechainRepl) -> None:
-        print("Exit the program.")
-
-    # quit
-    ##################
-
-    ##################
     # setup_accounts
 
     def do_setup_accounts(self: SidechainRepl, line: str) -> None:
-        for a in ["alice", "bob"]:
-            self.mc_chain.create_account(a)
-        for a in ["brad", "carol"]:
-            self.sc_chain.create_account(a)
-        amt = str(5000 * 1_000_000)
-        src = self.mc_chain.account_from_alias("root")
-        dst = self.mc_chain.account_from_alias("alice")
-        self.mc_chain.send_signed(
-            Payment(account=src.account_id, destination=dst.account_id, amount=amt)
-        )
-        self.mc_chain.maybe_ledger_accept()
+        set_up_accounts(self.mc_chain, self.sc_chain)
 
     # setup_accounts
     ##################
@@ -1453,91 +1196,9 @@ class SidechainRepl(cmd.Cmd):
     # setup_ious
 
     def do_setup_ious(self: SidechainRepl, line: str) -> None:
-        mc_chain = self.mc_chain
-        sc_chain = self.sc_chain
-        mc_asset = IssuedCurrency(
-            currency="USD", issuer=mc_chain.account_from_alias("root").account_id
-        )
-        sc_asset = IssuedCurrency(
-            currency="USD", issuer=sc_chain.account_from_alias("door").account_id
-        )
-        mc_chain.add_asset_alias(mc_asset, "rrr")
-        sc_chain.add_asset_alias(sc_asset, "ddd")
-        mc_chain.send_signed(
-            TrustSet(
-                account=mc_chain.account_from_alias("alice").account_id,
-                limit_amount=cast(
-                    IssuedCurrencyAmount, same_amount_new_value(mc_asset, 1_000_000)
-                ),
-            )
-        )
-
-        # create brad account on the side chain and set the trust line
-        memos = [
-            Memo.from_dict(
-                {
-                    "MemoData": sc_chain.account_from_alias(
-                        "brad"
-                    ).account_id_str_as_hex()
-                }
-            )
-        ]
-        mc_chain.send_signed(
-            Payment(
-                account=mc_chain.account_from_alias("alice").account_id,
-                destination=mc_chain.account_from_alias("door").account_id,
-                amount=str(3000 * 1_000_000),
-                memos=memos,
-            )
-        )
-        mc_chain.maybe_ledger_accept()
-
-        # create a trust line to alice and pay her USD/rrr
-        mc_chain.send_signed(
-            TrustSet(
-                account=mc_chain.account_from_alias("alice").account_id,
-                limit_amount=cast(
-                    IssuedCurrencyAmount, same_amount_new_value(mc_asset, 1_000_000)
-                ),
-            )
-        )
-        mc_chain.maybe_ledger_accept()
-        mc_chain.send_signed(
-            Payment(
-                account=mc_chain.account_from_alias("root").account_id,
-                destination=mc_chain.account_from_alias("alice").account_id,
-                amount=cast(
-                    IssuedCurrencyAmount, same_amount_new_value(mc_asset, 10_000)
-                ),
-            )
-        )
-        mc_chain.maybe_ledger_accept()
-
-        time.sleep(2)
-
-        # create a trust line for brad
-        sc_chain.send_signed(
-            TrustSet(
-                account=sc_chain.account_from_alias("brad").account_id,
-                limit_amount=cast(
-                    IssuedCurrencyAmount, same_amount_new_value(sc_asset, 1_000_000)
-                ),
-            )
-        )
+        return set_up_ious(self.mc_chain, self.sc_chain)
 
     # setup_ious
-    ##################
-
-    ##################
-    # q
-
-    def do_q(self: SidechainRepl, line: str) -> bool:
-        return self.do_quit(line)
-
-    def help_q(self: SidechainRepl) -> None:
-        return self.help_quit()
-
-    # q
     ##################
 
     ##################
@@ -1554,17 +1215,12 @@ class SidechainRepl(cmd.Cmd):
 
         chain = None
 
-        if args[0] not in ["mainchain", "sidechain"]:
-            print('Error: The first argument must be "mainchain" or "sidechain".')
+        chain = self._get_chain_arg(args[0])
+        if not chain:
             return
-
-        if args[0] == "mainchain":
-            chain = self.mc_chain
-        else:
-            chain = self.sc_chain
         args.pop(0)
 
-        accountStr = args[0]
+        account_str = args[0]
         args.pop(0)
 
         out_file = None
@@ -1574,11 +1230,11 @@ class SidechainRepl(cmd.Cmd):
 
         assert not args
 
-        if not chain.is_alias(accountStr):
-            print(f"Error: The issuer {accountStr} is not part of the address book.")
+        if not chain.is_alias(account_str):
+            print(f"Error: The issuer {account_str} is not part of the address book.")
             return
 
-        account = chain.account_from_alias(accountStr)
+        account = chain.account_from_alias(account_str)
 
         result = json.dumps(
             chain.request(AccountTx(account=account.account_id)), indent=1
@@ -1630,19 +1286,12 @@ class SidechainRepl(cmd.Cmd):
             )
             return
 
-        chain = None
-
-        if args[0] not in ["mainchain", "sidechain"]:
-            print('Error: The first argument must be "mainchain" or "sidechain".')
+        chain = self._get_chain_arg(args[0])
+        if not chain:
             return
-
-        if args[0] == "mainchain":
-            chain = self.mc_chain
-        else:
-            chain = self.sc_chain
         args.pop(0)
 
-        accountStr = args[0]
+        account_str = args[0]
         args.pop(0)
 
         out_file = args[0]
@@ -1650,11 +1299,11 @@ class SidechainRepl(cmd.Cmd):
 
         assert not args
 
-        if not chain.is_alias(accountStr):
-            print(f"Error: The issuer {accountStr} is not part of the address book.")
+        if not chain.is_alias(account_str):
+            print(f"Error: The issuer {account_str} is not part of the address book.")
             return
 
-        account = chain.account_from_alias(accountStr)
+        account = chain.account_from_alias(account_str)
 
         def _subscribe_callback(v: Dict[str, Any]) -> None:
             with open(out_file, "a") as f:
@@ -1689,6 +1338,30 @@ class SidechainRepl(cmd.Cmd):
         )
 
     # subscribe
+    ##################
+
+    ##################
+    # quit
+    def do_quit(self: SidechainRepl, line: str) -> bool:
+        print("Thank you for using RiplRepl. Goodbye.\n\n")
+        return True
+
+    def help_quit(self: SidechainRepl) -> None:
+        print("Exit the program.")
+
+    # quit
+    ##################
+
+    ##################
+    # q
+
+    def do_q(self: SidechainRepl, line: str) -> bool:
+        return self.do_quit(line)
+
+    def help_q(self: SidechainRepl) -> None:
+        return self.help_quit()
+
+    # q
     ##################
 
     ##################

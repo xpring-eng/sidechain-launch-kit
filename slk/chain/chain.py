@@ -14,7 +14,6 @@ from xrpl.models import (
     Subscribe,
 )
 from xrpl.models.transactions.transaction import Transaction
-from xrpl.utils import drops_to_xrp
 
 from slk.chain.chain_base import ChainBase
 from slk.classes.common import Account
@@ -199,35 +198,3 @@ class Chain(ChainBase):
             account_line["peer"] = account_line["account"]
             account_line["account"] = address
         return cast(List[Dict[str, Any]], account_lines)
-
-
-def balances_data(
-    chains: List[Chain],
-    chain_names: List[str],
-    account_ids: Optional[List[Optional[Account]]] = None,
-    assets: Optional[List[List[Currency]]] = None,
-    in_drops: bool = False,
-) -> List[Dict[str, Any]]:
-    if account_ids is None:
-        account_ids = [None] * len(chains)
-
-    if assets is None:
-        # XRP and all assets in the assets alias list
-        assets = [
-            [cast(Currency, XRP())] + cast(List[Currency], c.known_iou_assets())
-            for c in chains
-        ]
-
-    result = []
-    for chain, chain_name, acc, asset in zip(chains, chain_names, account_ids, assets):
-        chain_result = chain.get_balances(acc, asset)
-        for chain_res in chain_result:
-            chain.substitute_nicknames(chain_res)
-            if not in_drops and chain_res["currency"] == "XRP":
-                chain_res["balance"] = drops_to_xrp(chain_res["balance"])
-            else:
-                chain_res["balance"] = int(chain_res["balance"])
-            chain_short_name = "main" if chain_name == "mainchain" else "side"
-            chain_res["account"] = chain_short_name + " " + chain_res["account"]
-        result += chain_result
-    return result

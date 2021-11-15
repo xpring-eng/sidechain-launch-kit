@@ -8,8 +8,9 @@ from typing import Optional
 from tabulate import tabulate
 from xrpl.models import XRP, Amount, IssuedCurrencyAmount, Subscribe
 
-from slk.chain.chain import Chain, balances_data
+from slk.chain.chain import Chain
 from slk.classes.common import Account, same_amount_new_value
+from slk.repl.repl_functionality import get_balances_data
 
 MC_SUBSCRIBE_QUEUE = []
 SC_SUBSCRIBE_QUEUE = []
@@ -78,7 +79,7 @@ def wait_for_balance_change(
 def log_chain_state(mc_chain, sc_chain, log, msg="Chain State"):
     chains = [mc_chain, sc_chain]
     chain_names = ["mainchain", "sidechain"]
-    balances = balances_data(chains, chain_names)
+    balances = get_balances_data(chains, chain_names)
     data_as_str = tabulate(
         balances,
         headers="keys",
