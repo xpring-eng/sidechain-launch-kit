@@ -217,3 +217,17 @@ def set_up_ious(mc_chain: Chain, sc_chain: Chain) -> None:
             ),
         )
     )
+
+
+def set_up_accounts(mc_chain: Chain, sc_chain: Chain) -> None:
+    for a in ["alice", "bob"]:
+        mc_chain.create_account(a)
+    for a in ["brad", "carol"]:
+        sc_chain.create_account(a)
+    amt = str(5000 * 1_000_000)
+    src = mc_chain.account_from_alias("root")
+    dst = mc_chain.account_from_alias("alice")
+    mc_chain.send_signed(
+        Payment(account=src.account_id, destination=dst.account_id, amount=amt)
+    )
+    mc_chain.maybe_ledger_accept()

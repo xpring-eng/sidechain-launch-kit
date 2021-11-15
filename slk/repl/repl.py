@@ -30,6 +30,7 @@ from slk.repl.repl_functionality import (
     get_account_info,
     get_federator_info,
     get_server_info,
+    set_up_accounts,
     set_up_ious,
 )
 
@@ -1187,17 +1188,7 @@ class SidechainRepl(cmd.Cmd):
     # setup_accounts
 
     def do_setup_accounts(self: SidechainRepl, line: str) -> None:
-        for a in ["alice", "bob"]:
-            self.mc_chain.create_account(a)
-        for a in ["brad", "carol"]:
-            self.sc_chain.create_account(a)
-        amt = str(5000 * 1_000_000)
-        src = self.mc_chain.account_from_alias("root")
-        dst = self.mc_chain.account_from_alias("alice")
-        self.mc_chain.send_signed(
-            Payment(account=src.account_id, destination=dst.account_id, amount=amt)
-        )
-        self.mc_chain.maybe_ledger_accept()
+        set_up_accounts(self.mc_chain, self.sc_chain)
 
     # setup_accounts
     ##################
