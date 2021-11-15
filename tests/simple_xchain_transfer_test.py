@@ -8,7 +8,6 @@ from xrpl.utils import xrp_to_drops
 
 from slk.chain.chain import Chain
 from slk.chain.xchain_transfer import main_to_side_transfer, side_to_main_transfer
-from slk.classes.common import disable_eprint, eprint
 from slk.sidechain_interaction import (
     _convert_log_files_to_json,
     _multinode_with_callback,
@@ -16,6 +15,7 @@ from slk.sidechain_interaction import (
     close_mainchain_ledgers,
 )
 from slk.sidechain_params import SidechainParams
+from slk.utils.eprint import disable_eprint, eprint
 from tests.utils import (
     mc_connect_subscription,
     sc_connect_subscription,
