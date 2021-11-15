@@ -3,6 +3,8 @@ import time
 from typing import Any, Dict, List, Optional, Tuple, cast
 
 from xrpl.models import (
+    XRP,
+    Currency,
     IssuedCurrency,
     IssuedCurrencyAmount,
     Memo,
@@ -231,3 +233,35 @@ def set_up_accounts(mc_chain: Chain, sc_chain: Chain) -> None:
         Payment(account=src.account_id, destination=dst.account_id, amount=amt)
     )
     mc_chain.maybe_ledger_accept()
+
+
+def get_balances_data(
+    chains: List[Chain],
+    chain_names: List[str],
+    account_ids: Optional[List[Optional[Account]]] = None,
+    assets: Optional[List[List[Currency]]] = None,
+    in_drops: bool = False,
+) -> List[Dict[str, Any]]:
+    if account_ids is None:
+        account_ids = [None] * len(chains)
+
+    if assets is None:
+        # XRP and all assets in the assets alias list
+        assets = [
+            [cast(Currency, XRP())] + cast(List[Currency], c.known_iou_assets())
+            for c in chains
+        ]
+
+    result = []
+    for chain, chain_name, acc, asset in zip(chains, chain_names, account_ids, assets):
+        chain_result = chain.get_balances(acc, asset)
+        for chain_res in chain_result:
+            chain.substitute_nicknames(chain_res)
+            if not in_drops and chain_res["currency"] == "XRP":
+                chain_res["balance"] = drops_to_xrp(chain_res["balance"])
+            else:
+                chain_res["balance"] = int(chain_res["balance"])
+            chain_short_name = "main" if chain_name == "mainchain" else "side"
+            chain_res["account"] = chain_short_name + " " + chain_res["account"]
+        result += chain_result
+    return result

@@ -24,10 +24,11 @@ from xrpl.models import (
     TrustSet,
 )
 
-from slk.chain.chain import Chain, balances_data
+from slk.chain.chain import Chain
 from slk.classes.common import Account, same_amount_new_value
 from slk.repl.repl_functionality import (
     get_account_info,
+    get_balances_data,
     get_federator_info,
     get_server_info,
     set_up_accounts,
@@ -273,7 +274,7 @@ class SidechainRepl(cmd.Cmd):
         # should be done analyzing all the params
         assert arg_index == len(args)
 
-        result = balances_data(chains, chain_names, account_ids, assets, in_drops)
+        result = get_balances_data(chains, chain_names, account_ids, assets, in_drops)
         print(
             tabulate(
                 result,
