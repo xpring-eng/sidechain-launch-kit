@@ -2,9 +2,8 @@ from __future__ import annotations
 
 import binascii
 import sys
-from typing import Any, Type, Union
+from typing import Any, Type
 
-from xrpl.models import Amount, IssuedCurrency, IssuedCurrencyAmount
 from xrpl.wallet import Wallet
 
 EPRINT_ENABLED = True
@@ -62,14 +61,3 @@ class Account:
 
     def account_id_str_as_hex(self: Account) -> str:
         return binascii.hexlify(self.account_id.encode()).decode("utf-8")
-
-
-def same_amount_new_value(
-    prev_asset: Union[IssuedCurrency, str], new_value: Union[int, str, float]
-) -> Amount:
-    if isinstance(prev_asset, str):
-        return str(new_value)
-    else:
-        return IssuedCurrencyAmount(
-            value=str(new_value), issuer=prev_asset.issuer, currency=prev_asset.currency
-        )

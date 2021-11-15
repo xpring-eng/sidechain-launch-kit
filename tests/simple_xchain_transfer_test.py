@@ -8,7 +8,7 @@ from xrpl.utils import xrp_to_drops
 
 from slk.chain.chain import Chain
 from slk.chain.xchain_transfer import main_to_side_transfer, side_to_main_transfer
-from slk.classes.common import disable_eprint, eprint, same_amount_new_value
+from slk.classes.common import disable_eprint, eprint
 from slk.sidechain_interaction import (
     _convert_log_files_to_json,
     _multinode_with_callback,
@@ -75,7 +75,9 @@ def simple_iou_test(mc_chain: Chain, sc_chain: Chain, params: SidechainParams):
     mc_chain.send_signed(
         TrustSet(
             account=alice.account_id,
-            limit_amount=same_amount_new_value(mc_asset, 1_000_000),
+            limit_amount=IssuedCurrencyAmount.from_issued_currency(
+                mc_asset, str(1_000_000)
+            ),
         )
     )
 
@@ -89,7 +91,9 @@ def simple_iou_test(mc_chain: Chain, sc_chain: Chain, params: SidechainParams):
     mc_chain.send_signed(
         TrustSet(
             account=alice.account_id,
-            limit_amount=same_amount_new_value(mc_asset, 1_000_000),
+            limit_amount=IssuedCurrencyAmount.from_issued_currency(
+                mc_asset, str(1_000_000)
+            ),
         )
     )
     mc_chain.maybe_ledger_accept()
@@ -97,7 +101,7 @@ def simple_iou_test(mc_chain: Chain, sc_chain: Chain, params: SidechainParams):
         Payment(
             account=mc_chain.account_from_alias("root").account_id,
             destination=alice.account_id,
-            amount=same_amount_new_value(mc_asset, 10_000),
+            amount=IssuedCurrencyAmount.from_issued_currency(mc_asset, str(10_000)),
         )
     )
     mc_chain.maybe_ledger_accept()
@@ -106,7 +110,9 @@ def simple_iou_test(mc_chain: Chain, sc_chain: Chain, params: SidechainParams):
     sc_chain.send_signed(
         TrustSet(
             account=adam.account_id,
-            limit_amount=same_amount_new_value(sc_asset, 1_000_000),
+            limit_amount=IssuedCurrencyAmount.from_issued_currency(
+                sc_asset, str(1_000_000)
+            ),
         )
     )
 
@@ -114,9 +120,12 @@ def simple_iou_test(mc_chain: Chain, sc_chain: Chain, params: SidechainParams):
         # even amounts for main to side
         for value in range(10, 20, 2):
             with tst_context(mc_chain, sc_chain):
-                to_send_asset = same_amount_new_value(mc_asset, value)
-                rcv_asset = same_amount_new_value(sc_asset, value)
-                pre_bal = same_amount_new_value(
+                value = str(value)
+                to_send_asset = IssuedCurrencyAmount.from_issued_currency(
+                    mc_asset, value
+                )
+                rcv_asset = IssuedCurrencyAmount.from_issued_currency(sc_asset, value)
+                pre_bal = IssuedCurrencyAmount.from_issued_currency(
                     sc_asset, sc_chain.get_balance(adam, rcv_asset)
                 )
                 main_to_side_transfer(
@@ -128,9 +137,12 @@ def simple_iou_test(mc_chain: Chain, sc_chain: Chain, params: SidechainParams):
         # odd amounts for side to main
         for value in range(9, 19, 2):
             with tst_context(mc_chain, sc_chain):
-                to_send_asset = same_amount_new_value(sc_asset, value)
-                rcv_asset = same_amount_new_value(mc_asset, value)
-                pre_bal = same_amount_new_value(
+                value = str(value)
+                to_send_asset = IssuedCurrencyAmount.from_issued_currency(
+                    sc_asset, value
+                )
+                rcv_asset = IssuedCurrencyAmount.from_issued_currency(mc_asset, value)
+                pre_bal = IssuedCurrencyAmount.from_issued_currency(
                     to_send_asset, mc_chain.get_balance(alice, to_send_asset)
                 )
                 side_to_main_transfer(

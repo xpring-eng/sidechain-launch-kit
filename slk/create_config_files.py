@@ -24,7 +24,7 @@ import traceback
 from pathlib import Path
 from typing import Dict, List, Optional
 
-from xrpl.models import IssuedCurrencyAmount
+from xrpl.models import XRP, IssuedCurrency
 
 from slk.classes.common import eprint
 from slk.config.cfg_strs import generate_sidechain_stanza, get_cfg_str, get_ips_stanza
@@ -211,17 +211,15 @@ if __name__ == "__main__":
     xchain_assets = None
     if params.usd:
         xchain_assets = {}
-        xchain_assets["xrp_xrp_sidechain_asset"] = XChainAsset("0", "0", 1, 1, 200, 200)
+        xchain_assets["xrp_xrp_sidechain_asset"] = XChainAsset(
+            XRP(), XRP(), "1", "1", "200", "200"
+        )
 
         root_account = "rHb9CJAWyB4rj91VRWn96DkukG4bwdtyTh"
-        main_iou_asset = IssuedCurrencyAmount(
-            value="0", currency="USD", issuer=root_account
-        )
-        side_iou_asset = IssuedCurrencyAmount(
-            value="0", currency="USD", issuer=root_account
-        )
+        main_iou_asset = IssuedCurrency(currency="USD", issuer=root_account)
+        side_iou_asset = IssuedCurrency(currency="USD", issuer=root_account)
         xchain_assets["iou_iou_sidechain_asset"] = XChainAsset(
-            main_iou_asset, side_iou_asset, 1, 1, 0.02, 0.02
+            main_iou_asset, side_iou_asset, "1", "1", "0.02", "0.02"
         )
 
     main(params, xchain_assets)

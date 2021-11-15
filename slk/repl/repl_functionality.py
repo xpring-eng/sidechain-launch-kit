@@ -15,7 +15,7 @@ from xrpl.models import (
 from xrpl.utils import drops_to_xrp
 
 from slk.chain.chain import Chain
-from slk.classes.common import Account, same_amount_new_value
+from slk.classes.common import Account
 
 
 def _removesuffix(phrase: str, suffix: str) -> str:
@@ -168,7 +168,8 @@ def set_up_ious(mc_chain: Chain, sc_chain: Chain) -> None:
         TrustSet(
             account=mc_chain.account_from_alias("alice").account_id,
             limit_amount=cast(
-                IssuedCurrencyAmount, same_amount_new_value(mc_asset, 1_000_000)
+                IssuedCurrencyAmount,
+                IssuedCurrencyAmount.from_issued_currency(mc_asset, str(1_000_000)),
             ),
         )
     )
@@ -194,7 +195,8 @@ def set_up_ious(mc_chain: Chain, sc_chain: Chain) -> None:
         TrustSet(
             account=mc_chain.account_from_alias("alice").account_id,
             limit_amount=cast(
-                IssuedCurrencyAmount, same_amount_new_value(mc_asset, 1_000_000)
+                IssuedCurrencyAmount,
+                IssuedCurrencyAmount.from_issued_currency(mc_asset, str(1_000_000)),
             ),
         )
     )
@@ -203,7 +205,10 @@ def set_up_ious(mc_chain: Chain, sc_chain: Chain) -> None:
         Payment(
             account=mc_chain.account_from_alias("root").account_id,
             destination=mc_chain.account_from_alias("alice").account_id,
-            amount=cast(IssuedCurrencyAmount, same_amount_new_value(mc_asset, 10_000)),
+            amount=cast(
+                IssuedCurrencyAmount,
+                IssuedCurrencyAmount.from_issued_currency(mc_asset, str(10_000)),
+            ),
         )
     )
     mc_chain.maybe_ledger_accept()
@@ -215,7 +220,8 @@ def set_up_ious(mc_chain: Chain, sc_chain: Chain) -> None:
         TrustSet(
             account=sc_chain.account_from_alias("brad").account_id,
             limit_amount=cast(
-                IssuedCurrencyAmount, same_amount_new_value(sc_asset, 1_000_000)
+                IssuedCurrencyAmount,
+                IssuedCurrencyAmount.from_issued_currency(sc_asset, str(1_000_000)),
             ),
         )
     )

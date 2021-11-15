@@ -1,7 +1,7 @@
 import json
 from typing import Any, Dict, List, Optional, Tuple, Union
 
-from xrpl.models import Amount
+from xrpl.models import XRP, Amount
 from xrpl.wallet import Wallet
 
 from slk.config.helper_classes import Keypair, Ports, XChainAsset
@@ -59,7 +59,9 @@ def generate_asset_stanzas(assets: Optional[Dict[str, XChainAsset]] = None) -> s
     if assets is None:
         # default to xrp only at a 1:1 value
         assets = {}
-        assets["xrp_xrp_sidechain_asset"] = XChainAsset("0", "0", 1, 1, 400, 400)
+        assets["xrp_xrp_sidechain_asset"] = XChainAsset(
+            XRP(), XRP(), "1", "1", "400", "400"
+        )
 
     index_stanza = """
 [sidechain_assets]"""

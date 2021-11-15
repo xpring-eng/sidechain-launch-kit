@@ -1,11 +1,9 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import Optional, Union
+from typing import Optional
 
-from xrpl.models import Amount
-
-from slk.classes.common import same_amount_new_value
+from xrpl.models import Currency, IssuedCurrencyAmount
 
 
 @dataclass
@@ -37,18 +35,22 @@ class Ports:
 class XChainAsset:
     def __init__(
         self: XChainAsset,
-        main_asset: Amount,
-        side_asset: Amount,
-        main_value: Union[int, float],
-        side_value: Union[int, float],
-        main_refund_penalty: Union[int, float],
-        side_refund_penalty: Union[int, float],
+        main_asset: Currency,
+        side_asset: Currency,
+        main_value: str,
+        side_value: str,
+        main_refund_penalty: str,
+        side_refund_penalty: str,
     ) -> None:
-        self.main_asset = same_amount_new_value(main_asset, main_value)
-        self.side_asset = same_amount_new_value(side_asset, side_value)
-        self.main_refund_penalty = same_amount_new_value(
+        self.main_asset = IssuedCurrencyAmount.from_issued_currency(
+            main_asset, main_value
+        )
+        self.side_asset = IssuedCurrencyAmount.from_issued_currency(
+            side_asset, side_value
+        )
+        self.main_refund_penalty = IssuedCurrencyAmount.from_issued_currency(
             main_asset, main_refund_penalty
         )
-        self.side_refund_penalty = same_amount_new_value(
+        self.side_refund_penalty = IssuedCurrencyAmount.from_issued_currency(
             side_asset, side_refund_penalty
         )
