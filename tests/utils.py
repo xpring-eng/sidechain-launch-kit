@@ -9,7 +9,7 @@ from tabulate import tabulate
 from xrpl.models import XRP, Amount, IssuedCurrencyAmount, Subscribe
 
 from slk.chain.chain import Chain
-from slk.classes.common import Account, same_amount_new_value
+from slk.classes.account import Account
 from slk.repl.repl_functionality import get_balances_data
 
 MC_SUBSCRIBE_QUEUE = []
@@ -46,11 +46,10 @@ def wait_for_balance_change(
         f"{final_diff = }"
     )
     for i in range(30):
-        new_bal = same_amount_new_value(
-            pre_balance,
-            chain.get_balance(
-                acc, XRP() if isinstance(pre_balance, str) else pre_balance
-            ),
+        currency = XRP() if isinstance(pre_balance, str) else pre_balance
+        new_bal = IssuedCurrencyAmount.from_issued_currency(
+            currency,
+            chain.get_balance(acc, currency),
         )
         diff = value_diff(new_bal, pre_balance)
         if new_bal != pre_balance:

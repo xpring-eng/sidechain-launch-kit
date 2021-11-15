@@ -25,7 +25,7 @@ from xrpl.models import (
 )
 
 from slk.chain.chain import Chain
-from slk.classes.common import Account, same_amount_new_value
+from slk.classes.account import Account
 from slk.repl.repl_functionality import (
     get_account_info,
     get_balances_data,
@@ -978,7 +978,7 @@ class SidechainRepl(cmd.Cmd):
             return
         args.pop(0)
 
-        (alias, account_str, amountStr) = args
+        (alias, account_str, amount_str) = args
 
         if not chain.is_asset_alias(alias):
             print(f"Error: The alias {alias} does not exists.")
@@ -992,20 +992,22 @@ class SidechainRepl(cmd.Cmd):
 
         amount: Optional[Union[int, float]] = None
         try:
-            amount = int(amountStr)
+            amount = int(amount_str)
         except:
             try:
-                amount = float(amountStr)
+                amount = float(amount_str)
             except:
                 pass
 
         if amount is None:
-            print(f"Error: Invalid amount {amountStr}")
+            print(f"Error: Invalid amount {amount_str}")
             return
 
         asset = cast(
             IssuedCurrencyAmount,
-            same_amount_new_value(chain.asset_from_alias(alias), amount),
+            IssuedCurrencyAmount.from_issued_currency(
+                chain.asset_from_alias(alias), str(amount)
+            ),
         )
         # TODO: resolve error where repl crashes if account doesn't exist
         chain.send_signed(TrustSet(account=account.account_id, limit_amount=asset))

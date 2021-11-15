@@ -4,13 +4,13 @@
 import sys
 import traceback
 
-from slk.classes.common import disable_eprint, eprint
 from slk.repl import set_hooks_dir
 from slk.sidechain_interaction import (
     multinode_interactive_repl,
     standalone_interactive_repl,
 )
 from slk.sidechain_params import SidechainParams
+from slk.utils.eprint import disable_eprint, eprint
 
 
 def main() -> None:

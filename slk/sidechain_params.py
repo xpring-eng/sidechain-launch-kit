@@ -6,7 +6,7 @@ from typing import Optional
 
 from dotenv import load_dotenv
 
-from slk.classes.common import Account
+from slk.classes.account import Account
 from slk.classes.config_file import ConfigFile
 
 load_dotenv()

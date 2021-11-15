@@ -16,7 +16,7 @@ from xrpl.models import (
 from xrpl.models.transactions.transaction import Transaction
 
 from slk.chain.chain_base import ChainBase
-from slk.classes.common import Account
+from slk.classes.account import Account
 
 
 class Chain(ChainBase):

@@ -524,7 +524,7 @@ websockets = {version = ">=9.0.1 <11.0", markers = "python_version >= \"3.7\" an
 type = "git"
 url = "https://github.com/XRPLF/xrpl-py.git"
 reference = "sidechain"
-resolved_reference = "de2510b33ac7125ddc3352ed67c38bac6037056c"
+resolved_reference = "7c9e6cc775beb046aaab60fe56df9e55201929b7"
 
 [metadata]
 lock-version = "1.1"
