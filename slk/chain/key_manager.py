@@ -8,6 +8,8 @@ from slk.classes.account import Account
 
 
 class KeyManager:
+    """A class that stores account information in easily-accessible ways."""
+
     def __init__(self: KeyManager) -> None:
         """Initialize a KeyManager."""
         self._aliases: Dict[str, Account] = {}  # alias -> account

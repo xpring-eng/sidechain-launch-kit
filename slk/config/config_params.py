@@ -44,6 +44,11 @@ def _parse_args() -> argparse.Namespace:
 
 
 class ConfigParams:
+    """
+    A class that parses and stores the command-line arguments for creating the config
+    files.
+    """
+
     def __init__(self: ConfigParams) -> None:
         """Process command-line args for creating the config files."""
         args = _parse_args()

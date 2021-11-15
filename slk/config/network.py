@@ -11,6 +11,8 @@ from slk.config.helper_classes import Keypair, Ports
 
 
 class Network:
+    """Represents a network of validator nodes and their keypairs."""
+
     def __init__(self: Network, num_nodes: int, start_cfg_index: int) -> None:
         """
         Initialize a Network for config files.
@@ -40,6 +42,8 @@ class Network:
 
 
 class SidechainNetwork(Network):
+    """Represents a sidechain network of federator nodes and their keypairs."""
+
     def __init__(
         self: SidechainNetwork,
         num_federators: int,

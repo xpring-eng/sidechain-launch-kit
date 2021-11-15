@@ -7,6 +7,8 @@ from xrpl.models import IssuedCurrency
 
 
 class AssetAliases:
+    """A class that stores token information in easily-accessible ways."""
+
     def __init__(self: AssetAliases) -> None:
         """Initialize an AssetAliases."""
         self._aliases: Dict[str, IssuedCurrency] = {}  # alias -> IssuedCurrency

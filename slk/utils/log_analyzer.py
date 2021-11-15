@@ -9,6 +9,8 @@ from slk.utils.eprint import eprint
 
 
 class LogLine:
+    """A computer-readable representation of a line in a log file."""
+
     UNSTRUCTURED_RE = re.compile(
         r"""(?x)
                 # The x flag enables insignificant whitespace mode (allowing comments)

@@ -15,7 +15,7 @@ from slk.classes.config_file import ConfigFile
 
 
 class Node:
-    """Client to send commands to the rippled server"""
+    """Represents one node in a chain and its network connection."""
 
     def __init__(
         self: Node,

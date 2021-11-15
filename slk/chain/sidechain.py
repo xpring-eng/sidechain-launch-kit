@@ -14,6 +14,8 @@ from slk.classes.config_file import ConfigFile
 
 
 class Sidechain(Chain):
+    """Representation of one sidechain."""
+
     # If run_server is None, run all the servers.
     # This is useful to help debugging
     def __init__(

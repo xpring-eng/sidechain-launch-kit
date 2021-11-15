@@ -4,6 +4,15 @@ from typing import Any, Dict, List, Optional, Type
 
 
 class _Section:
+    """
+    A computer-readable representation of a section of a rippled.cfg config file.
+
+    e.g.
+    [section_name]
+    section_key_1=value_1
+    section_key_2=value_2
+    """
+
     @classmethod
     def section_header(cls: Type[_Section], line: str) -> Optional[str]:
         """
@@ -70,6 +79,8 @@ class _Section:
 
 
 class ConfigFile:
+    """A computer-readable representation of a rippled.cfg config file."""
+
     def __init__(self: ConfigFile, *, file_name: str) -> None:
         """
         Parse a config file and initialize the ConfigFile object.

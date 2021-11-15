@@ -98,6 +98,8 @@ def _parse_args() -> argparse.Namespace:
 
 
 class SidechainParams:
+    """A class that parses and stores command-line args for starting a sidechain."""
+
     def __init__(
         self: SidechainParams,
         *,
