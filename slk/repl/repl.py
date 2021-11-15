@@ -79,6 +79,9 @@ class SidechainRepl(cmd.Cmd):
         self.mc_chain = mc_chain
         self.sc_chain = sc_chain
 
+    ##################
+    # complete helpers
+
     def _complete_chain(self: SidechainRepl, text: str, line: str) -> List[str]:
         if not text:
             return ["mainchain", "sidechain"]
@@ -125,6 +128,11 @@ class SidechainRepl(cmd.Cmd):
         else:
             return [c for c in known_assets if c.startswith(text)]
 
+    # complete helpers
+    ##################
+
+    ##################
+    # do helpers
     def _get_chain_args(
         self: SidechainRepl, args: List[str]
     ) -> Tuple[List[Chain], List[str]]:
@@ -148,6 +156,9 @@ class SidechainRepl(cmd.Cmd):
         if arg == "mainchain":
             return self.mc_chain
         return self.sc_chain
+
+    # do helpers
+    ##################
 
     ##################
     # addressbook
@@ -399,14 +410,6 @@ class SidechainRepl(cmd.Cmd):
             args[4]: units (XRP if not specified)
         """
 
-        in_drops = False
-        if args and args[-1] in ["xrp", "drops"]:
-            unit = args[-1]
-            if unit == "xrp":
-                in_drops = False
-            elif unit == "drops":
-                in_drops = True
-
         chain = self._get_chain_arg(args[0])
         if not chain:
             return
@@ -435,6 +438,21 @@ class SidechainRepl(cmd.Cmd):
             return
         dst_account = chain.account_from_alias(dst_nickname)
 
+        asset = None
+        in_drops = False
+
+        if len(args) > 4:
+            asset_alias = args[4]
+            if asset_alias in ["xrp", "drops"]:
+                if asset_alias == "xrp":
+                    in_drops = False
+                elif asset_alias == "drops":
+                    in_drops = True
+            if not chain.is_asset_alias(asset_alias):
+                print(f"Error: {args[4]} is an invalid asset alias.")
+                return
+            asset = chain.asset_from_alias(asset_alias)
+
         amt_value: Optional[Union[int, float]] = None
         try:
             amt_value = int(args[3])
@@ -449,15 +467,6 @@ class SidechainRepl(cmd.Cmd):
         if amt_value is None:
             print(f"Error: {args[3]} is an invalid amount.")
             return
-
-        asset = None
-
-        if len(args) > 4:
-            asset_alias = args[4]
-            if not chain.is_asset_alias(asset_alias):
-                print(f"Error: {args[4]} is an invalid asset alias.")
-                return
-            asset = chain.asset_from_alias(asset_alias)
 
         if (
             (asset is not None and isinstance(asset, XRP)) or asset is None
@@ -542,15 +551,6 @@ class SidechainRepl(cmd.Cmd):
             args[4]: units (XRP if not specified)
         """
 
-        in_drops = False
-        if args and args[-1] in ["xrp", "drops"]:
-            unit = args[-1]
-            if unit == "xrp":
-                in_drops = False
-            elif unit == "drops":
-                in_drops = True
-            args.pop()
-
         chain = None
         if args[0] not in ["mainchain", "sidechain"]:
             print('Error: First argument must specify the chain. Type "help" for help.')
@@ -562,9 +562,8 @@ class SidechainRepl(cmd.Cmd):
         else:
             chain = self.sc_chain
             other_chain = self.mc_chain
-        args.pop(0)
 
-        nickname = args[0]
+        nickname = args[1]
         if nickname == "door":
             print(
                 'Error: The "door" account can not be used as the source of cross '
@@ -575,9 +574,8 @@ class SidechainRepl(cmd.Cmd):
             print(f"Error: {nickname} is not in the address book")
             return
         src_account = chain.account_from_alias(nickname)
-        args.pop(0)
 
-        nickname = args[0]
+        nickname = args[2]
         if nickname == "door":
             print(
                 'Error: The "door" account can not be used as the destination of cross '
@@ -588,34 +586,35 @@ class SidechainRepl(cmd.Cmd):
             print(f"Error: {nickname} is not in the address book")
             return
         dst_account = other_chain.account_from_alias(nickname)
-        args.pop(0)
 
         amt_value: Optional[Union[int, float]] = None
-        try:
-            amt_value = int(args[0])
-        except:
-            try:
-                if not in_drops:
-                    amt_value = float(args[0])
-            except:
-                pass
-
-        if amt_value is None:
-            print(f"Error: {args[0]} is an invalid amount.")
-            return
-        args.pop(0)
-
+        in_drops = False
         asset = None
 
-        if args:
-            asset_alias = args[0]
-            args.pop(0)
+        if len(args) > 4:
+            asset_alias = args[4]
+            if asset_alias in ["xrp", "drops"]:
+                if asset_alias == "xrp":
+                    in_drops = False
+                elif asset_alias == "drops":
+                    in_drops = True
             if not chain.is_asset_alias(asset_alias):
                 print(f"Error: {asset_alias} is an invalid asset alias.")
                 return
             asset = chain.asset_from_alias(asset_alias)
 
-        assert not args
+        try:
+            amt_value = int(args[3])
+        except:
+            try:
+                if not in_drops:
+                    amt_value = float(args[3])
+            except:
+                pass
+
+        if amt_value is None:
+            print(f"Error: {args[3]} is an invalid amount.")
+            return
 
         if (
             (asset is not None and isinstance(asset, XRP)) or asset is None
@@ -629,7 +628,6 @@ class SidechainRepl(cmd.Cmd):
         else:
             amt = str(amt_value)
 
-        assert not args
         memos = [Memo(memo_data=dst_account.account_id_str_as_hex())]
         door_account = chain.account_from_alias("door")
         chain.send_signed(
