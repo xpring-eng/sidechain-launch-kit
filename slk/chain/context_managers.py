@@ -1,10 +1,8 @@
 import os
-import time
 from contextlib import contextmanager
 from typing import Generator, List, Optional
 
 from slk.chain.chain import Chain
-from slk.chain.node import Node
 from slk.chain.sidechain import Sidechain
 from slk.classes.config_file import ConfigFile
 
@@ -23,22 +21,20 @@ def single_node_chain(
     """Start a ripple server and return a chain"""
     if extra_args is None:
         extra_args = []
-    server_running = False
     chain = None
-    node = Node(config=config, command_log=command_log, exe=exe, name="mainchain")
     try:
-        if run_server:
-            node.start_server(extra_args, standalone=True, server_out=server_out)
-            server_running = True
-            time.sleep(1.5)  # give process time to startup
-
-        chain = Chain(node=node)
+        chain = Chain(
+            exe,
+            config=config,
+            command_log=command_log,
+            run_server=run_server,
+            extra_args=extra_args,
+            server_out=server_out,
+        )
         yield chain
     finally:
         if chain:
             chain.shutdown()
-        if run_server and server_running:
-            node.stop_server()
 
 
 # TODO: rename this method to better represent what it does
@@ -52,7 +48,7 @@ def sidechain_network(
     command_logs: Optional[List[Optional[str]]] = None,
     run_server: Optional[List[bool]] = None,
     extra_args: Optional[List[List[str]]] = None,
-) -> Generator[Chain, None, None]:
+) -> Generator[Sidechain, None, None]:
     """Start a ripple testnet and return a chain"""
     try:
         chain = Sidechain(

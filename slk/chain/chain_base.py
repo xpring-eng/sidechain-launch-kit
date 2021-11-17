@@ -1,12 +1,24 @@
 from __future__ import annotations
 
 from abc import ABC, abstractmethod
-from typing import Any, Dict, List
+from typing import Any, Callable, Dict, List, Optional, Union, cast
 
-from xrpl.models import IssuedCurrency
+from xrpl.models import (
+    XRP,
+    AccountInfo,
+    AccountLines,
+    Currency,
+    IssuedCurrency,
+    IssuedCurrencyAmount,
+    LedgerAccept,
+    Request,
+    Subscribe,
+    Transaction,
+)
 
 from slk.chain.asset_aliases import AssetAliases
 from slk.chain.key_manager import KeyManager
+from slk.chain.node import Node
 from slk.classes.account import Account
 
 ROOT_ACCOUNT = Account(
@@ -21,16 +33,189 @@ class ChainBase(ABC):
 
     def __init__(
         self: ChainBase,
+        node: Node,
     ) -> None:
+        self.node = node
         self.key_manager = KeyManager()
         self.asset_aliases = AssetAliases()
 
         self.key_manager.add(ROOT_ACCOUNT)
 
-    @abstractmethod
     @property
+    @abstractmethod
     def standalone(self: ChainBase) -> bool:
         pass
+
+    # rippled stuff
+
+    def send_signed(self: ChainBase, txn: Transaction) -> Dict[str, Any]:
+        """Sign then send the given transaction"""
+        if not self.key_manager.is_account(txn.account):
+            raise ValueError("Cannot sign transaction without secret key")
+        account_obj = self.key_manager.get_account(txn.account)
+        return self.node.sign_and_submit(txn, account_obj.wallet)
+
+    def request(self: ChainBase, req: Request) -> Dict[str, Any]:
+        """Send the command to the rippled server"""
+        return self.node.request(req)
+
+    def send_subscribe(
+        self: ChainBase, req: Subscribe, callback: Callable[[Dict[str, Any]], None]
+    ) -> Dict[str, Any]:
+        """Send the subscription command to the rippled server."""
+        if not self.node.client.is_open():
+            self.node.client.open()
+        self.node.client.on("transaction", callback)
+        return self.node.request(req)
+
+    # specific rippled methods
+
+    def maybe_ledger_accept(self: ChainBase) -> None:
+        if not self.standalone:
+            return
+        self.request(LedgerAccept())
+
+    def get_account_info(
+        self: ChainBase, account: Optional[Account] = None
+    ) -> List[Dict[str, Any]]:
+        """
+        Return a dictionary of account info. If account is None, treat as a
+        wildcard (use address book)
+        """
+        if account is None:
+            known_accounts = self.key_manager.known_accounts()
+            return [d for acc in known_accounts for d in self.get_account_info(acc)]
+        try:
+            result = self.request(AccountInfo(account=account.account_id))
+        except:
+            # TODO: better error checking
+            # Most likely the account does not exist on the ledger. Give a balance of 0.
+            return [
+                {
+                    "account": account.account_id,
+                    "balance": "0",
+                    "flags": 0,
+                    "owner_count": 0,
+                    "previous_txn_id": "NA",
+                    "previous_txn_lgr_seq": -1,
+                    "sequence": -1,
+                }
+            ]
+        if "account_data" not in result:
+            raise ValueError("Bad result from account_info command")
+        info = result["account_data"]
+        for dk in ["LedgerEntryType", "index"]:
+            del info[dk]
+        rename_dict = {
+            "Account": "account",
+            "Balance": "balance",
+            "Flags": "flags",
+            "OwnerCount": "owner_count",
+            "PreviousTxnID": "previous_txn_id",
+            "PreviousTxnLgrSeq": "previous_txn_lgr_seq",
+            "Sequence": "sequence",
+        }
+        for key in rename_dict:
+            if key in info:
+                new_key = rename_dict[key]
+                info[new_key] = info[key]
+                del info[key]
+        return [cast(Dict[str, Any], info)]
+
+    def get_balances(
+        self: ChainBase,
+        account: Union[Account, List[Account], None] = None,
+        token: Union[Currency, List[Currency]] = XRP(),
+    ) -> List[Dict[str, Any]]:
+        """
+        Return a list of dicts of account balances. If account is None, treat as a
+        wildcard (use address book)
+        """
+        if account is None:
+            account = self.key_manager.known_accounts()
+        if isinstance(account, list):
+            return [d for acc in account for d in self.get_balances(acc, token)]
+        if isinstance(token, list):
+            return [d for ass in token for d in self.get_balances(account, ass)]
+        if isinstance(token, XRP):
+            try:
+                account_info = self.get_account_info(account)[0]
+                needed_data = ["account", "balance"]
+                account_info = {
+                    "account": account_info["account"],
+                    "balance": account_info["balance"],
+                }
+                account_info.update({"currency": "XRP", "peer": "", "limit": ""})
+                return [account_info]
+            except:
+                # TODO: better error handling
+                # Most likely the account does not exist on the ledger. Give a balance
+                # of zero.
+                return [
+                    {
+                        "account": account,
+                        "balance": 0,
+                        "currency": "XRP",
+                        "peer": "",
+                        "limit": "",
+                    }
+                ]
+        else:
+            assert isinstance(token, IssuedCurrencyAmount)  # for typing
+            try:
+                trustlines = self.get_trust_lines(account)
+                trustlines = [
+                    tl
+                    for tl in trustlines
+                    if (tl["peer"] == token.issuer and tl["currency"] == token.currency)
+                ]
+                needed_data = ["account", "balance", "currency", "peer", "limit"]
+                return [
+                    {k: trustline[k] for k in trustline if k in needed_data}
+                    for trustline in trustlines
+                ]
+            except:
+                # TODO: better error handling
+                # Most likely the account does not exist on the ledger. Return an empty
+                # data frame
+                return []
+
+    def get_balance(self: ChainBase, account: Account, token: Currency) -> str:
+        """Get a balance from a single account in a single token"""
+        try:
+            result = self.get_balances(account, token)
+            return cast(str, result[0]["balance"])
+        except:
+            return "0"
+
+    def get_trust_lines(
+        self: ChainBase, account: Account, peer: Optional[Account] = None
+    ) -> List[Dict[str, Any]]:
+        """
+        Return a list of dictionaries representing account trust lines. If peer account
+        is None, treat as a wildcard.
+        """
+        if peer is None:
+            result = self.request(AccountLines(account=account.account_id))
+        else:
+            result = self.request(
+                AccountLines(account=account.account_id, peer=peer.account_id)
+            )
+        if "lines" not in result or "account" not in result:
+            raise ValueError("Bad result from account_lines command")
+        address = result["account"]
+        account_lines = result["lines"]
+        for account_line in account_lines:
+            account_line["peer"] = account_line["account"]
+            account_line["account"] = address
+        return cast(List[Dict[str, Any]], account_lines)
+
+    # Get a dict of the server_state, validated_ledger_seq, and complete_ledgers
+    @abstractmethod
+    def get_brief_server_info(self: ChainBase) -> Dict[str, List[Dict[str, Any]]]:
+        pass
+
+    # Account/asset stuff
 
     def create_account(self: ChainBase, name: str) -> Account:
         """Create an account. Use the name as the alias."""

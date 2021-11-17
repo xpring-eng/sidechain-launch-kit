@@ -8,12 +8,12 @@ from typing import Any, Dict, List, Optional, Set, Union
 
 from xrpl.models import FederatorInfo
 
-from slk.chain.chain import Chain
+from slk.chain.chain_base import ChainBase
 from slk.chain.node import Node
 from slk.classes.config_file import ConfigFile
 
 
-class Sidechain(Chain):
+class Sidechain(ChainBase):
     # If run_server is None, run all the servers.
     # This is useful to help debugging
     def __init__(
@@ -71,7 +71,7 @@ class Sidechain(Chain):
             node_num += 1
             self.nodes.append(node)
 
-        super().__init__(node=self.nodes[0])
+        super().__init__(self.nodes[0])
 
         self.servers_start(extra_args=extra_args)
 
