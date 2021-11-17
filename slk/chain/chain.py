@@ -28,11 +28,11 @@ ROOT_ACCOUNT = Account(
 )
 
 
-class ChainBase(ABC):
+class Chain(ABC):
     """Representation of one chain (mainchain/sidechain)"""
 
     def __init__(
-        self: ChainBase,
+        self: Chain,
         node: Node,
     ) -> None:
         self.node = node
@@ -43,24 +43,24 @@ class ChainBase(ABC):
 
     @property
     @abstractmethod
-    def standalone(self: ChainBase) -> bool:
+    def standalone(self: Chain) -> bool:
         pass
 
     # rippled stuff
 
-    def send_signed(self: ChainBase, txn: Transaction) -> Dict[str, Any]:
+    def send_signed(self: Chain, txn: Transaction) -> Dict[str, Any]:
         """Sign then send the given transaction"""
         if not self.key_manager.is_account(txn.account):
             raise ValueError("Cannot sign transaction without secret key")
         account_obj = self.key_manager.get_account(txn.account)
         return self.node.sign_and_submit(txn, account_obj.wallet)
 
-    def request(self: ChainBase, req: Request) -> Dict[str, Any]:
+    def request(self: Chain, req: Request) -> Dict[str, Any]:
         """Send the command to the rippled server"""
         return self.node.request(req)
 
     def send_subscribe(
-        self: ChainBase, req: Subscribe, callback: Callable[[Dict[str, Any]], None]
+        self: Chain, req: Subscribe, callback: Callable[[Dict[str, Any]], None]
     ) -> Dict[str, Any]:
         """Send the subscription command to the rippled server."""
         if not self.node.client.is_open():
@@ -70,13 +70,13 @@ class ChainBase(ABC):
 
     # specific rippled methods
 
-    def maybe_ledger_accept(self: ChainBase) -> None:
+    def maybe_ledger_accept(self: Chain) -> None:
         if not self.standalone:
             return
         self.request(LedgerAccept())
 
     def get_account_info(
-        self: ChainBase, account: Optional[Account] = None
+        self: Chain, account: Optional[Account] = None
     ) -> List[Dict[str, Any]]:
         """
         Return a dictionary of account info. If account is None, treat as a
@@ -123,7 +123,7 @@ class ChainBase(ABC):
         return [cast(Dict[str, Any], info)]
 
     def get_balances(
-        self: ChainBase,
+        self: Chain,
         account: Union[Account, List[Account], None] = None,
         token: Union[Currency, List[Currency]] = XRP(),
     ) -> List[Dict[str, Any]]:
@@ -180,7 +180,7 @@ class ChainBase(ABC):
                 # data frame
                 return []
 
-    def get_balance(self: ChainBase, account: Account, token: Currency) -> str:
+    def get_balance(self: Chain, account: Account, token: Currency) -> str:
         """Get a balance from a single account in a single token"""
         try:
             result = self.get_balances(account, token)
@@ -189,7 +189,7 @@ class ChainBase(ABC):
             return "0"
 
     def get_trust_lines(
-        self: ChainBase, account: Account, peer: Optional[Account] = None
+        self: Chain, account: Account, peer: Optional[Account] = None
     ) -> List[Dict[str, Any]]:
         """
         Return a list of dictionaries representing account trust lines. If peer account
@@ -212,12 +212,12 @@ class ChainBase(ABC):
 
     # Get a dict of the server_state, validated_ledger_seq, and complete_ledgers
     @abstractmethod
-    def get_brief_server_info(self: ChainBase) -> Dict[str, List[Dict[str, Any]]]:
+    def get_brief_server_info(self: Chain) -> Dict[str, List[Dict[str, Any]]]:
         pass
 
     # Account/asset stuff
 
-    def create_account(self: ChainBase, name: str) -> Account:
+    def create_account(self: Chain, name: str) -> Account:
         """Create an account. Use the name as the alias."""
         assert not self.key_manager.is_alias(name)
 
@@ -226,7 +226,7 @@ class ChainBase(ABC):
         return account
 
     def substitute_nicknames(
-        self: ChainBase, items: Dict[str, Any], cols: List[str] = ["account", "peer"]
+        self: Chain, items: Dict[str, Any], cols: List[str] = ["account", "peer"]
     ) -> None:
         """Substitutes in-place account IDs for nicknames"""
         for c in cols:
@@ -234,29 +234,29 @@ class ChainBase(ABC):
                 continue
             items[c] = self.key_manager.alias_or_account_id(items[c])
 
-    def add_to_keymanager(self: ChainBase, account: Account) -> None:
+    def add_to_keymanager(self: Chain, account: Account) -> None:
         self.key_manager.add(account)
 
-    def is_alias(self: ChainBase, name: str) -> bool:
+    def is_alias(self: Chain, name: str) -> bool:
         return self.key_manager.is_alias(name)
 
-    def account_from_alias(self: ChainBase, name: str) -> Account:
+    def account_from_alias(self: Chain, name: str) -> Account:
         return self.key_manager.account_from_alias(name)
 
-    def known_accounts(self: ChainBase) -> List[Account]:
+    def known_accounts(self: Chain) -> List[Account]:
         return self.key_manager.known_accounts()
 
-    def known_asset_aliases(self: ChainBase) -> List[str]:
+    def known_asset_aliases(self: Chain) -> List[str]:
         return self.asset_aliases.known_aliases()
 
-    def known_iou_assets(self: ChainBase) -> List[IssuedCurrency]:
+    def known_iou_assets(self: Chain) -> List[IssuedCurrency]:
         return self.asset_aliases.known_assets()
 
-    def is_asset_alias(self: ChainBase, name: str) -> bool:
+    def is_asset_alias(self: Chain, name: str) -> bool:
         return self.asset_aliases.is_alias(name)
 
-    def add_asset_alias(self: ChainBase, asset: IssuedCurrency, name: str) -> None:
+    def add_asset_alias(self: Chain, asset: IssuedCurrency, name: str) -> None:
         self.asset_aliases.add(asset, name)
 
-    def asset_from_alias(self: ChainBase, name: str) -> IssuedCurrency:
+    def asset_from_alias(self: Chain, name: str) -> IssuedCurrency:
         return self.asset_aliases.asset_from_alias(name)
