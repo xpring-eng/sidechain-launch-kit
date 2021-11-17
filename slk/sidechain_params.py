@@ -4,12 +4,15 @@ import argparse
 import os
 from typing import Optional
 
-from dotenv import load_dotenv
+from dotenv import dotenv_values
 
 from slk.classes.account import Account
 from slk.classes.config_file import ConfigFile
 
-load_dotenv()
+_ENV_VARS = {
+    **os.environ,
+    **{key: value for key, value in dotenv_values().items() if value},
+}
 
 
 def _parse_args_helper(parser: argparse.ArgumentParser) -> None:
@@ -124,8 +127,8 @@ class SidechainParams:
             )
 
         # identify mainchain rippled exe file location (for standalone)
-        if "RIPPLED_MAINCHAIN_EXE" in os.environ:
-            self.mainchain_exe = os.environ["RIPPLED_MAINCHAIN_EXE"]
+        if "RIPPLED_MAINCHAIN_EXE" in _ENV_VARS:
+            self.mainchain_exe = _ENV_VARS["RIPPLED_MAINCHAIN_EXE"]
         if args.exe_mainchain:
             self.mainchain_exe = args.exe_mainchain
         # if `self.mainchain_exe` doesn't exist (done this way for typing purposes)
@@ -136,8 +139,8 @@ class SidechainParams:
             )
 
         # identify sidechain rippled exe file location
-        if "RIPPLED_SIDECHAIN_EXE" in os.environ:
-            self.sidechain_exe = os.environ["RIPPLED_SIDECHAIN_EXE"]
+        if "RIPPLED_SIDECHAIN_EXE" in _ENV_VARS:
+            self.sidechain_exe = _ENV_VARS["RIPPLED_SIDECHAIN_EXE"]
         if args.exe_sidechain:
             self.sidechain_exe = args.exe_sidechain
         # if `self.sidechain_exe` doesn't exist (done this way for typing purposes)
@@ -149,8 +152,8 @@ class SidechainParams:
 
         # identify where all the config files are located
         self.configs_dir = None
-        if "RIPPLED_SIDECHAIN_CFG_DIR" in os.environ:
-            self.configs_dir = os.environ["RIPPLED_SIDECHAIN_CFG_DIR"]
+        if "RIPPLED_SIDECHAIN_CFG_DIR" in _ENV_VARS:
+            self.configs_dir = _ENV_VARS["RIPPLED_SIDECHAIN_CFG_DIR"]
         if args.cfgs_dir:
             self.configs_dir = args.cfgs_dir
         if configs_dir is not None:
@@ -164,8 +167,8 @@ class SidechainParams:
 
         # identify directory where hooks files are
         self.hooks_dir = None
-        if "RIPPLED_SIDECHAIN_HOOKS_DIR" in os.environ:
-            self.hooks_dir = os.environ["RIPPLED_SIDECHAIN_HOOKS_DIR"]
+        if "RIPPLED_SIDECHAIN_HOOKS_DIR" in _ENV_VARS:
+            self.hooks_dir = _ENV_VARS["RIPPLED_SIDECHAIN_HOOKS_DIR"]
         if args.hooks_dir:
             self.hooks_dir = args.hooks_dir
 

@@ -3,20 +3,17 @@ from __future__ import annotations
 import argparse
 import os
 
-from dotenv import load_dotenv
+from dotenv import dotenv_values
 
-load_dotenv()
+_ENV_VARS = {
+    **os.environ,
+    **{key: value for key, value in dotenv_values().items() if value},
+}
 
 
 def _parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(
         description=("Create config files for testing sidechains")
-    )
-
-    parser.add_argument(
-        "--exe",
-        "-e",
-        help=("path to rippled executable"),
     )
 
     parser.add_argument(
@@ -50,19 +47,8 @@ class ConfigParams:
     def __init__(self: ConfigParams) -> None:
         args = _parse_args()
 
-        if "RIPPLED_MAINCHAIN_EXE" in os.environ:
-            self.exe = os.environ["RIPPLED_MAINCHAIN_EXE"]
-        if args.exe:
-            self.exe = args.exe
-        # if `self.mainchain_exe` doesn't exist (done this way for typing purposes)
-        if not hasattr(self, "exe"):
-            raise Exception(
-                "Missing exe location. Either set the env variable "
-                "RIPPLED_MAINCHAIN_EXE or use the --exe_mainchain command line switch"
-            )
-
-        if "RIPPLED_SIDECHAIN_CFG_DIR" in os.environ:
-            self.configs_dir = os.environ["RIPPLED_SIDECHAIN_CFG_DIR"]
+        if "RIPPLED_SIDECHAIN_CFG_DIR" in _ENV_VARS:
+            self.configs_dir = _ENV_VARS["RIPPLED_SIDECHAIN_CFG_DIR"]
         if args.cfgs_dir:
             self.configs_dir = args.cfgs_dir
         # if `self.configs_dir` doesn't exist (done this way for typing purposes)
@@ -72,8 +58,8 @@ class ConfigParams:
                 "RIPPLED_SIDECHAIN_CFG_DIR or use the --cfgs_dir command line switch"
             )
 
-        if "NUM_FEDERATORS" in os.environ:
-            self.num_federators = int(os.environ["NUM_FEDERATORS"])
+        if "NUM_FEDERATORS" in _ENV_VARS:
+            self.num_federators = int(_ENV_VARS["NUM_FEDERATORS"])
         if args.num_federators:
             self.num_federators = int(args.num_federators)
         # if `self.num_federators` doesn't exist (done this way for typing purposes)
