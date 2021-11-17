@@ -4,12 +4,15 @@ import argparse
 import os
 from typing import Optional
 
-from dotenv import load_dotenv
+from dotenv import dotenv_values
 
 from slk.classes.account import Account
 from slk.classes.config_file import ConfigFile
 
-load_dotenv()
+_ENV_VARS = {
+    **os.environ,
+    **{key: value for key, value in dotenv_values().items() if value},
+}
 
 
 def _parse_args_helper(parser: argparse.ArgumentParser) -> None:
