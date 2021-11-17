@@ -11,11 +11,11 @@ from slk.chain.node import Node
 from slk.classes.config_file import ConfigFile
 
 
-class Chain(ChainBase):
-    """Representation of one chain (mainchain/sidechain)"""
+class Mainchain(ChainBase):
+    """Representation of a mainchain."""
 
     def __init__(
-        self: Chain,
+        self: Mainchain,
         exe: str,
         *,
         config: ConfigFile,
@@ -34,30 +34,30 @@ class Chain(ChainBase):
             self.servers_start(extra_args=extra_args, server_out=server_out)
 
     @property
-    def standalone(self: Chain) -> bool:
+    def standalone(self: Mainchain) -> bool:
         return True
 
-    def get_node(self: Chain, i: Optional[int] = None) -> Node:
+    def get_node(self: Mainchain, i: Optional[int] = None) -> Node:
         assert i is None
         return self.node
 
-    def shutdown(self: Chain) -> None:
+    def shutdown(self: Mainchain) -> None:
         self.node.shutdown()
         self.servers_stop()
 
-    def get_pids(self: Chain) -> List[int]:
+    def get_pids(self: Mainchain) -> List[int]:
         if pid := self.node.get_pid():
             return [pid]
         return []
 
-    def get_running_status(self: Chain) -> List[bool]:
+    def get_running_status(self: Mainchain) -> List[bool]:
         if self.node.get_pid():
             return [True]
         else:
             return [False]
 
     def servers_start(
-        self: Chain,
+        self: Mainchain,
         *,
         extra_args: Optional[List[str]] = None,
         server_out: str = os.devnull,
@@ -75,24 +75,24 @@ class Chain(ChainBase):
         time.sleep(2)  # give servers time to start
 
     def servers_stop(
-        self: Chain, server_indexes: Optional[Union[Set[int], List[int]]] = None
+        self: Mainchain, server_indexes: Optional[Union[Set[int], List[int]]] = None
     ) -> None:
         if self.server_running:
             self.node.stop_server()
             self.server_running = False
 
-    def get_configs(self: Chain) -> List[ConfigFile]:
+    def get_configs(self: Mainchain) -> List[ConfigFile]:
         return [self.node.config]
 
     # Get a dict of the server_state, validated_ledger_seq, and complete_ledgers
-    def get_brief_server_info(self: Chain) -> Dict[str, List[Any]]:
+    def get_brief_server_info(self: Mainchain) -> Dict[str, List[Any]]:
         ret = {}
         for (k, v) in self.node.get_brief_server_info().items():
             ret[k] = [v]
         return ret
 
     def federator_info(
-        self: Chain, server_indexes: Optional[Union[Set[int], List[int]]] = None
+        self: Mainchain, server_indexes: Optional[Union[Set[int], List[int]]] = None
     ) -> Dict[int, Dict[str, Any]]:
         # key is server index. value is federator_info result
         result_dict = {}
