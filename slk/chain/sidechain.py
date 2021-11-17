@@ -8,12 +8,12 @@ from typing import Any, Dict, List, Optional, Set, Union
 
 from xrpl.models import FederatorInfo
 
-from slk.chain.chain_base import ChainBase
+from slk.chain.chain import Chain
 from slk.chain.node import Node
 from slk.classes.config_file import ConfigFile
 
 
-class Sidechain(ChainBase):
+class Sidechain(Chain):
     # If run_server is None, run all the servers.
     # This is useful to help debugging
     def __init__(

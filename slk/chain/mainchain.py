@@ -6,12 +6,12 @@ from typing import Any, Dict, List, Optional, Set, Union
 
 from xrpl.models import FederatorInfo
 
-from slk.chain.chain_base import ChainBase
+from slk.chain.chain import Chain
 from slk.chain.node import Node
 from slk.classes.config_file import ConfigFile
 
 
-class Mainchain(ChainBase):
+class Mainchain(Chain):
     """Representation of a mainchain."""
 
     def __init__(

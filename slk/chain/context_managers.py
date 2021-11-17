@@ -2,7 +2,7 @@ import os
 from contextlib import contextmanager
 from typing import Generator, List, Optional
 
-from slk.chain.chain import Chain
+from slk.chain.mainchain import Mainchain
 from slk.chain.sidechain import Sidechain
 from slk.classes.config_file import ConfigFile
 
@@ -17,13 +17,13 @@ def single_node_chain(
     run_server: bool = True,
     exe: str,
     extra_args: Optional[List[str]] = None,
-) -> Generator[Chain, None, None]:
+) -> Generator[Mainchain, None, None]:
     """Start a ripple server and return a chain"""
     if extra_args is None:
         extra_args = []
     chain = None
     try:
-        chain = Chain(
+        chain = Mainchain(
             exe,
             config=config,
             command_log=command_log,
