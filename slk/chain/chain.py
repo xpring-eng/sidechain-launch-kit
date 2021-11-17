@@ -16,11 +16,59 @@ from xrpl.models import (
 from xrpl.models.transactions.transaction import Transaction
 
 from slk.chain.chain_base import ChainBase
+from slk.chain.node import Node
 from slk.classes.account import Account
+from slk.classes.config_file import ConfigFile
 
 
 class Chain(ChainBase):
     """Representation of one chain (mainchain/sidechain)"""
+
+    def __init__(
+        self: Chain,
+        node: Node,
+    ) -> None:
+        self.node = node
+
+        super().__init__()
+
+    @property
+    def standalone(self: Chain) -> bool:
+        return True
+
+    def get_node(self: Chain, i: Optional[int] = None) -> Node:
+        assert i is None
+        return self.node
+
+    def shutdown(self: Chain) -> None:
+        self.node.shutdown()
+
+    def get_pids(self: Chain) -> List[int]:
+        if pid := self.node.get_pid():
+            return [pid]
+        return []
+
+    def get_running_status(self: Chain) -> List[bool]:
+        if self.node.get_pid():
+            return [True]
+        else:
+            return [False]
+
+    def servers_start(
+        self: Chain,
+        server_indexes: Optional[Union[Set[int], List[int]]] = None,
+        *,
+        extra_args: Optional[List[List[str]]] = None,
+    ) -> None:
+        raise ValueError("Cannot start stand alone server")
+
+    def servers_stop(
+        self: Chain, server_indexes: Optional[Union[Set[int], List[int]]] = None
+    ) -> None:
+        raise ValueError("Cannot stop stand alone server")
+
+    def get_configs(self: Chain) -> List[ConfigFile]:
+        return [self.node.config]
 
     def send_signed(self: Chain, txn: Transaction) -> Dict[str, Any]:
         """Sign then send the given transaction"""

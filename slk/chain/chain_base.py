@@ -1,14 +1,13 @@
 from __future__ import annotations
 
-from typing import Any, Dict, List, Optional, Set, Union
+from abc import ABC, abstractmethod
+from typing import Any, Dict, List
 
 from xrpl.models import IssuedCurrency
 
 from slk.chain.asset_aliases import AssetAliases
 from slk.chain.key_manager import KeyManager
-from slk.chain.node import Node
 from slk.classes.account import Account
-from slk.classes.config_file import ConfigFile
 
 ROOT_ACCOUNT = Account(
     nickname="root",
@@ -17,53 +16,21 @@ ROOT_ACCOUNT = Account(
 )
 
 
-class ChainBase:
+class ChainBase(ABC):
     """Representation of one chain (mainchain/sidechain)"""
 
     def __init__(
         self: ChainBase,
-        node: Node,
     ) -> None:
-        self.node = node
-
         self.key_manager = KeyManager()
         self.asset_aliases = AssetAliases()
 
         self.key_manager.add(ROOT_ACCOUNT)
 
+    @abstractmethod
     @property
     def standalone(self: ChainBase) -> bool:
-        return True
-
-    def shutdown(self: ChainBase) -> None:
-        self.node.shutdown()
-
-    def get_pids(self: ChainBase) -> List[int]:
-        if pid := self.node.get_pid():
-            return [pid]
-        return []
-
-    def get_running_status(self: ChainBase) -> List[bool]:
-        if self.node.get_pid():
-            return [True]
-        else:
-            return [False]
-
-    def servers_start(
-        self: ChainBase,
-        server_indexes: Optional[Union[Set[int], List[int]]] = None,
-        *,
-        extra_args: Optional[List[List[str]]] = None,
-    ) -> None:
-        raise ValueError("Cannot start stand alone server")
-
-    def servers_stop(
-        self: ChainBase, server_indexes: Optional[Union[Set[int], List[int]]] = None
-    ) -> None:
-        raise ValueError("Cannot stop stand alone server")
-
-    def get_configs(self: ChainBase) -> List[ConfigFile]:
-        return [self.node.config]
+        pass
 
     def create_account(self: ChainBase, name: str) -> Account:
         """Create an account. Use the name as the alias."""
@@ -108,7 +75,3 @@ class ChainBase:
 
     def asset_from_alias(self: ChainBase, name: str) -> IssuedCurrency:
         return self.asset_aliases.asset_from_alias(name)
-
-    def get_node(self: ChainBase, i: Optional[int] = None) -> Node:
-        assert i is None
-        return self.node
