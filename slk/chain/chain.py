@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+import os
+from abc import ABC, abstractmethod
 from typing import Any, Callable, Dict, List, Optional, Set, Union, cast
 
 from xrpl.models import (
@@ -7,20 +9,81 @@ from xrpl.models import (
     AccountInfo,
     AccountLines,
     Currency,
-    FederatorInfo,
+    IssuedCurrency,
     IssuedCurrencyAmount,
     LedgerAccept,
     Request,
     Subscribe,
+    Transaction,
 )
-from xrpl.models.transactions.transaction import Transaction
 
-from slk.chain.chain_base import ChainBase
+from slk.chain.asset_aliases import AssetAliases
+from slk.chain.key_manager import KeyManager
+from slk.chain.node import Node
 from slk.classes.account import Account
+from slk.classes.config_file import ConfigFile
+
+ROOT_ACCOUNT = Account(
+    nickname="root",
+    account_id="rHb9CJAWyB4rj91VRWn96DkukG4bwdtyTh",
+    seed="snoPBrXtMeMyMHUVTgbuqAfg1SUTb",
+)
 
 
-class Chain(ChainBase):
+class Chain(ABC):
     """Representation of one chain (mainchain/sidechain)"""
+
+    def __init__(
+        self: Chain,
+        node: Node,
+    ) -> None:
+        self.node = node
+        self.key_manager = KeyManager()
+        self.asset_aliases = AssetAliases()
+
+        self.key_manager.add(ROOT_ACCOUNT)
+
+    @property
+    @abstractmethod
+    def standalone(self: Chain) -> bool:
+        pass
+
+    @abstractmethod
+    def get_pids(self: Chain) -> List[int]:
+        pass
+
+    @abstractmethod
+    def get_node(self: Chain, i: Optional[int] = None) -> Node:
+        pass
+
+    @abstractmethod
+    def get_configs(self: Chain) -> List[ConfigFile]:
+        pass
+
+    @abstractmethod
+    def get_running_status(self: Chain) -> List[bool]:
+        pass
+
+    @abstractmethod
+    def shutdown(self: Chain) -> None:
+        pass
+
+    @abstractmethod
+    def servers_start(
+        self: Chain,
+        *,
+        server_indexes: Optional[Union[Set[int], List[int]]] = None,
+        server_out: str = os.devnull,
+    ) -> None:
+        pass
+
+    @abstractmethod
+    def servers_stop(
+        self: Chain, server_indexes: Optional[Union[Set[int], List[int]]] = None
+    ) -> None:
+        pass
+
+    # rippled stuff
 
     def send_signed(self: Chain, txn: Transaction) -> Dict[str, Any]:
         """Sign then send the given transaction"""
@@ -42,27 +105,12 @@ class Chain(ChainBase):
         self.node.client.on("transaction", callback)
         return self.node.request(req)
 
+    # specific rippled methods
+
     def maybe_ledger_accept(self: Chain) -> None:
         if not self.standalone:
             return
         self.request(LedgerAccept())
-
-    # Get a dict of the server_state, validated_ledger_seq, and complete_ledgers
-    def get_brief_server_info(self: Chain) -> Dict[str, List[Any]]:
-        ret = {}
-        for (k, v) in self.node.get_brief_server_info().items():
-            ret[k] = [v]
-        return ret
-
-    def federator_info(
-        self: Chain, server_indexes: Optional[Union[Set[int], List[int]]] = None
-    ) -> Dict[int, Dict[str, Any]]:
-        # key is server index. value is federator_info result
-        result_dict = {}
-        # TODO: do this more elegantly
-        if server_indexes is not None and 0 in server_indexes:
-            result_dict[0] = self.node.request(FederatorInfo())
-        return result_dict
 
     def get_account_info(
         self: Chain, account: Optional[Account] = None
@@ -198,3 +246,60 @@ class Chain(ChainBase):
             account_line["peer"] = account_line["account"]
             account_line["account"] = address
         return cast(List[Dict[str, Any]], account_lines)
+
+    # Get a dict of the server_state, validated_ledger_seq, and complete_ledgers
+    @abstractmethod
+    def get_brief_server_info(self: Chain) -> Dict[str, List[Dict[str, Any]]]:
+        pass
+
+    @abstractmethod
+    def federator_info(
+        self: Chain, server_indexes: Optional[Union[Set[int], List[int]]] = None
+    ) -> Dict[int, Dict[str, Any]]:
+        pass
+
+    # Account/asset stuff
+
+    def create_account(self: Chain, name: str) -> Account:
+        """Create an account. Use the name as the alias."""
+        assert not self.key_manager.is_alias(name)
+
+        account = Account.create(name)
+        self.key_manager.add(account)
+        return account
+
+    def substitute_nicknames(
+        self: Chain, items: Dict[str, Any], cols: List[str] = ["account", "peer"]
+    ) -> None:
+        """Substitutes in-place account IDs for nicknames"""
+        for c in cols:
+            if c not in items:
+                continue
+            items[c] = self.key_manager.alias_or_account_id(items[c])
+
+    def add_to_keymanager(self: Chain, account: Account) -> None:
+        self.key_manager.add(account)
+
+    def is_alias(self: Chain, name: str) -> bool:
+        return self.key_manager.is_alias(name)
+
+    def account_from_alias(self: Chain, name: str) -> Account:
+        return self.key_manager.account_from_alias(name)
+
+    def known_accounts(self: Chain) -> List[Account]:
+        return self.key_manager.known_accounts()
+
+    def known_asset_aliases(self: Chain) -> List[str]:
+        return self.asset_aliases.known_aliases()
+
+    def known_iou_assets(self: Chain) -> List[IssuedCurrency]:
+        return self.asset_aliases.known_assets()
+
+    def is_asset_alias(self: Chain, name: str) -> bool:
+        return self.asset_aliases.is_alias(name)
+
+    def add_asset_alias(self: Chain, asset: IssuedCurrency, name: str) -> None:
+        self.asset_aliases.add(asset, name)
+
+    def asset_from_alias(self: Chain, name: str) -> IssuedCurrency:
+        return self.asset_aliases.asset_from_alias(name)

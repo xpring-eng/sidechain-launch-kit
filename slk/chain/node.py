@@ -62,11 +62,13 @@ class Node:
 
     def start_server(
         self: Node,
-        extra_args: List[str],
         *,
+        extra_args: Optional[List[str]] = None,
         standalone: bool = False,
         server_out: str = os.devnull,
     ) -> None:
+        if extra_args is None:
+            extra_args = []
         to_run = [self.exe, "--conf", self.config_file_name]
         if standalone:
             to_run.append("-a")
@@ -88,7 +90,7 @@ class Node:
 
         assert self.process is not None
         self.process.wait()
-        self.pid = -1
+        self.pid = None
 
     def wait_for_validated_ledger(self: Node) -> None:
         for i in range(600):
@@ -124,7 +126,7 @@ class Node:
     # Get a dict of the server_state, validated_ledger_seq, and complete_ledgers
     def get_brief_server_info(self: Node) -> Dict[str, Any]:
         ret = {"server_state": "NA", "ledger_seq": "NA", "complete_ledgers": "NA"}
-        if not self.pid or self.pid == -1:
+        if not self.pid:
             return ret
         r = self.client.request(ServerInfo()).result
         if "info" not in r:
