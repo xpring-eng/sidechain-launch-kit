@@ -122,6 +122,7 @@ class Sidechain(Chain):
             node.start_server(server_out=server_out)
             self.running_server_indexes.add(i)
 
+        # wait until the servers have started up
         while not all([node.server_started() for node in self.nodes]):
             time.sleep(0.5)
 

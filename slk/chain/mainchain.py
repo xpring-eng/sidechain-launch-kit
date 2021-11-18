@@ -72,6 +72,7 @@ class Mainchain(Chain):
 
         self.node.start_server(standalone=True, server_out=server_out)
 
+        # wait until the server has started up
         while not self.node.server_started():
             time.sleep(0.5)
 
