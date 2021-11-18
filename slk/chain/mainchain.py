@@ -71,6 +71,7 @@ class Mainchain(Chain):
             return
 
         self.node.start_server(standalone=True, server_out=server_out)
+        self.server_running = True
 
         # wait until the server has started up
         counter = 0
