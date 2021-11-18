@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import os
+import socket
 import subprocess
 import time
 from typing import Any, Dict, List, Optional
@@ -95,8 +96,6 @@ class Node:
         self.pid = None
 
     def server_started(self: Node) -> bool:
-        import socket
-
         sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         result = sock.connect_ex((self.ip, int(self.port)))
         if result == 0:
