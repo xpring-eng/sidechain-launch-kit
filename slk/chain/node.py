@@ -96,12 +96,16 @@ class Node:
         self.pid = None
 
     def server_started(self: Node) -> bool:
+        """
+        Determine whether the server the node is connected to has started and is ready
+        to accept a WebSocket connection on its port.
+
+        Returns:
+            Whether the socket is open and ready to accept a WebSocket connection.
+        """
         with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as sock:
             result = sock.connect_ex((self.ip, int(self.port)))
-            if result == 0:
-                return True
-            else:
-                return False
+            return result == 0  # means the WS port is open for connections
 
     def wait_for_validated_ledger(self: Node) -> None:
         for i in range(600):
