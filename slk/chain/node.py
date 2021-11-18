@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import os
+import socket
 import subprocess
 import time
 from typing import Any, Dict, List, Optional
@@ -26,6 +27,8 @@ class Node:
     ) -> None:
         section = config.port_ws_admin_local
         self.websocket_uri = f"{section.protocol}://{section.ip}:{section.port}"
+        self.ip = section.ip
+        self.port = section.port
         self.name = name
         self.client = WebsocketClient(url=self.websocket_uri)
         self.config = config
@@ -91,6 +94,18 @@ class Node:
         assert self.process is not None
         self.process.wait()
         self.pid = None
+
+    def server_started(self: Node) -> bool:
+        """
+        Determine whether the server the node is connected to has started and is ready
+        to accept a WebSocket connection on its port.
+
+        Returns:
+            Whether the socket is open and ready to accept a WebSocket connection.
+        """
+        with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as sock:
+            result = sock.connect_ex((self.ip, int(self.port)))
+            return result == 0  # means the WS port is open for connections
 
     def wait_for_validated_ledger(self: Node) -> None:
         for i in range(600):
