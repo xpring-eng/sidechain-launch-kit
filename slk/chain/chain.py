@@ -53,11 +53,19 @@ class Chain(ABC):
         pass
 
     @abstractmethod
-    def get_running_status(self: Chain) -> List[bool]:
+    def get_node(self: Chain, i: Optional[int] = None) -> Node:
         pass
 
     @abstractmethod
     def get_configs(self: Chain) -> List[ConfigFile]:
+        pass
+
+    @abstractmethod
+    def get_running_status(self: Chain) -> List[bool]:
+        pass
+
+    @abstractmethod
+    def shutdown(self: Chain) -> None:
         pass
 
     @abstractmethod

@@ -36,24 +36,27 @@ class Mainchain(Chain):
     def standalone(self: Mainchain) -> bool:
         return True
 
-    def get_node(self: Mainchain, i: Optional[int] = None) -> Node:
-        assert i is None
-        return self.node
-
-    def shutdown(self: Mainchain) -> None:
-        self.node.shutdown()
-        self.servers_stop()
-
     def get_pids(self: Mainchain) -> List[int]:
         if pid := self.node.get_pid():
             return [pid]
         return []
+
+    def get_node(self: Mainchain, i: Optional[int] = None) -> Node:
+        assert i is None
+        return self.node
+
+    def get_configs(self: Mainchain) -> List[ConfigFile]:
+        return [self.node.config]
 
     def get_running_status(self: Mainchain) -> List[bool]:
         if self.node.get_pid():
             return [True]
         else:
             return [False]
+
+    def shutdown(self: Mainchain) -> None:
+        self.node.shutdown()
+        self.servers_stop()
 
     def servers_start(
         self: Mainchain,
@@ -79,9 +82,6 @@ class Mainchain(Chain):
         if self.server_running:
             self.node.stop_server()
             self.server_running = False
-
-    def get_configs(self: Mainchain) -> List[ConfigFile]:
-        return [self.node.config]
 
     # Get a dict of the server_state, validated_ledger_seq, and complete_ledgers
     def get_brief_server_info(self: Mainchain) -> Dict[str, List[Any]]:
