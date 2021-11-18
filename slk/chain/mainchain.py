@@ -72,7 +72,8 @@ class Mainchain(Chain):
 
         self.node.start_server(standalone=True, server_out=server_out)
 
-        time.sleep(2)  # give servers time to start
+        while not self.node.server_started():
+            time.sleep(0.5)
 
     def servers_stop(
         self: Mainchain, server_indexes: Optional[Union[Set[int], List[int]]] = None

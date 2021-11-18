@@ -26,6 +26,8 @@ class Node:
     ) -> None:
         section = config.port_ws_admin_local
         self.websocket_uri = f"{section.protocol}://{section.ip}:{section.port}"
+        self.ip = section.ip
+        self.port = section.port
         self.name = name
         self.client = WebsocketClient(url=self.websocket_uri)
         self.config = config
@@ -91,6 +93,18 @@ class Node:
         assert self.process is not None
         self.process.wait()
         self.pid = None
+
+    def server_started(self: Node) -> bool:
+        import socket
+
+        sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        result = sock.connect_ex((self.ip, int(self.port)))
+        if result == 0:
+            ret_val = True
+        else:
+            ret_val = False
+        sock.close()
+        return ret_val
 
     def wait_for_validated_ledger(self: Node) -> None:
         for i in range(600):

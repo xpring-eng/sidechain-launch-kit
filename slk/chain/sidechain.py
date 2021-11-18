@@ -122,7 +122,8 @@ class Sidechain(Chain):
             node.start_server(server_out=server_out)
             self.running_server_indexes.add(i)
 
-        time.sleep(2)  # give servers time to start
+        while not all([node.server_started() for node in self.nodes]):
+            time.sleep(0.5)
 
     def servers_stop(
         self: Sidechain, server_indexes: Optional[Union[Set[int], List[int]]] = None
