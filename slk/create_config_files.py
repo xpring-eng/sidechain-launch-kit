@@ -179,7 +179,7 @@ def generate_multinode_net(
         )
 
 
-def main(
+def create_config_files(
     params: ConfigParams, xchain_assets: Optional[Dict[str, XChainAsset]] = None
 ) -> None:
     index = 0
@@ -199,7 +199,7 @@ def main(
     (Path(params.configs_dir) / "logs").mkdir(parents=True, exist_ok=True)
 
 
-if __name__ == "__main__":
+def main() -> None:
     # TODO: add support for real sidechains to only generate one federator's config file
     # since real sidechain networks will have federators running on different machines
     try:
@@ -222,4 +222,8 @@ if __name__ == "__main__":
             main_iou_asset, side_iou_asset, "1", "1", "0.02", "0.02"
         )
 
-    main(params, xchain_assets)
+    create_config_files(params, xchain_assets)
+
+
+if __name__ == "__main__":
+    main()
