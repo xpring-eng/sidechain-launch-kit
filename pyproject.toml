@@ -26,6 +26,7 @@ packages = [
 
 [tool.poetry.scripts]
 sidechain-shell = "slk.riplrepl:main"
+sidechain-config = "slk.create_config_files:main"
 
 [tool.poetry.dependencies]
 python = ">= 3.8, < 3.10"
