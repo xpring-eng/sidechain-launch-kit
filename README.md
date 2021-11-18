@@ -46,7 +46,7 @@ There should now be many configuration files in the directory specified by the `
 
 ## Running the interactive shell
 
-There is an interactive shell called `RiplRepl` that can be used to explore side chains. It will use the configuration files built above to spin up test rippled main chain running in standalone mode as well as 5 side chain federators running in regular consensus mode.
+There is an interactive shell that can be used to explore side chains. It will use the configuration files built above to spin up test rippled main chain running in standalone mode as well as 5 side chain federators running in regular consensus mode.
 
 To start the shell, run the following script:
 ```
@@ -59,12 +59,12 @@ Once the shell has started, the following message should appear:
 ```
 Welcome to the sidechain test shell.   Type help or ? to list commands.
 
-RiplRepl>
+SSX>
 ```
 
 Type the command `server_info` to make sure the servers are running. An example output would be:
 ```
-RiplRepl> server_info
+SSX> server_info
            pid                                  config  running server_state  ledger_seq complete_ledgers
 main 0  136206  main.no_shards.mainchain_0/rippled.cfg     True    proposing          75             2-75
 side 0  136230                 sidechain_0/rippled.cfg     True    proposing          92             1-92
@@ -78,7 +78,7 @@ Of course, you'll see slightly different output on your machine. The important t
 
 Next, type the `balance` command, to see the balances of the accounts in the address book:
 ```
-RiplRepl> balance
+SSX> balance
                            balance currency peer limit
      account
 main root    99,999,989,999.999985      XRP
@@ -89,15 +89,15 @@ side door    99,999,999,999.999954      XRP
 There are two accounts on the main chain: `root` and `door`; and one account on the side chain: `door`. These are not user accounts. Let's add two user accounts, one on the main chain called `alice` and one on the side chain called `bob`. The `new_account` command does this for us.
 
 ```
-RiplRepl> new_account mainchain alice
-RiplRepl> new_account sidechain bob
+SSX> new_account mainchain alice
+SSX> new_account sidechain bob
 ```
 
 This just added the accounts to the address book, but they don't exist on the ledger yet. To do that, we need to fund the accounts with a payment. For now, let's just fund the `alice` account and check the balances. The `pay` command makes a payment on one of the chains:
 
 ```
-RiplRepl> pay mainchain root alice 5000
-RiplRepl> balance
+SSX> pay mainchain root alice 5000
+SSX> balance
                            balance currency peer limit
      account
 main root    99,999,984,999.999969      XRP
@@ -110,8 +110,8 @@ side door    99,999,999,999.999954      XRP
 Finally, let's do something specific to side chains: make a cross chain payment. The `xchain` command makes a payment between chains:
 
 ```
-RiplRepl> xchain mainchain alice bob 4000
-RiplRepl> balance
+SSX> xchain mainchain alice bob 4000
+SSX> balance
                            balance currency peer limit
      account
 main root    99,999,984,999.999969      XRP
@@ -125,8 +125,8 @@ Note: the account reserve on the side chain is 100 XRP. The cross chain amount m
 
 Making a cross chain transaction from the side chain to the main chain is similar:
 ```
-RiplRepl> xchain sidechain bob alice 2000
-RiplRepl> balance
+SSX> xchain sidechain bob alice 2000
+SSX> balance
                            balance currency peer limit
      account
 main root    99,999,984,999.999969      XRP
@@ -140,8 +140,8 @@ If you typed `balance` very quickly, you may catch a cross chain payment in prog
 
 Finally, exit the program with the `quit` command:
 ```
-RiplRepl> quit
-Thank you for using RiplRepl. Goodbye.
+SSX> quit
+Thank you for using the sidechain shell. Goodbye.
 
 
 WARNING: Server 0 is being stopped. RPC commands cannot be sent until this is restarted.
