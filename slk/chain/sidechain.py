@@ -123,7 +123,11 @@ class Sidechain(Chain):
             self.running_server_indexes.add(i)
 
         # wait until the servers have started up
+        counter = 0
         while not all([node.server_started() for node in self.nodes]):
+            counter += 1
+            if counter == 20:  # 10 second timeout
+                raise Exception("Timeout: servers took too long to start.")
             time.sleep(0.5)
 
     def servers_stop(

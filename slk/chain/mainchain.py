@@ -73,7 +73,11 @@ class Mainchain(Chain):
         self.node.start_server(standalone=True, server_out=server_out)
 
         # wait until the server has started up
+        counter = 0
         while not self.node.server_started():
+            counter += 1
+            if counter == 20:  # 10 second timeout
+                raise Exception("Timeout: server took too long to start.")
             time.sleep(0.5)
 
     def servers_stop(
