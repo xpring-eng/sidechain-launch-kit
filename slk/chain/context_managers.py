@@ -16,11 +16,8 @@ def single_node_chain(
     server_out: str = os.devnull,
     run_server: bool = True,
     exe: str,
-    extra_args: Optional[List[str]] = None,
 ) -> Generator[Mainchain, None, None]:
     """Start a ripple server and return a chain"""
-    if extra_args is None:
-        extra_args = []
     chain = None
     try:
         chain = Mainchain(
@@ -28,7 +25,6 @@ def single_node_chain(
             config=config,
             command_log=command_log,
             run_server=run_server,
-            extra_args=extra_args,
             server_out=server_out,
         )
         yield chain
@@ -47,7 +43,6 @@ def sidechain_network(
     configs: List[ConfigFile],
     command_logs: Optional[List[Optional[str]]] = None,
     run_server: Optional[List[bool]] = None,
-    extra_args: Optional[List[List[str]]] = None,
 ) -> Generator[Sidechain, None, None]:
     """Start a ripple testnet and return a chain"""
     try:
@@ -56,7 +51,6 @@ def sidechain_network(
             configs=configs,
             command_logs=command_logs,
             run_server=run_server,
-            extra_args=extra_args,
         )
         chain.wait_for_validated_ledger()
         yield chain

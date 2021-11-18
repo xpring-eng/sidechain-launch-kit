@@ -62,11 +62,13 @@ class Node:
 
     def start_server(
         self: Node,
-        extra_args: List[str],
         *,
+        extra_args: Optional[List[str]] = None,
         standalone: bool = False,
         server_out: str = os.devnull,
     ) -> None:
+        if extra_args is None:
+            extra_args = []
         to_run = [self.exe, "--conf", self.config_file_name]
         if standalone:
             to_run.append("-a")

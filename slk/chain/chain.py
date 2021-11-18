@@ -1,7 +1,8 @@
 from __future__ import annotations
 
+import os
 from abc import ABC, abstractmethod
-from typing import Any, Callable, Dict, List, Optional, Union, cast
+from typing import Any, Callable, Dict, List, Optional, Set, Union, cast
 
 from xrpl.models import (
     XRP,
@@ -20,6 +21,7 @@ from slk.chain.asset_aliases import AssetAliases
 from slk.chain.key_manager import KeyManager
 from slk.chain.node import Node
 from slk.classes.account import Account
+from slk.classes.config_file import ConfigFile
 
 ROOT_ACCOUNT = Account(
     nickname="root",
@@ -44,6 +46,33 @@ class Chain(ABC):
     @property
     @abstractmethod
     def standalone(self: Chain) -> bool:
+        pass
+
+    @abstractmethod
+    def get_pids(self: Chain) -> List[int]:
+        pass
+
+    @abstractmethod
+    def get_running_status(self: Chain) -> List[bool]:
+        pass
+
+    @abstractmethod
+    def get_configs(self: Chain) -> List[ConfigFile]:
+        pass
+
+    @abstractmethod
+    def servers_start(
+        self: Chain,
+        *,
+        server_indexes: Optional[Union[Set[int], List[int]]] = None,
+        server_out: str = os.devnull,
+    ) -> None:
+        pass
+
+    @abstractmethod
+    def servers_stop(
+        self: Chain, server_indexes: Optional[Union[Set[int], List[int]]] = None
+    ) -> None:
         pass
 
     # rippled stuff
@@ -213,6 +242,12 @@ class Chain(ABC):
     # Get a dict of the server_state, validated_ledger_seq, and complete_ledgers
     @abstractmethod
     def get_brief_server_info(self: Chain) -> Dict[str, List[Dict[str, Any]]]:
+        pass
+
+    @abstractmethod
+    def federator_info(
+        self: Chain, server_indexes: Optional[Union[Set[int], List[int]]] = None
+    ) -> Dict[int, Dict[str, Any]]:
         pass
 
     # Account/asset stuff

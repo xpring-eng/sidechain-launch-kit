@@ -1107,7 +1107,7 @@ class SidechainRepl(cmd.Cmd):
                     indexes.add(int(arg))
             except:
                 f'Error: server_start bad arguments: {args}. Type "help" for help.'
-        self.sc_chain.servers_start(indexes)
+        self.sc_chain.servers_start(server_indexes=indexes)
 
     def complete_server_start(
         self: SidechainRepl, text: str, line: str, begidx: int, endidx: int

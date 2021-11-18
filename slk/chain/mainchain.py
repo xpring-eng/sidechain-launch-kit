@@ -21,7 +21,6 @@ class Mainchain(Chain):
         config: ConfigFile,
         command_log: Optional[str] = None,
         run_server: bool = False,
-        extra_args: Optional[List[str]] = None,
         server_out: str = os.devnull,
     ) -> None:
         node = Node(config=config, command_log=command_log, exe=exe, name="mainchain")
@@ -31,7 +30,7 @@ class Mainchain(Chain):
         super().__init__(node)
 
         if run_server:
-            self.servers_start(extra_args=extra_args, server_out=server_out)
+            self.servers_start(server_out=server_out)
 
     @property
     def standalone(self: Mainchain) -> bool:
@@ -59,24 +58,24 @@ class Mainchain(Chain):
     def servers_start(
         self: Mainchain,
         *,
-        extra_args: Optional[List[str]] = None,
+        server_indexes: Optional[Union[Set[int], List[int]]] = None,
         server_out: str = os.devnull,
     ) -> None:
-        if extra_args is None:
-            extra_args = []
+        if server_indexes is not None:
+            raise Exception("Mainchain does not have server indexes.")
 
         if self.server_running:
             return
 
-        self.node.start_server(
-            standalone=True, extra_args=extra_args, server_out=server_out
-        )
+        self.node.start_server(standalone=True, server_out=server_out)
 
         time.sleep(2)  # give servers time to start
 
     def servers_stop(
         self: Mainchain, server_indexes: Optional[Union[Set[int], List[int]]] = None
     ) -> None:
+        if server_indexes is not None:
+            raise Exception("Mainchain does not have server indexes.")
         if self.server_running:
             self.node.stop_server()
             self.server_running = False

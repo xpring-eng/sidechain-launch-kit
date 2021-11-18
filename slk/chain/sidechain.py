@@ -23,7 +23,6 @@ class Sidechain(Chain):
         configs: List[ConfigFile],
         command_logs: Optional[List[Optional[str]]] = None,
         run_server: Optional[List[bool]] = None,
-        extra_args: Optional[List[List[str]]] = None,
     ) -> None:
         if not configs:
             raise ValueError("Must specify at least one config")
@@ -73,7 +72,7 @@ class Sidechain(Chain):
 
         super().__init__(self.nodes[0])
 
-        self.servers_start(extra_args=extra_args)
+        self.servers_start()
 
     def shutdown(self: Sidechain) -> None:
         for a in self.nodes:
@@ -142,23 +141,19 @@ class Sidechain(Chain):
 
     def servers_start(
         self: Sidechain,
-        server_indexes: Optional[Union[Set[int], List[int]]] = None,
         *,
-        extra_args: Optional[List[List[str]]] = None,
+        server_indexes: Optional[Union[Set[int], List[int]]] = None,
+        server_out: str = os.devnull,
     ) -> None:
         if server_indexes is None:
             server_indexes = [i for i in range(len(self.nodes))]
-
-        if extra_args is None:
-            extra_args = []
-        extra_args += [list()] * (len(self.nodes) - len(extra_args))
 
         for i in server_indexes:
             if i in self.running_server_indexes or not self.run_server[i]:
                 continue
 
             node = self.nodes[i]
-            node.start_server(extra_args[i])
+            node.start_server(server_out=server_out)
             self.running_server_indexes.add(i)
 
         time.sleep(2)  # give servers time to start
