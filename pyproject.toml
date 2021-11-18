@@ -24,6 +24,9 @@ packages = [
   { include = "slk" },
 ]
 
+[tool.poetry.scripts]
+slk = "slk.riplrepl:main"
+
 [tool.poetry.dependencies]
 python = ">= 3.8, < 3.10"
 pytest = "^6.2.5"
