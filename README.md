@@ -10,17 +10,18 @@ This document walks through the steps to setup a side chain running on your loca
 
 This section describes how to install the python dependencies, create the environment variables, and create the configuration files that scripts need to run correctly.
 
+### Install the sidechain launch kit
+
+```
+pip install sidechain-launch-kit
+```
+
+<!-- TODO: remove when we publish on pip -->
+(If you're working with a pre-release version of the launch kit, you'll instead need to clone the repo locally and [install `poetry`](CONTRIBUTING.md#manage-dependencies-and-virtual-environments), and run the CLI commands in the shell that is created when you enter `poetry shell`.)
+
 ### Build rippled
 
 Checkout the `sidechain` branch from the rippled repository, and follow the usual process to build rippled.
-
-### Manage dependencies and virtual environments
-
-To simplify managing library dependencies and the virtual environment, this package uses [`poetry`](https://python-poetry.org/docs).
-
-* [Install `poetry`](https://python-poetry.org/docs/#osx-linux-bashonwindows-install-instructions):
-
-        curl -sSL https://raw.githubusercontent.com/python-poetry/poetry/master/get-poetry.py | python - poetry install
 
 ### Environment variables
 
@@ -38,7 +39,7 @@ Setting environment variables can be very convenient. For example, a small scrip
 
 Assuming rippled is built, the three environment variables are set, and the python environment is activated, run the following script:
 ```
-poetry run python -m slk.create_config_files --usd
+sidechain-config --usd
 ```
 
 There should now be many configuration files in the directory specified by the `RIPPLED_SIDECHAIN_CFG_DIR` environment variable. The `--usd` creates a sample cross chain asset for USD -> USD transfers.
@@ -49,7 +50,7 @@ There is an interactive shell called `RiplRepl` that can be used to explore side
 
 To start the shell, run the following script:
 ```
-poetry run python -m slk.riplrepl
+sidechain-shell
 ```
 
 The shell will not start until the servers have synced. It may take a minute or two until they do sync. The script should give feedback while it is syncing.

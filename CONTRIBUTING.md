@@ -8,9 +8,17 @@ Note: the unit tests do not use the configuration files, so the `RIPPLED_SIDECHA
 
 ## Dev Env Setup
 
+### Manage dependencies and virtual environments
+
+To simplify managing library dependencies and the virtual environment, this package uses [`poetry`](https://python-poetry.org/docs).
+
+* [Install `poetry`](https://python-poetry.org/docs/#osx-linux-bashonwindows-install-instructions):
+
+        curl -sSL https://raw.githubusercontent.com/python-poetry/poetry/master/get-poetry.py | python - poetry install
+
 ### Set up Python environment
 
-To make it easy to manage your Python environment, including switching between versions, install `pyenv` and follow these steps:
+This step isn't strictly necessary if you prefer to just use your local Python version. However, to make it easy to manage your Python environment, including switching between versions, install `pyenv` and follow these steps:
 
 * Install [`pyenv`](https://github.com/pyenv/pyenv):
 
