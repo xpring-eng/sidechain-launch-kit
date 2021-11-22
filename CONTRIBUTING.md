@@ -78,7 +78,7 @@ tests/simple_xchain_transfer_test.py .                              [100%]
 ```
 
 ## Scripts
-### riplrepl.py
+### shell.py
 
 This is an interactive shell for experimenting with side chains. It will spin up a test main chain running in standalone mode, and a test side chain with five federators - all running on the local machine. There are commands to make payments within a chain, make cross-chain payments, check balances, check server info, and check federator info. There is a simple "help" system, but more documentation is needed for this tool (or more likely we need to replace this with some web front end).
 
@@ -122,7 +122,7 @@ Python module representing a config file that is read from disk.
 
 ### repl.py
 
-Python module with the implementation of the RiplRepl interactive shell.
+Python module with the implementation of the interactive shell.
 
 ### chain/sidechain.py
 

@@ -66,10 +66,8 @@ def _file_to_hex(filename: Path) -> str:
 class SidechainRepl(cmd.Cmd):
     """Simple repl for interacting with side chains"""
 
-    intro = (
-        "\n\nWelcome to the sidechain test shell.   Type help or ? to list commands.\n"
-    )
-    prompt = "RiplRepl> "
+    intro = "\n\nWelcome to the sidechain shell.   Type help or ? to list commands.\n"
+    prompt = "SSX> "
 
     def preloop(self: SidechainRepl) -> None:
         clear_screen()
@@ -1345,7 +1343,7 @@ class SidechainRepl(cmd.Cmd):
     ##################
     # quit
     def do_quit(self: SidechainRepl, line: str) -> bool:
-        print("Thank you for using RiplRepl. Goodbye.\n\n")
+        print("Thank you for using the sidechain shell. Goodbye.\n\n")
         return True
 
     def help_quit(self: SidechainRepl) -> None:
@@ -1369,8 +1367,7 @@ class SidechainRepl(cmd.Cmd):
     ##################
     # EOF
     def do_EOF(self: SidechainRepl, line: str) -> bool:
-        print("Thank you for using RiplRepl. Goodbye.\n\n")
-        return True
+        return self.do_quit(line)
 
     def help_EOF(self: SidechainRepl) -> None:
         print("Exit the program by typing control-d.")
