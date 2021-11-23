@@ -38,7 +38,7 @@ def single_node_chain(
 def connect_to_external_chain(
     *,
     url: str,
-    port: str,
+    port: int,
 ) -> Generator[ExternalChain, None, None]:
     """Start a ripple server and return a chain"""
     chain = None

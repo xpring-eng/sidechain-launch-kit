@@ -1,8 +1,6 @@
 from __future__ import annotations
 
 import os
-import socket
-import subprocess
 import time
 from typing import Any, Dict, List, Optional
 
@@ -11,46 +9,34 @@ from xrpl.models import Request, ServerInfo, Transaction
 from xrpl.transaction import safe_sign_and_submit_transaction
 from xrpl.wallet import Wallet
 
-from slk.classes.config_file import ConfigFile
+from slk.chain.node import Node
 
 
-class Node:
+class ExternalNode(Node):
     """Client to send commands to the rippled server"""
 
     def __init__(
-        self: Node,
-        *,
-        config: ConfigFile,
-        exe: str,
-        command_log: Optional[str] = None,
-        name: str,
+        self: ExternalNode,
+        protocol: str,
+        ip: str,
+        port: int,
     ) -> None:
-        section = config.port_ws_admin_local
-        self.websocket_uri = f"{section.protocol}://{section.ip}:{section.port}"
-        self.ip = section.ip
-        self.port = int(section.port)
-        self.name = name
+        self.websocket_uri = f"{protocol}://{ip}:{port}"
+        self.ip = ip
+        self.port = port
         self.client = WebsocketClient(url=self.websocket_uri)
-        self.config = config
-        self.exe = exe
-        self.command_log = command_log
-        self.pid: Optional[int] = None
-        self.process: Optional[subprocess.Popen[bytes]] = None
-        if self.command_log is not None:
-            with open(self.command_log, "w") as f:
-                f.write("# Start \n")
 
     @property
-    def config_file_name(self: Node) -> str:
-        return self.config.get_file_name()
+    def config_file_name(self: ExternalNode) -> str:
+        raise Exception("No config file for an external node")
 
-    def shutdown(self: Node) -> None:
+    def shutdown(self: ExternalNode) -> None:
         self.client.close()
 
-    def get_pid(self: Node) -> Optional[int]:
+    def get_pid(self: ExternalNode) -> Optional[int]:
         return self.pid
 
-    def request(self: Node, req: Request) -> Dict[str, Any]:
+    def request(self: ExternalNode, req: Request) -> Dict[str, Any]:
         if not self.client.is_open():
             self.client.open()
         response = self.client.request(req)
@@ -58,44 +44,26 @@ class Node:
             return response.result
         raise Exception("failed transaction", response.result)
 
-    def sign_and_submit(self: Node, txn: Transaction, wallet: Wallet) -> Dict[str, Any]:
+    def sign_and_submit(
+        self: ExternalNode, txn: Transaction, wallet: Wallet
+    ) -> Dict[str, Any]:
         if not self.client.is_open():
             self.client.open()
         return safe_sign_and_submit_transaction(txn, wallet, self.client).result
 
     def start_server(
-        self: Node,
+        self: ExternalNode,
         *,
         extra_args: Optional[List[str]] = None,
         standalone: bool = False,
         server_out: str = os.devnull,
     ) -> None:
-        if extra_args is None:
-            extra_args = []
-        to_run = [self.exe, "--conf", self.config_file_name]
-        if standalone:
-            to_run.append("-a")
-        print(f"Starting server {self.name}")
-        fout = open(server_out, "w")
-        self.process = subprocess.Popen(
-            to_run + extra_args, stdout=fout, stderr=subprocess.STDOUT
-        )
-        self.pid = self.process.pid
-        print(
-            f"  started rippled: {self.name} PID: {self.process.pid}",
-            flush=True,
-        )
+        pass
 
-    def stop_server(self: Node, *, server_out: str = os.devnull) -> None:
-        to_run = [self.exe, "--conf", self.config_file_name]
-        fout = open(os.devnull, "w")
-        subprocess.Popen(to_run + ["stop"], stdout=fout, stderr=subprocess.STDOUT)
+    def stop_server(self: ExternalNode, *, server_out: str = os.devnull) -> None:
+        raise Exception("Cannot stop server for an external node")
 
-        assert self.process is not None
-        self.process.wait()
-        self.pid = None
-
-    def server_started(self: Node) -> bool:
+    def server_started(self: ExternalNode) -> bool:
         """
         Determine whether the server the node is connected to has started and is ready
         to accept a WebSocket connection on its port.
@@ -103,11 +71,9 @@ class Node:
         Returns:
             Whether the socket is open and ready to accept a WebSocket connection.
         """
-        with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as sock:
-            result = sock.connect_ex((self.ip, self.port))
-            return result == 0  # means the WS port is open for connections
+        return True
 
-    def wait_for_validated_ledger(self: Node) -> None:
+    def wait_for_validated_ledger(self: ExternalNode) -> None:
         for i in range(600):
             r = self.request(ServerInfo())
             state = None
@@ -139,10 +105,8 @@ class Node:
         raise ValueError("Could not sync server {self.config_file_name}")
 
     # Get a dict of the server_state, validated_ledger_seq, and complete_ledgers
-    def get_brief_server_info(self: Node) -> Dict[str, Any]:
+    def get_brief_server_info(self: ExternalNode) -> Dict[str, Any]:
         ret = {"server_state": "NA", "ledger_seq": "NA", "complete_ledgers": "NA"}
-        if not self.pid:
-            return ret
         r = self.client.request(ServerInfo()).result
         if "info" not in r:
             return ret

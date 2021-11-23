@@ -173,6 +173,7 @@ class SidechainParams:
             self.hooks_dir = args.hooks_dir
 
         # set up config files
+        self.mainchain_config = None
         if self.standalone:
             if False:  # TODO: should be whether this is connecting to external net
                 self.mainchain_config = ConfigFile(

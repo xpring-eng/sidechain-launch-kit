@@ -96,7 +96,8 @@ def _standalone_with_callback(
     callback: Callable[[Chain, Chain], None],
     setup_user_accounts: bool = True,
 ) -> None:
-
+    # TODO: make more elegant once params is more fleshed out
+    assert params.mainchain_config is not None
     if params.debug_mainchain:
         input("Start mainchain server and press enter to continue: ")
     else:
@@ -264,6 +265,8 @@ def multinode_test(params: SidechainParams) -> None:
 def close_mainchain_ledgers(
     stop_token: Any, params: SidechainParams, sleep_time: int = 4
 ) -> None:
+    # TODO: make more elegant once params is more fleshed out
+    assert params.mainchain_config is not None
     with single_node_chain(
         config=params.mainchain_config,
         exe=params.mainchain_exe,

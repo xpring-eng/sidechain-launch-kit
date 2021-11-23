@@ -6,7 +6,7 @@ from typing import Any, Dict, List, Optional, Set, Union
 from xrpl.models import Transaction
 
 from slk.chain.chain import Chain
-from slk.chain.client import Client
+from slk.chain.external_node import ExternalNode
 from slk.chain.node import Node
 from slk.classes.config_file import ConfigFile
 
@@ -17,10 +17,10 @@ class ExternalChain(Chain):
     def __init__(
         self: ExternalChain,
         url: str,
-        port: str,
+        port: int,
     ) -> None:
         pass
-        super().__init__(Client("wss", url, port))
+        super().__init__(ExternalNode("wss", url, port))
 
     @property
     def standalone(self: ExternalChain) -> bool:
