@@ -84,6 +84,7 @@ sidechain_refund_penalty={json.dumps(amt_to_json(xchainasset.side_refund_penalty
 # First element of the returned tuple is the sidechain stanzas
 # second element is the bootstrap stanzas
 def generate_sidechain_stanza(
+    mainchain_url: str,
     mainchain_ws_port: int,
     main_account: Wallet,
     federators: List[Keypair],
@@ -108,7 +109,7 @@ def generate_sidechain_stanza(
 [sidechain]
 signing_key={signing_key}
 mainchain_account={main_account.classic_address}
-mainchain_ip={MAINCHAIN_IP}
+mainchain_ip={mainchain_url}
 mainchain_port_ws={mainchain_ws_port}
 {cfg_file_line}
 
@@ -116,7 +117,7 @@ mainchain_port_ws={mainchain_ws_port}
 
 {federators_stanza}
 
-{federators_secrets_stanza}
+{federators_secrets_stanza if mainchain_url == THIS_IP else ""}
 """
     bootstrap_stanzas = f"""
 [sidechain]

@@ -11,16 +11,17 @@ from slk.config.helper_classes import Keypair, Ports
 
 
 class Network:
-    def __init__(self: Network, ports: List[Ports]) -> None:
+    def __init__(self: Network, num_nodes: int, ports: List[Ports]) -> None:
+        self.url = "127.0.0.1"
+        self.num_nodes = num_nodes
         self.ports = ports
 
 
 class StandaloneNetwork(Network):
     def __init__(self: StandaloneNetwork, num_nodes: int, start_cfg_index: int) -> None:
-        self.num_nodes = num_nodes
+        ports = [Ports.generate(start_cfg_index + i) for i in range(num_nodes)]
+        super().__init__(num_nodes, ports)
         self.validator_keypairs = self._generate_node_keypairs()
-        ports = [Ports.generate(start_cfg_index + i) for i in range(self.num_nodes)]
-        super().__init__(ports)
 
     def _generate_node_keypairs(self: StandaloneNetwork) -> List[Keypair]:
         """generate keypairs suitable for validator keys"""
@@ -36,6 +37,13 @@ class StandaloneNetwork(Network):
                 )
             )
         return result
+
+
+class ExternalNetwork(Network):
+    def __init__(self: ExternalNetwork, url: str, ws_port: int) -> None:
+        ports = [Ports(None, None, ws_port, None)]
+        super().__init__(1, ports)
+        self.url = url
 
 
 class SidechainNetwork(StandaloneNetwork):

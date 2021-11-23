@@ -29,7 +29,12 @@ from xrpl.models import XRP, IssuedCurrency
 from slk.config.cfg_strs import generate_sidechain_stanza, get_cfg_str, get_ips_stanza
 from slk.config.config_params import ConfigParams
 from slk.config.helper_classes import Ports, XChainAsset
-from slk.config.network import Network, SidechainNetwork, StandaloneNetwork
+from slk.config.network import (
+    ExternalNetwork,
+    Network,
+    SidechainNetwork,
+    StandaloneNetwork,
+)
 from slk.utils.eprint import eprint
 
 MAINNET_VALIDATORS = """
@@ -84,6 +89,7 @@ def generate_cfg_dir(
     for path in ["", "/db", "/shards"]:
         Path(sub_dir + path).mkdir(parents=True, exist_ok=True)
 
+    assert ports.peer_port is not None  # TODO: better error handling/port typing
     ips_stanza = get_ips_stanza(fixed_ips, ports.peer_port, main_net)
 
     cfg_str = get_cfg_str(
@@ -164,6 +170,7 @@ def generate_multinode_net(
         if standalone:
             mainnet_cfg = mainnet_cfgs[mainnet_i]
         sidechain_stanza, sidechain_bootstrap_stanza = generate_sidechain_stanza(
+            mainnet.url,
             mainnet.ports[mainnet_i].ws_public_port,
             sidenet.main_account,
             sidenet.federator_keypairs,
@@ -190,7 +197,11 @@ def create_config_files(
 ) -> None:
     index = 0
     print("creating", params.standalone, params.mainnet_url, params.mainnet_port)
-    mainnet = StandaloneNetwork(num_nodes=1, start_cfg_index=index)
+    if params.standalone:
+        mainnet: Network = StandaloneNetwork(num_nodes=1, start_cfg_index=index)
+    else:
+        assert params.mainnet_port is not None  # TODO: better error handling
+        mainnet = ExternalNetwork(url=params.mainnet_url, ws_port=params.mainnet_port)
     sidenet = SidechainNetwork(
         num_federators=params.num_federators,
         start_cfg_index=index + 1,
@@ -200,6 +211,7 @@ def create_config_files(
         mainnet=mainnet,
         sidenet=sidenet,
         xchain_assets=xchain_assets,
+        standalone=params.standalone,
     )
     index = index + 2
 

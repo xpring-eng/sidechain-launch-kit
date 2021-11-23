@@ -26,10 +26,10 @@ class Ports:
 
     def __init__(
         self: Ports,
-        peer_port: int,
-        http_admin_port: int,
+        peer_port: Optional[int],
+        http_admin_port: Optional[int],
         ws_public_port: int,
-        ws_admin_port: int,
+        ws_admin_port: Optional[int],
     ) -> None:
         self.peer_port = peer_port
         self.http_admin_port = http_admin_port
@@ -37,8 +37,8 @@ class Ports:
         self.ws_admin_port = ws_admin_port
 
     @classmethod
-    def generate(self: Type[Ports], cfg_index: int) -> Ports:
-        return Ports(
+    def generate(cls: Type[Ports], cfg_index: int) -> Ports:
+        return cls(
             Ports.peer_port_base + cfg_index,
             Ports.http_admin_port_base + cfg_index,
             Ports.ws_public_port_base + (2 * cfg_index),

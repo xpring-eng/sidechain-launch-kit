@@ -105,8 +105,8 @@ class ConfigParams:
         self.mainnet_port = None
         if not self.standalone:
             if "MAINNET_PORT" in _ENV_VARS:
-                self.mainnet_port = _ENV_VARS["MAINNET_PORT"]
+                self.mainnet_port = int(_ENV_VARS["MAINNET_PORT"])
             if args.mainnet_port:
-                self.mainnet_port = args.mainnet_port
+                self.mainnet_port = int(args.mainnet_port)
 
         self.usd = args.usd or False
