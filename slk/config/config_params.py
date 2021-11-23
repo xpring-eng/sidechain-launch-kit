@@ -40,6 +40,15 @@ def _parse_args() -> argparse.Namespace:
         ),
     )
 
+    parser.add_argument(
+        "--mainnet",
+        "-m",
+        help=(
+            "URl of the mainnet. Defaults to standalone. Type `standalone` to use a "
+            "standalone node."
+        ),
+    )
+
     return parser.parse_known_args()[0]
 
 
@@ -73,5 +82,14 @@ class ConfigParams:
                 "Invalid number of federators. Expected between 1 and 8 "
                 f"(inclusive), received {self.num_federators}"
             )
+
+        mainnet = None
+        if "MAINNET" in _ENV_VARS:
+            mainnet = _ENV_VARS["MAINNET"]
+        if args.mainnet:
+            mainnet = args.mainnet
+        if not mainnet:
+            mainnet = "standalone"
+        self.mainnet_url = "127.0.0.1" if mainnet == "standalone" else mainnet
 
         self.usd = args.usd or False
