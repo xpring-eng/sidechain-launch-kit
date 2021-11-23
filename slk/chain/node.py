@@ -136,7 +136,7 @@ class Node:
                 )
             time.sleep(1)
 
-        raise ValueError("Could not sync server {self.config_file_name}")
+        raise ValueError(f"Could not sync server {self.name}")
 
     # Get a dict of the server_state, validated_ledger_seq, and complete_ledgers
     def get_brief_server_info(self: Node) -> Dict[str, Any]:
