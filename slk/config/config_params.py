@@ -49,6 +49,15 @@ def _parse_args() -> argparse.Namespace:
         ),
     )
 
+    parser.add_argument(
+        "--mainnet_port",
+        "-mp",
+        help=(
+            "The WebSocket port for the mainnet network. Defaults to 6005. Ignored if "
+            "in standalone."
+        ),
+    )
+
     return parser.parse_known_args()[0]
 
 
@@ -91,5 +100,13 @@ class ConfigParams:
         if not mainnet:
             mainnet = "standalone"
         self.mainnet_url = "127.0.0.1" if mainnet == "standalone" else mainnet
+        self.standalone = mainnet == "standalone" or mainnet == "127.0.0.1"
+
+        self.mainnet_port = None
+        if not self.standalone:
+            if "MAINNET_PORT" in _ENV_VARS:
+                self.mainnet_port = _ENV_VARS["MAINNET_PORT"]
+            if args.mainnet_port:
+                self.mainnet_port = args.mainnet_port
 
         self.usd = args.usd or False
