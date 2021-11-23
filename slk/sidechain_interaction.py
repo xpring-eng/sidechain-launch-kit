@@ -203,11 +203,11 @@ def _external_node_with_callback(
     callback: Callable[[Chain, Chain], None],
     setup_user_accounts: bool = True,
 ) -> None:
-
+    assert params.mainnet_port is not None  # TODO: type this better
     with connect_to_external_chain(
         # TODO: stop hardcoding this
-        url="s.devnet.rippletest.net",
-        port=51233,
+        url=params.mainnet_url,
+        port=params.mainnet_port,
     ) as mc_chain:
         if params.with_pauses:
             input("Pausing after mainchain connected (press enter to continue)")
@@ -257,6 +257,13 @@ def multinode_test(params: SidechainParams) -> None:
         simple_test(mc_chain, sc_chain, params)
 
     _multinode_with_callback(params, callback)
+
+
+def external_node_test(params: SidechainParams) -> None:
+    def callback(mc_chain: Chain, sc_chain: Chain) -> None:
+        simple_test(mc_chain, sc_chain, params)
+
+    _external_node_with_callback(params, callback)
 
 
 # The mainchain runs in standalone mode. Most operations - like cross chain
@@ -345,10 +352,14 @@ def main() -> None:
         disable_eprint()
 
     if params.interactive:
-        if params.standalone:
+        if not params.main_standalone:
+            external_node_interactive_repl(params)
+        elif params.standalone:
             standalone_interactive_repl(params)
         else:
             multinode_interactive_repl(params)
+    elif not params.main_standalone:
+        external_node_test(params)
     elif params.standalone:
         standalone_test(params)
     else:

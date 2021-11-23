@@ -90,6 +90,24 @@ def _parse_args_helper(parser: argparse.ArgumentParser) -> None:
         help=("path to hooks dir"),
     )
 
+    parser.add_argument(
+        "--mainnet",
+        "-m",
+        help=(
+            "URl of the mainnet. Defaults to standalone. Type `standalone` to use a "
+            "standalone node."
+        ),
+    )
+
+    parser.add_argument(
+        "--mainnet_port",
+        "-mp",
+        help=(
+            "The WebSocket port for the mainnet network. Defaults to 6005. Ignored if "
+            "in standalone."
+        ),
+    )
+
 
 def _parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description=("Test and debug sidechains"))
@@ -126,17 +144,38 @@ class SidechainParams:
                 "Cannot specify both verbose and quiet options at the same time"
             )
 
-        # identify mainchain rippled exe file location (for standalone)
-        if "RIPPLED_MAINCHAIN_EXE" in _ENV_VARS:
-            self.mainchain_exe = _ENV_VARS["RIPPLED_MAINCHAIN_EXE"]
-        if args.exe_mainchain:
-            self.mainchain_exe = args.exe_mainchain
-        # if `self.mainchain_exe` doesn't exist (done this way for typing purposes)
-        if not hasattr(self, "mainchain_exe"):
-            raise Exception(
-                "Missing mainchain_exe location. Either set the env variable "
-                "RIPPLED_MAINCHAIN_EXE or use the --exe_mainchain command line switch"
-            )
+        # identify network to connect to
+        mainnet = None
+        if "MAINNET" in _ENV_VARS:
+            mainnet = _ENV_VARS["MAINNET"]
+        if args.mainnet:
+            mainnet = args.mainnet
+        if not mainnet:
+            mainnet = "standalone"
+        self.mainnet_url = "127.0.0.1" if mainnet == "standalone" else mainnet
+        self.main_standalone = mainnet == "standalone" or mainnet == "127.0.0.1"
+
+        self.mainnet_port = None
+        if not self.main_standalone:
+            if "MAINNET_PORT" in _ENV_VARS:
+                self.mainnet_port = int(_ENV_VARS["MAINNET_PORT"])
+            if args.mainnet_port:
+                self.mainnet_port = int(args.mainnet_port)
+        print(self.main_standalone, self.mainnet_url, self.mainnet_port)
+
+        if self.main_standalone:
+            # identify mainchain rippled exe file location (for standalone)
+            if "RIPPLED_MAINCHAIN_EXE" in _ENV_VARS:
+                self.mainchain_exe = _ENV_VARS["RIPPLED_MAINCHAIN_EXE"]
+            if args.exe_mainchain:
+                self.mainchain_exe = args.exe_mainchain
+            # if `self.mainchain_exe` doesn't exist (done this way for typing purposes)
+            if not hasattr(self, "mainchain_exe"):
+                raise Exception(
+                    "Missing mainchain_exe location. Either set the env variable "
+                    "RIPPLED_MAINCHAIN_EXE or use the --exe_mainchain command line "
+                    "switch"
+                )
 
         # identify sidechain rippled exe file location
         if "RIPPLED_SIDECHAIN_EXE" in _ENV_VARS:

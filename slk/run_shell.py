@@ -28,11 +28,12 @@ def main() -> None:
     else:
         disable_eprint()
 
-    external_node_interactive_repl(params)
-    # if params.standalone:
-    #     standalone_interactive_repl(params)
-    # else:
-    #     multinode_interactive_repl(params)
+    if not params.main_standalone:
+        external_node_interactive_repl(params)
+    elif params.standalone:
+        standalone_interactive_repl(params)
+    else:
+        multinode_interactive_repl(params)
 
 
 if __name__ == "__main__":
