@@ -47,6 +47,10 @@ class Node:
     def shutdown(self: Node) -> None:
         self.client.close()
 
+    @property
+    def running(self: Node) -> bool:
+        return self.pid is not None
+
     def get_pid(self: Node) -> Optional[int]:
         return self.pid
 
@@ -141,7 +145,7 @@ class Node:
     # Get a dict of the server_state, validated_ledger_seq, and complete_ledgers
     def get_brief_server_info(self: Node) -> Dict[str, Any]:
         ret = {"server_state": "NA", "ledger_seq": "NA", "complete_ledgers": "NA"}
-        if not self.pid:
+        if not self.running:
             return ret
         r = self.client.request(ServerInfo()).result
         if "info" not in r:

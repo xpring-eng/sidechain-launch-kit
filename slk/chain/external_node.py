@@ -4,7 +4,7 @@ import os
 from typing import Any, Dict, List, Optional
 
 from xrpl.clients import WebsocketClient
-from xrpl.models import ServerInfo, Transaction
+from xrpl.models import Transaction
 from xrpl.transaction import (
     safe_sign_and_autofill_transaction,
     send_reliable_submission,
@@ -36,6 +36,9 @@ class ExternalNode(Node):
     def get_pid(self: ExternalNode) -> Optional[int]:
         raise Exception("No pid for an external node")
 
+    def running(self: ExternalNode) -> bool:
+        return True
+
     def sign_and_submit(
         self: ExternalNode, txn: Transaction, wallet: Wallet
     ) -> Dict[str, Any]:
@@ -65,17 +68,3 @@ class ExternalNode(Node):
             Whether the socket is open and ready to accept a WebSocket connection.
         """
         return True
-
-    # Get a dict of the server_state, validated_ledger_seq, and complete_ledgers
-    def get_brief_server_info(self: ExternalNode) -> Dict[str, Any]:
-        ret = {"server_state": "NA", "ledger_seq": "NA", "complete_ledgers": "NA"}
-        r = self.client.request(ServerInfo()).result
-        if "info" not in r:
-            return ret
-        r = r["info"]
-        for f in ["server_state", "complete_ledgers"]:
-            if f in r:
-                ret[f] = r[f]
-        if "validated_ledger" in r:
-            ret["ledger_seq"] = r["validated_ledger"]["seq"]
-        return ret
