@@ -37,7 +37,7 @@ class ExternalChain(Chain):
         raise Exception("Cannot get configs for connection to external chain.")
 
     def get_running_status(self: ExternalChain) -> List[bool]:
-        raise Exception("Cannot get running status for connection to external chain.")
+        return [True]
 
     def shutdown(self: ExternalChain) -> None:
         self.node.shutdown()
@@ -48,7 +48,7 @@ class ExternalChain(Chain):
         server_indexes: Optional[Union[Set[int], List[int]]] = None,
         server_out: str = os.devnull,
     ) -> None:
-        raise Exception("Cannot start server for connection to external chain.")
+        pass
 
     def servers_stop(
         self: ExternalChain, server_indexes: Optional[Union[Set[int], List[int]]] = None
