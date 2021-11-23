@@ -205,6 +205,7 @@ def create_config_files(
     sidenet = SidechainNetwork(
         num_federators=params.num_federators,
         start_cfg_index=index + 1,
+        main_door_seed=params.door_seed,
     )
     generate_multinode_net(
         out_dir=f"{params.configs_dir}/sidechain_testnet",

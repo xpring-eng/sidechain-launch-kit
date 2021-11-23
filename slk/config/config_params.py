@@ -58,6 +58,15 @@ def _parse_args() -> argparse.Namespace:
         ),
     )
 
+    parser.add_argument(
+        "--door_seed",
+        "-d",
+        help=(
+            "The seed of the door account to use on the main network. Only required if "
+            "not connecting to standalone mode."
+        ),
+    )
+
     return parser.parse_known_args()[0]
 
 
@@ -108,5 +117,12 @@ class ConfigParams:
                 self.mainnet_port = int(_ENV_VARS["MAINNET_PORT"])
             if args.mainnet_port:
                 self.mainnet_port = int(args.mainnet_port)
+
+        self.door_seed = None
+        if not self.standalone:
+            if "DOOR_ACCOUNT_SEED" in _ENV_VARS:
+                self.door_seed = _ENV_VARS["DOOR_ACCOUNT_SEED"]
+            if args.door_seed:
+                self.door_seed = args.door_seedå
 
         self.usd = args.usd or False

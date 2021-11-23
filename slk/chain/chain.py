@@ -33,15 +33,13 @@ ROOT_ACCOUNT = Account(
 class Chain(ABC):
     """Representation of one chain (mainchain/sidechain)"""
 
-    def __init__(
-        self: Chain,
-        node: Node,
-    ) -> None:
+    def __init__(self: Chain, node: Node, add_root: bool = True) -> None:
         self.node = node
         self.key_manager = KeyManager()
         self.asset_aliases = AssetAliases()
 
-        self.key_manager.add(ROOT_ACCOUNT)
+        if add_root:
+            self.key_manager.add(ROOT_ACCOUNT)
 
     @property
     @abstractmethod

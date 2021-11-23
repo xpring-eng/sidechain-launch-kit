@@ -1,3 +1,4 @@
+from xrpl.account import does_account_exist
 from xrpl.models import (
     AccountSet,
     AccountSetFlag,
@@ -9,7 +10,6 @@ from xrpl.models import (
     TrustSet,
 )
 from xrpl.utils import xrp_to_drops
-from xrpl.wallet import generate_faucet_wallet
 
 from slk.chain.chain import Chain
 from slk.sidechain_params import SidechainParams
@@ -29,7 +29,8 @@ def setup_mainchain(
     # mc_chain.request(LogLevel('fatal'))
     # TODO: only do all this setup for external network if it hasn't already been done
 
-    if False:  # TODO: generalize to only standalone
+    # TODO: set up cross-chain ious
+    if params.main_standalone:
         # Allow rippling through the genesis account
         mc_chain.send_signed(
             AccountSet(
@@ -39,7 +40,7 @@ def setup_mainchain(
         )
         mc_chain.maybe_ledger_accept()
 
-    if False:  # TODO: generalize to only standalone
+    if params.main_standalone:
         # Create and fund the mc door account
         mc_chain.send_signed(
             Payment(
@@ -51,9 +52,16 @@ def setup_mainchain(
         mc_chain.maybe_ledger_accept()
     else:
         mc_chain.node.client.open()
-        generate_faucet_wallet(mc_chain.node.client, params.mc_door_account.wallet)
+        if not does_account_exist(
+            params.mc_door_account.account_id, mc_chain.node.client
+        ):
+            raise Exception(
+                f"Account {params.mc_door_account.account_id} needs to be funded to "
+                "exist."
+            )
 
-    if False:  # TODO: generalize to only standalone
+    # TODO: set up cross-chain ious
+    if params.main_standalone:
         # Create a trust line so USD/root account ious can be sent cross chain
         mc_chain.send_signed(
             TrustSet(

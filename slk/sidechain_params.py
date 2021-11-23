@@ -214,7 +214,7 @@ class SidechainParams:
         # set up config files
         self.mainchain_config = None
         if self.standalone:
-            if False:  # TODO: should be whether this is connecting to external net
+            if self.main_standalone:
                 self.mainchain_config = ConfigFile(
                     file_name=f"{self.configs_dir}/main.no_shards.dog/rippled.cfg"
                 )
@@ -226,7 +226,7 @@ class SidechainParams:
                 "sidechain_bootstrap.cfg"
             )
         else:
-            if False:
+            if self.main_standalone:
                 self.mainchain_config = ConfigFile(
                     file_name=f"{self.configs_dir}/sidechain_testnet/main.no_shards."
                     "mainchain_0/rippled.cfg"
