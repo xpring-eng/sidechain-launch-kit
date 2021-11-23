@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import Optional
+from typing import Optional, Type
 
 from xrpl.models import Currency, IssuedCurrencyAmount
 
@@ -24,12 +24,27 @@ class Ports:
     http_admin_port_base = 5005
     ws_public_port_base = 6005
 
-    def __init__(self: Ports, cfg_index: int) -> None:
-        self.peer_port = Ports.peer_port_base + cfg_index
-        self.http_admin_port = Ports.http_admin_port_base + cfg_index
-        self.ws_public_port = Ports.ws_public_port_base + (2 * cfg_index)
-        # note admin port uses public port base
-        self.ws_admin_port = Ports.ws_public_port_base + (2 * cfg_index) + 1
+    def __init__(
+        self: Ports,
+        peer_port: int,
+        http_admin_port: int,
+        ws_public_port: int,
+        ws_admin_port: int,
+    ) -> None:
+        self.peer_port = peer_port
+        self.http_admin_port = http_admin_port
+        self.ws_public_port = ws_public_port
+        self.ws_admin_port = ws_admin_port
+
+    @classmethod
+    def generate(self: Type[Ports], cfg_index: int) -> Ports:
+        return Ports(
+            Ports.peer_port_base + cfg_index,
+            Ports.http_admin_port_base + cfg_index,
+            Ports.ws_public_port_base + (2 * cfg_index),
+            # note admin port uses public port base
+            Ports.ws_public_port_base + (2 * cfg_index) + 1,
+        )
 
 
 class XChainAsset:

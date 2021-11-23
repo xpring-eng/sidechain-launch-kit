@@ -84,11 +84,11 @@ sidechain_refund_penalty={json.dumps(amt_to_json(xchainasset.side_refund_penalty
 # First element of the returned tuple is the sidechain stanzas
 # second element is the bootstrap stanzas
 def generate_sidechain_stanza(
-    mainchain_ports: Ports,
+    mainchain_ws_port: int,
     main_account: Wallet,
     federators: List[Keypair],
     signing_key: str,
-    mainchain_cfg_file: str,
+    mainchain_cfg_file: Optional[str] = None,
     xchain_assets: Optional[Dict[str, XChainAsset]] = None,
 ) -> Tuple[str, str]:
     assets_stanzas = generate_asset_stanzas(xchain_assets)
@@ -96,6 +96,9 @@ def generate_sidechain_stanza(
     federators_stanza = FEDERATORS_STANZA_INIT
     federators_secrets_stanza = FEDERATORS_SECRETS_STANZA_INIT
     bootstrap_federators_stanza = BOOTSTRAP_FEDERATORS_STANZA_INIT
+    cfg_file_line = ""
+    if mainchain_cfg_file is not None:
+        cfg_file_line = f"# mainchain config file is: {mainchain_cfg_file}"
     for fed in federators:
         federators_stanza += f"{fed.public_key}\n"
         federators_secrets_stanza += f"{fed.secret_key}\n"
@@ -106,8 +109,8 @@ def generate_sidechain_stanza(
 signing_key={signing_key}
 mainchain_account={main_account.classic_address}
 mainchain_ip={MAINCHAIN_IP}
-mainchain_port_ws={mainchain_ports.ws_public_port}
-# mainchain config file is: {mainchain_cfg_file}
+mainchain_port_ws={mainchain_ws_port}
+{cfg_file_line}
 
 {assets_stanzas}
 
