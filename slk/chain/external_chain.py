@@ -3,8 +3,6 @@ from __future__ import annotations
 import os
 from typing import Any, Dict, List, Optional, Set, Union
 
-from xrpl.models import Transaction
-
 from slk.chain.chain import Chain
 from slk.chain.external_node import ExternalNode
 from slk.chain.node import Node
@@ -54,16 +52,6 @@ class ExternalChain(Chain):
         self: ExternalChain, server_indexes: Optional[Union[Set[int], List[int]]] = None
     ) -> None:
         raise Exception("Cannot stop server for connection to external chain.")
-
-    # rippled stuff
-
-    def send_signed(self: ExternalChain, txn: Transaction) -> Dict[str, Any]:
-        """Sign then send the given transaction"""
-        if not self.key_manager.is_account(txn.account):
-            raise ValueError("Cannot sign transaction without secret key")
-        account_obj = self.key_manager.get_account(txn.account)
-        return self.node.sign_and_submit(txn, account_obj.wallet)
-        # TODO: need relsub
 
     # specific rippled methods
 

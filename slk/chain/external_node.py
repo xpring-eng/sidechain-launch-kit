@@ -41,13 +41,8 @@ class ExternalNode(Node):
     ) -> Dict[str, Any]:
         if not self.client.is_open():
             self.client.open()
-        from pprint import pprint
-
-        pprint(txn.to_dict())
         autofilled = safe_sign_and_autofill_transaction(txn, wallet, self.client)
-        result = send_reliable_submission(autofilled, self.client).result
-        pprint(result)
-        return result
+        return send_reliable_submission(autofilled, self.client).result
 
     def start_server(
         self: ExternalNode,

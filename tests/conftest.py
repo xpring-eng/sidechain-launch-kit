@@ -57,7 +57,7 @@ def configs_dirs_dict(tmp_path):
         _config_dirs = {}
         for ratio in (1, 2):
             params.configs_dir = str(tmp_path / f"test_config_files_{ratio}")
-            create_config_files.main(params, _xchain_assets(ratio))
+            create_config_files.create_config_files(params, _xchain_assets(ratio))
             _config_dirs[ratio] = params.configs_dir
 
     return _config_dirs
