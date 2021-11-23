@@ -56,6 +56,7 @@ class SidechainNetwork(StandaloneNetwork):
         super().__init__(num_nodes or num_federators, start_cfg_index)
         self.num_federators = num_federators
         self.federator_keypairs = self._generate_federator_keypairs()
+        # TODO: main_account needs to be user-defined for external networks
         self.main_account = Wallet.create(CryptoAlgorithm.SECP256K1)
 
     def _generate_federator_keypairs(self: SidechainNetwork) -> List[Keypair]:

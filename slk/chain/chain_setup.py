@@ -9,6 +9,7 @@ from xrpl.models import (
     TrustSet,
 )
 from xrpl.utils import xrp_to_drops
+from xrpl.wallet import generate_faucet_wallet
 
 from slk.chain.chain import Chain
 from slk.sidechain_params import SidechainParams
@@ -26,37 +27,44 @@ def setup_mainchain(
         mc_chain.add_to_keymanager(params.user_account)
 
     # mc_chain.request(LogLevel('fatal'))
+    # TODO: only do all this setup for external network if it hasn't already been done
 
-    # Allow rippling through the genesis account
-    mc_chain.send_signed(
-        AccountSet(
-            account=params.genesis_account.account_id,
-            set_flag=AccountSetFlag.ASF_DEFAULT_RIPPLE,
+    if False:  # TODO: generalize to only standalone
+        # Allow rippling through the genesis account
+        mc_chain.send_signed(
+            AccountSet(
+                account=params.genesis_account.account_id,
+                set_flag=AccountSetFlag.ASF_DEFAULT_RIPPLE,
+            )
         )
-    )
-    mc_chain.maybe_ledger_accept()
+        mc_chain.maybe_ledger_accept()
 
-    # Create and fund the mc door account
-    mc_chain.send_signed(
-        Payment(
-            account=params.genesis_account.account_id,
-            destination=params.mc_door_account.account_id,
-            amount=xrp_to_drops(1_000),
+    if False:  # TODO: generalize to only standalone
+        # Create and fund the mc door account
+        mc_chain.send_signed(
+            Payment(
+                account=params.genesis_account.account_id,
+                destination=params.mc_door_account.account_id,
+                amount=xrp_to_drops(1_000),
+            )
         )
-    )
-    mc_chain.maybe_ledger_accept()
+        mc_chain.maybe_ledger_accept()
+    else:
+        mc_chain.node.client.open()
+        generate_faucet_wallet(mc_chain.node.client, params.mc_door_account.wallet)
 
-    # Create a trust line so USD/root account ious can be sent cross chain
-    mc_chain.send_signed(
-        TrustSet(
-            account=params.mc_door_account.account_id,
-            limit_amount=IssuedCurrencyAmount(
-                value=str(1_000_000),
-                currency="USD",
-                issuer=params.genesis_account.account_id,
-            ),
+    if False:  # TODO: generalize to only standalone
+        # Create a trust line so USD/root account ious can be sent cross chain
+        mc_chain.send_signed(
+            TrustSet(
+                account=params.mc_door_account.account_id,
+                limit_amount=IssuedCurrencyAmount(
+                    value=str(1_000_000),
+                    currency="USD",
+                    issuer=params.genesis_account.account_id,
+                ),
+            )
         )
-    )
 
     # set the chain's signer list and disable the master key
     # quorum is 80%

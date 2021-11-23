@@ -126,7 +126,7 @@ class Sidechain(Chain):
         counter = 0
         while not all([node.server_started() for node in self.nodes]):
             counter += 1
-            if counter == 20:  # 10 second timeout
+            if counter == 200:  # 100 second timeout
                 raise Exception("Timeout: servers took too long to start.")
             time.sleep(0.5)
 
