@@ -1,3 +1,5 @@
+"""Representation of a standalone mainchain."""
+
 from __future__ import annotations
 
 import os

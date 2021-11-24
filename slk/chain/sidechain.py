@@ -1,4 +1,4 @@
-"""Bring up a rippled sidechain network from a set of config files with fixed ips."""
+"""Representation of a local sidechain."""
 from __future__ import annotations
 
 import glob

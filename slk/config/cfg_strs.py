@@ -1,3 +1,5 @@
+"""Helper methods for generating the strings that make up the config files."""
+
 import json
 from typing import Any, Dict, List, Optional, Tuple, Union
 

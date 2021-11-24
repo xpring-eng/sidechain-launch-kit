@@ -1,4 +1,4 @@
-#!/usr/bin/env python3
+"""Python script to convert log files to JSON."""
 from __future__ import annotations
 
 import argparse

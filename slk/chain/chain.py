@@ -1,3 +1,5 @@
+"""Representation of one chain (e.g. mainchain/sidechain)."""
+
 from __future__ import annotations
 
 import os
@@ -31,7 +33,7 @@ ROOT_ACCOUNT = Account(
 
 
 class Chain(ABC):
-    """Representation of one chain (mainchain/sidechain)"""
+    """Representation of one chain (e.g. mainchain/sidechain)."""
 
     def __init__(
         self: Chain,

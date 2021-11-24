@@ -1,3 +1,5 @@
+"""Parsing and storage of command-line args for creating the config files."""
+
 from __future__ import annotations
 
 import argparse

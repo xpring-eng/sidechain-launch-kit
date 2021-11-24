@@ -1,3 +1,5 @@
+"""Representation of an account in the XRPL."""
+
 from __future__ import annotations
 
 import binascii
@@ -7,7 +9,7 @@ from xrpl.wallet import Wallet
 
 
 class Account:
-    """Account in the XRPL"""
+    """Representation of an account in the XRPL"""
 
     def __init__(self: Account, *, account_id: str, nickname: str, seed: str) -> None:
         """
@@ -18,6 +20,8 @@ class Account:
             nickname: The shortened nickname for the account.
             seed: The seed for the wallet for the account.
         """
+        # TODO: refactor so account_id is pulled from the wallet instead of separately
+        # stored
         self.account_id = account_id
         self.nickname = nickname
         self.seed = seed

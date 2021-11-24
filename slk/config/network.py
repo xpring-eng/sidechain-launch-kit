@@ -1,3 +1,9 @@
+"""
+Classes related to networks for generating the config files.
+
+A network is basically a representation of nodes and keypairs.
+"""
+
 from __future__ import annotations
 
 from typing import List

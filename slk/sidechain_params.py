@@ -1,3 +1,5 @@
+"""Parsing and storage of command-line args for starting a sidechain."""
+
 from __future__ import annotations
 
 import argparse

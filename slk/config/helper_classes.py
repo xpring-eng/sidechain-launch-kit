@@ -1,3 +1,5 @@
+"""Helper classes for generating the config files."""
+
 from __future__ import annotations
 
 from dataclasses import dataclass

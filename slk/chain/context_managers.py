@@ -1,3 +1,5 @@
+"""Context managers for working with a chain."""
+
 import os
 from contextlib import contextmanager
 from typing import Generator, List, Optional

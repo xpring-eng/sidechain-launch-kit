@@ -1,3 +1,5 @@
+"""Simple REPL for interacting with side chains."""
+
 from __future__ import annotations
 
 import binascii
@@ -65,7 +67,7 @@ def _file_to_hex(filename: Path) -> str:
 
 
 class SidechainRepl(cmd.Cmd):
-    """Simple repl for interacting with side chains"""
+    """Simple REPL for interacting with side chains."""
 
     intro = "\n\nWelcome to the sidechain shell.   Type help or ? to list commands.\n"
     prompt = "SSX> "

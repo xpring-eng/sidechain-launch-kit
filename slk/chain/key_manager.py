@@ -1,3 +1,5 @@
+"""A class that stores account information in easily-accessible ways."""
+
 from __future__ import annotations
 
 from typing import Dict, List, Optional, Union

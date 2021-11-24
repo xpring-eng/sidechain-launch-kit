@@ -1,3 +1,5 @@
+"""Printing debugging info."""
+
 import sys
 from typing import Any
 

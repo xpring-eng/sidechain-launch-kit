@@ -1,3 +1,5 @@
+"""Helper methods for the REPL that involve interacting with the Ledger."""
+
 import os
 import time
 from typing import Any, Dict, List, Optional, Tuple, cast

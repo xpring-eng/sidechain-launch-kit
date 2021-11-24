@@ -1,3 +1,5 @@
+"""Represents one node in a chain and its network connection."""
+
 from __future__ import annotations
 
 import os
