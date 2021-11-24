@@ -123,6 +123,6 @@ class ConfigParams:
             if "DOOR_ACCOUNT_SEED" in _ENV_VARS:
                 self.door_seed = _ENV_VARS["DOOR_ACCOUNT_SEED"]
             if args.door_seed:
-                self.door_seed = args.door_seedå
+                self.door_seed = args.door_seed
 
         self.usd = args.usd or False
