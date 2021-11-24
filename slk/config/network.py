@@ -32,7 +32,7 @@ class Network:
         self.ports = [Ports(start_cfg_index + i) for i in range(self.num_nodes)]
 
     def _generate_node_keypairs(self: Network) -> List[Keypair]:
-        """generate keypairs suitable for validator keys"""
+        """Generate keypairs suitable for validator keys."""
         result = []
         for i in range(self.num_nodes):
             seed = generate_seed(None, CryptoAlgorithm.SECP256K1)
@@ -68,7 +68,7 @@ class SidechainNetwork(Network):
         self.main_account = Wallet.create(CryptoAlgorithm.SECP256K1)
 
     def _generate_federator_keypairs(self: SidechainNetwork) -> List[Keypair]:
-        """generate keypairs suitable for federator keys"""
+        """Generate keypairs suitable for federator keys."""
         result = []
         for i in range(self.num_federators):
             wallet = Wallet.create(crypto_algorithm=CryptoAlgorithm.ED25519)

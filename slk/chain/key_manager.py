@@ -41,7 +41,7 @@ class KeyManager:
         return self._accounts
 
     def alias_or_account_id(self: KeyManager, account_id: Union[Account, str]) -> str:
-        """return the alias if it exists, otherwise return the id"""
+        """Return the alias if it exists, otherwise return the id."""
         if isinstance(account_id, Account):
             return account_id.nickname
 
