@@ -45,6 +45,7 @@ def get_account_info(
 def get_server_info(
     chains: List[Chain], chain_names: List[str]
 ) -> List[Dict[str, Any]]:
+    # TODO: handle external networks better
     def data_dict(chain: Chain, chain_name: str) -> Dict[str, Any]:
         # get the server_info data for a specific chain
         # TODO: refactor get_brief_server_info to make this method less clunky

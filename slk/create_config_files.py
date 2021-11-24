@@ -196,7 +196,6 @@ def create_config_files(
     params: ConfigParams, xchain_assets: Optional[Dict[str, XChainAsset]] = None
 ) -> None:
     index = 0
-    print("creating", params.standalone, params.mainnet_url, params.mainnet_port)
     if params.standalone:
         mainnet: Network = StandaloneNetwork(num_nodes=1, start_cfg_index=index)
     else:

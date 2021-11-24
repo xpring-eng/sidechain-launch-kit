@@ -10,7 +10,6 @@ from xrpl.models import (
     AccountLines,
     Currency,
     IssuedCurrency,
-    IssuedCurrencyAmount,
     LedgerAccept,
     Request,
     Subscribe,
@@ -196,7 +195,7 @@ class Chain(ABC):
                     }
                 ]
         else:
-            assert isinstance(token, IssuedCurrencyAmount)  # for typing
+            assert isinstance(token, IssuedCurrency)  # for typing
             try:
                 trustlines = self.get_trust_lines(account)
                 trustlines = [

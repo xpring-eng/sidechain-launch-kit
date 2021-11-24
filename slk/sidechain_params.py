@@ -161,7 +161,6 @@ class SidechainParams:
                 self.mainnet_port = int(_ENV_VARS["MAINNET_PORT"])
             if args.mainnet_port:
                 self.mainnet_port = int(args.mainnet_port)
-        print(self.main_standalone, self.mainnet_url, self.mainnet_port)
 
         if self.main_standalone:
             # identify mainchain rippled exe file location (for standalone)

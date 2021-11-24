@@ -10,6 +10,7 @@ from xrpl.models import (
     TrustSet,
 )
 from xrpl.utils import xrp_to_drops
+from xrpl.wallet import generate_faucet_wallet
 
 from slk.chain.chain import Chain
 from slk.sidechain_params import SidechainParams
@@ -31,17 +32,23 @@ def setup_mainchain(
 
     # TODO: set up cross-chain ious
     if params.main_standalone:
-        # Allow rippling through the genesis account
-        mc_chain.send_signed(
-            AccountSet(
-                account=params.genesis_account.account_id,
-                set_flag=AccountSetFlag.ASF_DEFAULT_RIPPLE,
-            )
-        )
-        mc_chain.maybe_ledger_accept()
+        issuer = params.genesis_account
+    else:
+        issuer = mc_chain.create_account("issuer")
+        mc_chain.node.client.open()
+        generate_faucet_wallet(mc_chain.node.client, issuer.wallet)
 
+    # Allow rippling through the IOU issuer account
+    mc_chain.send_signed(
+        AccountSet(
+            account=issuer.account_id,
+            set_flag=AccountSetFlag.ASF_DEFAULT_RIPPLE,
+        )
+    )
+    mc_chain.maybe_ledger_accept()
+
+    # Create and fund the mc door account
     if params.main_standalone:
-        # Create and fund the mc door account
         mc_chain.send_signed(
             Payment(
                 account=params.genesis_account.account_id,
@@ -61,18 +68,17 @@ def setup_mainchain(
             )
 
     # TODO: set up cross-chain ious
-    if params.main_standalone:
-        # Create a trust line so USD/root account ious can be sent cross chain
-        mc_chain.send_signed(
-            TrustSet(
-                account=params.mc_door_account.account_id,
-                limit_amount=IssuedCurrencyAmount(
-                    value=str(1_000_000),
-                    currency="USD",
-                    issuer=params.genesis_account.account_id,
-                ),
-            )
+    # Create a trust line so USD/root account ious can be sent cross chain
+    mc_chain.send_signed(
+        TrustSet(
+            account=params.mc_door_account.account_id,
+            limit_amount=IssuedCurrencyAmount(
+                value=str(1_000_000),
+                currency="USD",
+                issuer=issuer.account_id,
+            ),
         )
+    )
 
     # set the chain's signer list and disable the master key
     # quorum is 80%

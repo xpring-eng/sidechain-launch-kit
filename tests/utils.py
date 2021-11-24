@@ -122,16 +122,16 @@ def tst_context(mc_chain, sc_chain, verbose_logging: Optional[bool] = None):
     global test_context_verbose_logging
     if verbose_logging is None:
         verbose_logging = test_context_verbose_logging
+    if verbose_logging:
+        log_chain_state(mc_chain, sc_chain, logging.info)
+    start_time = time.monotonic()
     try:
-        if verbose_logging:
-            log_chain_state(mc_chain, sc_chain, logging.info)
-        start_time = time.monotonic()
         yield
     except:
         log_chain_state(mc_chain, sc_chain, logging.error)
         raise
     finally:
-        elapased_time = time.monotonic() - start_time
-        logging.info(f"Test elapsed time: {elapased_time}")
+        elapsed_time = time.monotonic() - start_time
+        logging.info(f"Test elapsed time: {elapsed_time}")
     if verbose_logging:
         log_chain_state(mc_chain, sc_chain, logging.info)

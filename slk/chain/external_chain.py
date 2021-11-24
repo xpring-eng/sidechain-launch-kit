@@ -25,14 +25,14 @@ class ExternalChain(Chain):
         return False
 
     def get_pids(self: ExternalChain) -> List[int]:
-        raise Exception("Cannot get pids for connection to external chain.")
+        return []
 
     def get_node(self: ExternalChain, i: Optional[int] = None) -> Node:
         assert i is None
         return self.node
 
     def get_configs(self: ExternalChain) -> List[ConfigFile]:
-        raise Exception("Cannot get configs for connection to external chain.")
+        return []
 
     def get_running_status(self: ExternalChain) -> List[bool]:
         return [True]
@@ -66,3 +66,5 @@ class ExternalChain(Chain):
         self: ExternalChain, server_indexes: Optional[Union[Set[int], List[int]]] = None
     ) -> Dict[int, Dict[str, Any]]:
         return {}
+
+    # Account stuff
