@@ -209,9 +209,6 @@ def _external_node_with_callback(
         url=params.mainnet_url,
         port=params.mainnet_port,
     ) as mc_chain:
-        if params.with_pauses:
-            input("Pausing after mainchain connected (press enter to continue)")
-
         setup_mainchain(mc_chain, params, setup_user_accounts)
         if params.with_pauses:
             input("Pausing after mainchain setup (press enter to continue)")
