@@ -14,7 +14,7 @@ from slk.classes.config_file import ConfigFile
 
 
 class Sidechain(Chain):
-    """Representation of one sidechain."""
+    """Representation of a local sidechain."""
 
     # If run_server is None, run all the servers.
     # This is useful to help debugging
@@ -34,7 +34,6 @@ class Sidechain(Chain):
             configs: The config files associated with this chain.
             command_logs: The location of the log files.
             run_server: Whether to start each of the servers.
-            extra_args: Extra args to pass into starting the server.
         """
         if not configs:
             raise ValueError("Must specify at least one config")

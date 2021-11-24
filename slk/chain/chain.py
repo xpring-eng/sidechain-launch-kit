@@ -37,6 +37,14 @@ class Chain(ABC):
         self: Chain,
         node: Node,
     ) -> None:
+        """
+        Initializes a chain.
+
+        Note: Do not use this __init__, only use it with Chain.
+
+        Args:
+            node: The node to use with this chain.
+        """
         self.node = node
         self.key_manager = KeyManager()
         self.asset_aliases = AssetAliases()

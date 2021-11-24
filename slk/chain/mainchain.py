@@ -12,7 +12,7 @@ from slk.classes.config_file import ConfigFile
 
 
 class Mainchain(Chain):
-    """Representation of a mainchain."""
+    """Representation of a standalone mainchain."""
 
     def __init__(
         self: Mainchain,
@@ -23,6 +23,16 @@ class Mainchain(Chain):
         run_server: bool = False,
         server_out: str = os.devnull,
     ) -> None:
+        """
+        Initializes a mainchain.
+
+        Args:
+            exe: The location of the rippled exe to run in standalone mode.
+            config: The config file associated with this chain.
+            command_log: The location of the log file.
+            run_server: Whether to start the server.
+            server_out: The file location for server output.
+        """
         node = Node(config=config, command_log=command_log, exe=exe, name="mainchain")
 
         self.server_running = False
