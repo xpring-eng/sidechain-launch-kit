@@ -36,7 +36,7 @@ from slk.repl.repl_functionality import (
 )
 
 
-def clear_screen() -> None:
+def _clear_screen() -> None:
     if os.name == "nt":
         _ = os.system("cls")
     else:
@@ -49,6 +49,7 @@ HOOKS_DIR = Path()
 
 
 def set_hooks_dir(hooks_dir_to_set: Optional[str]) -> None:
+    """Set the hooks directory."""
     global HOOKS_DIR
     if hooks_dir_to_set:
         HOOKS_DIR = Path(hooks_dir_to_set)
@@ -70,7 +71,7 @@ class SidechainRepl(cmd.Cmd):
     prompt = "SSX> "
 
     def preloop(self: SidechainRepl) -> None:
-        clear_screen()
+        _clear_screen()
 
     def __init__(self: SidechainRepl, mc_chain: Chain, sc_chain: Chain) -> None:
         """
@@ -1384,4 +1385,5 @@ class SidechainRepl(cmd.Cmd):
 
 
 def start_repl(mc_chain: Chain, sc_chain: Chain) -> None:
+    """Start the REPL."""
     SidechainRepl(mc_chain, sc_chain).cmdloop()
