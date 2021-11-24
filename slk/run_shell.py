@@ -14,6 +14,7 @@ from slk.utils.eprint import disable_eprint, eprint
 
 
 def main() -> None:
+    """Run the interactive sidechain shell, with command-line args."""
     try:
         params = SidechainParams(interactive=True)
     except Exception:

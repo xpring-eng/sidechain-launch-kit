@@ -41,6 +41,19 @@ def main_to_side_transfer(
     amt: Amount,
     params: SidechainParams,
 ) -> None:
+    """
+    Transfer value from the mainchain to the sidechain.
+
+    Args:
+        mc_chain: The mainchain.
+        sc_chain: The sidechain.
+        src: The account to transfer from (on the mainchain).
+        dst: The account to transfer to (on the sidechain).
+        amt: The amount of value to transfer.
+        params: The params (which contain door account info).
+    """
+    # TODO: refactor so this doesn't need params
+    # maybe store door account info in the chain itself?
     _xchain_transfer(
         mc_chain,
         sc_chain,
@@ -60,6 +73,17 @@ def side_to_main_transfer(
     amt: Amount,
     params: SidechainParams,
 ) -> None:
+    """
+    Transfer value from the sidechain to the mainchain.
+
+    Args:
+        mc_chain: The mainchain.
+        sc_chain: The sidechain.
+        src: The account to transfer from (on the sidechain).
+        dst: The account to transfer to (on the mainchain).
+        amt: The amount of value to transfer.
+        params: The params (which contain door account info).
+    """
     _xchain_transfer(
         sc_chain,
         mc_chain,

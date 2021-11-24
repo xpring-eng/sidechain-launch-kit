@@ -91,6 +91,15 @@ class LogLine:
 def convert_log(
     in_file_name: str, out_file_name: str, *, pure_json: bool = False
 ) -> None:
+    """
+    Convert a log file to JSON and dump the result in another file.
+
+    Args:
+        in_file_name: The log file to convert.
+        out_file_name: The file to dump the result in.
+        pure_json: Whether it should be pure JSON or only half (some log info is still
+            raw).
+    """
     try:
         prev_lines = None
         with open(in_file_name) as input:
@@ -125,9 +134,9 @@ def convert_log(
         raise e
 
 
-def parse_args() -> argparse.Namespace:
+def _parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(
-        description=("python script to convert log files to json")
+        description=("Python script to convert log files to JSON.")
     )
 
     parser.add_argument(
@@ -146,5 +155,5 @@ def parse_args() -> argparse.Namespace:
 
 
 if __name__ == "__main__":
-    args = parse_args()
+    args = _parse_args()
     convert_log(args.input, args.output, pure_json=True)

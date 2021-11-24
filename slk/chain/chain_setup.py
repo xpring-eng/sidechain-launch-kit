@@ -21,6 +21,15 @@ UPDATE_SIGNER_LIST = 2
 def setup_mainchain(
     mc_chain: Chain, params: SidechainParams, setup_user_accounts: bool = True
 ) -> None:
+    """
+    Set up the mainchain.
+
+    Args:
+        mc_chain: The mainchain.
+        params: The command-line arguments for setup.
+        setup_user_accounts: Whether to create + fund a user account. The default is
+            True.
+    """
     mc_chain.add_to_keymanager(params.mc_door_account)
     if setup_user_accounts:
         mc_chain.add_to_keymanager(params.user_account)
@@ -121,6 +130,15 @@ def setup_mainchain(
 def setup_sidechain(
     sc_chain: Chain, params: SidechainParams, setup_user_accounts: bool = True
 ) -> None:
+    """
+    Set up the sidechain.
+
+    Args:
+        sc_chain: The sidechain.
+        params: The command-line arguments for setup.
+        setup_user_accounts: Whether to create + fund a user account. The default is
+            True.
+    """
     sc_chain.add_to_keymanager(params.sc_door_account)
     if setup_user_accounts:
         sc_chain.add_to_keymanager(params.user_account)
