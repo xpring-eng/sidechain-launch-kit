@@ -190,6 +190,7 @@ def set_up_ious(mc_chain: Chain, sc_chain: Chain) -> None:
         mc_chain: The mainchain.
         sc_chain: The sidechain.
     """
+    # TODO: refactor all of these to use `alias_to_account_id`
     mc_asset = IssuedCurrency(
         currency="USD", issuer=mc_chain.account_from_alias("root").account_id
     )

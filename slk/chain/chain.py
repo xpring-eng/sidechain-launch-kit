@@ -56,26 +56,32 @@ class Chain(ABC):
     @property
     @abstractmethod
     def standalone(self: Chain) -> bool:
+        """Return whether the chain is in standalone mode."""
         pass
 
     @abstractmethod
     def get_pids(self: Chain) -> List[int]:
+        """Return a list of process IDs for the nodes in the chain."""
         pass
 
     @abstractmethod
     def get_node(self: Chain, i: Optional[int] = None) -> Node:
+        """Get a specific node from the chain."""
         pass
 
     @abstractmethod
     def get_configs(self: Chain) -> List[ConfigFile]:
+        """Get a list of all the config files for the nodes in the chain."""
         pass
 
     @abstractmethod
     def get_running_status(self: Chain) -> List[bool]:
+        """Return whether the chain is up and running."""
         pass
 
     @abstractmethod
     def shutdown(self: Chain) -> None:
+        """Shut down the chain."""
         pass
 
     @abstractmethod
@@ -85,25 +91,27 @@ class Chain(ABC):
         server_indexes: Optional[Union[Set[int], List[int]]] = None,
         server_out: str = os.devnull,
     ) -> None:
+        """Start the servers for the chain."""
         pass
 
     @abstractmethod
     def servers_stop(
         self: Chain, server_indexes: Optional[Union[Set[int], List[int]]] = None
     ) -> None:
+        """Stop the servers for the chain."""
         pass
 
     # rippled stuff
 
     def send_signed(self: Chain, txn: Transaction) -> Dict[str, Any]:
-        """Sign then send the given transaction"""
+        """Sign then send the given transaction."""
         if not self.key_manager.is_account(txn.account):
             raise ValueError("Cannot sign transaction without secret key")
         account_obj = self.key_manager.get_account(txn.account)
         return self.node.sign_and_submit(txn, account_obj.wallet)
 
     def request(self: Chain, req: Request) -> Dict[str, Any]:
-        """Send the command to the rippled server"""
+        """Send the request to the rippled server."""
         return self.node.request(req)
 
     def send_subscribe(
@@ -118,6 +126,7 @@ class Chain(ABC):
     # specific rippled methods
 
     def maybe_ledger_accept(self: Chain) -> None:
+        """Advance the ledger if the chain is in standalone mode."""
         if not self.standalone:
             return
         self.request(LedgerAccept())
@@ -257,15 +266,19 @@ class Chain(ABC):
             account_line["account"] = address
         return cast(List[Dict[str, Any]], account_lines)
 
-    # Get a dict of the server_state, validated_ledger_seq, and complete_ledgers
     @abstractmethod
     def get_brief_server_info(self: Chain) -> Dict[str, List[Dict[str, Any]]]:
+        """
+        Get a dictionary of the server_state, validated_ledger_seq, and
+        complete_ledgers for all the nodes in the chain.
+        """
         pass
 
     @abstractmethod
     def federator_info(
         self: Chain, server_indexes: Optional[Union[Set[int], List[int]]] = None
     ) -> Dict[int, Dict[str, Any]]:
+        """Get the federator info of the servers."""
         pass
 
     # Account/asset stuff
@@ -288,28 +301,37 @@ class Chain(ABC):
             items[c] = self.key_manager.alias_or_account_id(items[c])
 
     def add_to_keymanager(self: Chain, account: Account) -> None:
+        """Add an account to the known accounts on the chain."""
         self.key_manager.add(account)
 
     def is_alias(self: Chain, name: str) -> bool:
+        """Determine whether an account name is known."""
         return self.key_manager.is_alias(name)
 
     def account_from_alias(self: Chain, name: str) -> Account:
+        """Get an account from the account's alias."""
         return self.key_manager.account_from_alias(name)
 
     def known_accounts(self: Chain) -> List[Account]:
+        """Get a list of all known accounts on the chain."""
         return self.key_manager.known_accounts()
 
     def known_asset_aliases(self: Chain) -> List[str]:
+        """Get a list of all known token aliases on the chain."""
         return self.asset_aliases.known_aliases()
 
     def known_iou_assets(self: Chain) -> List[IssuedCurrency]:
+        """Get a list of all known tokens on the chain."""
         return self.asset_aliases.known_assets()
 
     def is_asset_alias(self: Chain, name: str) -> bool:
+        """Determine whether an asset name is known."""
         return self.asset_aliases.is_alias(name)
 
     def add_asset_alias(self: Chain, asset: IssuedCurrency, name: str) -> None:
+        """Add an asset to the known assets on the chain."""
         self.asset_aliases.add(asset, name)
 
     def asset_from_alias(self: Chain, name: str) -> IssuedCurrency:
+        """Get an asset from the asset's alias."""
         return self.asset_aliases.asset_from_alias(name)

@@ -30,6 +30,7 @@ class Account:
 
     @classmethod
     def create(cls: Type[Account], name: str) -> Account:
+        """Create a new account with a new set of keys."""
         wallet = Wallet.create()
         return Account(
             account_id=wallet.classic_address,
@@ -77,4 +78,5 @@ class Account:
         return self.account_id
 
     def account_id_str_as_hex(self: Account) -> str:
+        """Get the account ID in hex (for xchain payments)."""
         return binascii.hexlify(self.account_id.encode()).decode("utf-8")

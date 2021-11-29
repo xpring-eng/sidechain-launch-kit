@@ -54,15 +54,19 @@ class Node:
 
     @property
     def config_file_name(self: Node) -> str:
+        """Get the file name/location for the config file that this node is using."""
         return self.config.get_file_name()
 
     def shutdown(self: Node) -> None:
+        """Shut down the connection to the server."""
         self.client.close()
 
     def get_pid(self: Node) -> Optional[int]:
+        """Get the process id for the server the node is running."""
         return self.pid
 
     def request(self: Node, req: Request) -> Dict[str, Any]:
+        """Send a request to the rippled node and return the response."""
         if not self.client.is_open():
             self.client.open()
         response = self.client.request(req)
@@ -71,6 +75,7 @@ class Node:
         raise Exception("failed transaction", response.result)
 
     def sign_and_submit(self: Node, txn: Transaction, wallet: Wallet) -> Dict[str, Any]:
+        """Sign and submit the given transaction."""
         if not self.client.is_open():
             self.client.open()
         return safe_sign_and_submit_transaction(txn, wallet, self.client).result
@@ -82,6 +87,7 @@ class Node:
         standalone: bool = False,
         server_out: str = os.devnull,
     ) -> None:
+        """Start up the server."""
         if extra_args is None:
             extra_args = []
         to_run = [self.exe, "--conf", self.config_file_name]
@@ -99,6 +105,7 @@ class Node:
         )
 
     def stop_server(self: Node, *, server_out: str = os.devnull) -> None:
+        """Stop the server."""
         to_run = [self.exe, "--conf", self.config_file_name]
         fout = open(os.devnull, "w")
         subprocess.Popen(to_run + ["stop"], stdout=fout, stderr=subprocess.STDOUT)
@@ -120,6 +127,7 @@ class Node:
             return result == 0  # means the WS port is open for connections
 
     def wait_for_validated_ledger(self: Node) -> None:
+        """Wait for the server to have validated ledgers."""
         for i in range(600):
             r = self.request(ServerInfo())
             state = None
@@ -150,8 +158,11 @@ class Node:
 
         raise ValueError("Could not sync server {self.config_file_name}")
 
-    # Get a dict of the server_state, validated_ledger_seq, and complete_ledgers
     def get_brief_server_info(self: Node) -> Dict[str, Any]:
+        """
+        Get a dictionary of the server_state, validated_ledger_seq, and
+        complete_ledgers for the node.
+        """
         ret = {"server_state": "NA", "ledger_seq": "NA", "complete_ledgers": "NA"}
         if not self.pid:
             return ret

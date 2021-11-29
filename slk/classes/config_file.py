@@ -102,7 +102,7 @@ class ConfigFile:
                     continue
                 if section_name := _Section.section_header(line):
                     if cur_section:
-                        self.add_section(cur_section)
+                        self._add_section(cur_section)
                     cur_section = _Section(section_name)
                     continue
                 if not cur_section:
@@ -113,12 +113,13 @@ class ConfigFile:
                 cur_section.add_line(line)
 
         if cur_section:
-            self.add_section(cur_section)
+            self._add_section(cur_section)
 
-    def add_section(self: ConfigFile, s: _Section) -> None:
+    def _add_section(self: ConfigFile, s: _Section) -> None:
         self._sections[s.get_name()] = s
 
     def get_file_name(self: ConfigFile) -> str:
+        """Get the file name/location of the config file."""
         return self._file_name
 
     def __getstate__(self: ConfigFile) -> Dict[str, Any]:

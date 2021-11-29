@@ -46,27 +46,33 @@ class Mainchain(Chain):
 
     @property
     def standalone(self: Mainchain) -> bool:
+        """Return whether the chain is in standalone mode."""
         return True
 
     def get_pids(self: Mainchain) -> List[int]:
+        """Return a list of process IDs for the nodes in the chain."""
         if pid := self.node.get_pid():
             return [pid]
         return []
 
     def get_node(self: Mainchain, i: Optional[int] = None) -> Node:
+        """Get a specific node from the chain."""
         assert i is None
         return self.node
 
     def get_configs(self: Mainchain) -> List[ConfigFile]:
+        """Get a list of all the config files for the nodes in the chain."""
         return [self.node.config]
 
     def get_running_status(self: Mainchain) -> List[bool]:
+        """Return whether the chain is up and running."""
         if self.node.get_pid():
             return [True]
         else:
             return [False]
 
     def shutdown(self: Mainchain) -> None:
+        """Shut down the chain."""
         self.node.shutdown()
         self.servers_stop()
 
@@ -76,6 +82,7 @@ class Mainchain(Chain):
         server_indexes: Optional[Union[Set[int], List[int]]] = None,
         server_out: str = os.devnull,
     ) -> None:
+        """Start the servers for the chain."""
         if server_indexes is not None:
             raise Exception("Mainchain does not have server indexes.")
 
@@ -96,14 +103,18 @@ class Mainchain(Chain):
     def servers_stop(
         self: Mainchain, server_indexes: Optional[Union[Set[int], List[int]]] = None
     ) -> None:
+        """Stop the servers for the chain."""
         if server_indexes is not None:
             raise Exception("Mainchain does not have server indexes.")
         if self.server_running:
             self.node.stop_server()
             self.server_running = False
 
-    # Get a dict of the server_state, validated_ledger_seq, and complete_ledgers
     def get_brief_server_info(self: Mainchain) -> Dict[str, List[Any]]:
+        """
+        Get a dictionary of the server_state, validated_ledger_seq, and
+        complete_ledgers for all the nodes in the chain.
+        """
         ret = {}
         for (k, v) in self.node.get_brief_server_info().items():
             ret[k] = [v]
@@ -112,6 +123,7 @@ class Mainchain(Chain):
     def federator_info(
         self: Mainchain, server_indexes: Optional[Union[Set[int], List[int]]] = None
     ) -> Dict[int, Dict[str, Any]]:
+        """Get the federator info of the servers."""
         # key is server index. value is federator_info result
         result_dict = {}
         # TODO: do this more elegantly

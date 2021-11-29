@@ -73,6 +73,7 @@ class SidechainRepl(cmd.Cmd):
     prompt = "SSX> "
 
     def preloop(self: SidechainRepl) -> None:
+        """Clear the screen before the REPL starts up."""
         _clear_screen()
 
     def __init__(self: SidechainRepl, mc_chain: Chain, sc_chain: Chain) -> None:
@@ -92,12 +93,14 @@ class SidechainRepl(cmd.Cmd):
     # complete helpers
 
     def _complete_chain(self: SidechainRepl, text: str, line: str) -> List[str]:
+        """Helper method to complete the chain name."""
         if not text:
             return ["mainchain", "sidechain"]
         else:
             return [c for c in ["mainchain", "sidechain"] if c.startswith(text)]
 
     def _complete_unit(self: SidechainRepl, text: str, line: str) -> List[str]:
+        """Helper method to complete the unit."""
         if not text:
             return ["drops", "xrp"]
         else:
@@ -106,6 +109,7 @@ class SidechainRepl(cmd.Cmd):
     def _complete_account(
         self: SidechainRepl, text: str, line: str, chain_name: Optional[str] = None
     ) -> List[str]:
+        """Helper method to complete the account alias name."""
         known_accounts: Set[str] = set()
         chains = [self.mc_chain, self.sc_chain]
         if chain_name == "mainchain":
@@ -124,6 +128,7 @@ class SidechainRepl(cmd.Cmd):
     def _complete_asset(
         self: SidechainRepl, text: str, line: str, chain_name: Optional[str] = None
     ) -> List[str]:
+        """Helper method to complete the asset alias name."""
         known_assets: Set[str] = set()
         chains = [self.mc_chain, self.sc_chain]
         if chain_name == "mainchain":
@@ -145,6 +150,7 @@ class SidechainRepl(cmd.Cmd):
     def _get_chain_args(
         self: SidechainRepl, args: List[str]
     ) -> Tuple[List[Chain], List[str]]:
+        """Helper method to get the chains/names."""
         chains = [self.mc_chain, self.sc_chain]
         chain_names = ["mainchain", "sidechain"]
 
@@ -159,6 +165,7 @@ class SidechainRepl(cmd.Cmd):
         return chains, chain_names
 
     def _get_chain_arg(self: SidechainRepl, arg: str) -> Optional[Chain]:
+        """Helper method to get the chain arg."""
         if arg not in ["mainchain", "sidechain"]:
             print('Error: First argument must specify the chain. Type "help" for help.')
             return None
@@ -172,6 +179,7 @@ class SidechainRepl(cmd.Cmd):
     ##################
     # addressbook
     def do_addressbook(self: SidechainRepl, line: str) -> None:
+        """Implementation of the `addressbook` REPL command."""
         args = line.split()
         if len(args) > 2:
             print(
@@ -195,6 +203,7 @@ class SidechainRepl(cmd.Cmd):
     def complete_addressbook(
         self: SidechainRepl, text: str, line: str, begidx: int, endidx: int
     ) -> List[str]:
+        """Handle autocompletion for the `addressbook` REPL command."""
         args = line.split()
         arg_num = len(args)
         if arg_num == 2:  # chain
@@ -204,6 +213,7 @@ class SidechainRepl(cmd.Cmd):
         return []
 
     def help_addressbook(self: SidechainRepl) -> None:
+        """Print out a help message for the `addressbook` REPL command."""
         print(
             "\n".join(
                 [
@@ -222,6 +232,7 @@ class SidechainRepl(cmd.Cmd):
     ##################
     # balance
     def do_balance(self: SidechainRepl, line: str) -> None:
+        """Implementation of the `balance` REPL command."""
         args = line.split()
         arg_index = 0
 
@@ -296,6 +307,7 @@ class SidechainRepl(cmd.Cmd):
     def complete_balance(
         self: SidechainRepl, text: str, line: str, begidx: int, endidx: int
     ) -> List[str]:
+        """Handle autocompletion for the `balance` REPL command."""
         args = line.split()
         arg_num = len(args)
         if arg_num == 2:  # chain or account
@@ -313,6 +325,7 @@ class SidechainRepl(cmd.Cmd):
         return []
 
     def help_balance(self: SidechainRepl) -> None:
+        """Print out a help message for the `balance` REPL command."""
         print(
             "\n".join(
                 [
@@ -336,6 +349,7 @@ class SidechainRepl(cmd.Cmd):
     # account_info
 
     def do_account_info(self: SidechainRepl, line: str) -> None:
+        """Implementation of the `account_info` REPL command."""
         args = line.split()
         if len(args) > 2:
             print(
@@ -373,6 +387,7 @@ class SidechainRepl(cmd.Cmd):
     def complete_account_info(
         self: SidechainRepl, text: str, line: str, begidx: int, endidx: int
     ) -> List[str]:
+        """Handle autocompletion for the `account_info` REPL command."""
         args = line.split()
         arg_num = len(args)
         if arg_num == 2:  # chain or account
@@ -382,6 +397,7 @@ class SidechainRepl(cmd.Cmd):
         return []
 
     def help_account_info(self: SidechainRepl) -> None:
+        """Print out a help message for the `account_info` REPL command."""
         print(
             "\n".join(
                 [
@@ -400,6 +416,7 @@ class SidechainRepl(cmd.Cmd):
     ##################
     # pay
     def do_pay(self: SidechainRepl, line: str) -> None:
+        """Implementation of the `pay` REPL command."""
         args = line.split()
         if len(args) < 4:
             print('Error: Too few arguments to pay command. Type "help" for help.')
@@ -502,6 +519,7 @@ class SidechainRepl(cmd.Cmd):
     def complete_pay(
         self: SidechainRepl, text: str, line: str, begidx: int, endidx: int
     ) -> List[str]:
+        """Handle autocompletion for the `pay` REPL command."""
         args = line.split()
         arg_num = len(args)
         if not text:
@@ -521,6 +539,7 @@ class SidechainRepl(cmd.Cmd):
         return []
 
     def help_pay(self: SidechainRepl) -> None:
+        """Print out a help message for the `pay` REPL command."""
         print(
             "\n".join(
                 [
@@ -541,6 +560,7 @@ class SidechainRepl(cmd.Cmd):
     ##################
     # xchain
     def do_xchain(self: SidechainRepl, line: str) -> None:
+        """Implementation of the `xchain` REPL command."""
         args = line.split()
         if len(args) < 4:
             print('Error: Too few arguments to pay command. Type "help" for help.')
@@ -657,6 +677,7 @@ class SidechainRepl(cmd.Cmd):
     def complete_xchain(
         self: SidechainRepl, text: str, line: str, begidx: int, endidx: int
     ) -> List[str]:
+        """Handle autocompletion for the `xchain` REPL command."""
         args = line.split()
         arg_num = len(args)
         if not text:
@@ -681,6 +702,7 @@ class SidechainRepl(cmd.Cmd):
         return []
 
     def help_xchain(self: SidechainRepl) -> None:
+        """Print out a help message for the `xchain` REPL command."""
         print(
             "\n".join(
                 [
@@ -699,6 +721,7 @@ class SidechainRepl(cmd.Cmd):
     ##################
     # server_info
     def do_server_info(self: SidechainRepl, line: str) -> None:
+        """Implementation of the `server_info` REPL command."""
         args = line.split()
         if len(args) > 1:
             print(
@@ -722,12 +745,14 @@ class SidechainRepl(cmd.Cmd):
     def complete_server_info(
         self: SidechainRepl, text: str, line: str, begidx: int, endidx: int
     ) -> List[str]:
+        """Handle autocompletion for the `server_info` REPL command."""
         arg_num = len(line.split())
         if arg_num == 2:  # chain
             return self._complete_chain(text, line)
         return []
 
     def help_server_info(self: SidechainRepl) -> None:
+        """Print out a help message for the `server_info` REPL command."""
         print(
             "\n".join(
                 [
@@ -746,6 +771,7 @@ class SidechainRepl(cmd.Cmd):
     # federator_info
 
     def do_federator_info(self: SidechainRepl, line: str) -> None:
+        """Implementation of the `federator_info` REPL command."""
         args = line.split()
         indexes = set()
         verbose = False
@@ -792,6 +818,7 @@ class SidechainRepl(cmd.Cmd):
     def complete_federator_info(
         self: SidechainRepl, text: str, line: str, begidx: int, endidx: int
     ) -> List[str]:
+        """Handle autocompletion for the `federator_info` REPL command."""
         args = line.split()
         if "verbose".startswith(args[-1]):
             return ["verbose"]
@@ -805,6 +832,7 @@ class SidechainRepl(cmd.Cmd):
         ]
 
     def help_federator_info(self: SidechainRepl) -> None:
+        """Print out a help message for the `federator_info` REPL command."""
         print(
             "\n".join(
                 [
@@ -823,6 +851,7 @@ class SidechainRepl(cmd.Cmd):
     ##################
     # new_account
     def do_new_account(self: SidechainRepl, line: str) -> None:
+        """Implementation of the `new_account` REPL command."""
         args = line.split()
         if len(args) < 2:
             print(
@@ -845,12 +874,14 @@ class SidechainRepl(cmd.Cmd):
     def complete_new_account(
         self: SidechainRepl, text: str, line: str, begidx: int, endidx: int
     ) -> List[str]:
+        """Handle autocompletion for the `new_account` REPL command."""
         arg_num = len(line.split())
         if arg_num == 2:  # chain
             return self._complete_chain(text, line)
         return []
 
     def help_new_account(self: SidechainRepl) -> None:
+        """Print out a help message for the `new_account` REPL command."""
         print(
             "\n".join(
                 [
@@ -866,6 +897,7 @@ class SidechainRepl(cmd.Cmd):
     ##################
     # new_iou
     def do_new_iou(self: SidechainRepl, line: str) -> None:
+        """Implementation of the `new_iou` REPL command."""
         args = line.split()
         if len(args) != 4:
             print(
@@ -899,6 +931,7 @@ class SidechainRepl(cmd.Cmd):
     def complete_new_iou(
         self: SidechainRepl, text: str, line: str, begidx: int, endidx: int
     ) -> List[str]:
+        """Handle autocompletion for the `new_iou` REPL command."""
         arg_num = len(line.split())
         if arg_num == 2:  # chain
             return self._complete_chain(text, line)
@@ -907,6 +940,7 @@ class SidechainRepl(cmd.Cmd):
         return []
 
     def help_new_iou(self: SidechainRepl) -> None:
+        """Print out a help message for the `new_iou` REPL command."""
         print(
             "\n".join(
                 [
@@ -922,6 +956,8 @@ class SidechainRepl(cmd.Cmd):
     ##################
     # ious
     def do_ious(self: SidechainRepl, line: str) -> None:
+        """Implementation of the `ious` REPL command."""
+
         def print_ious(chain: Chain, chain_name: str, nickname: Optional[str]) -> None:
             if nickname and not chain.is_asset_alias(nickname):
                 print(f"{nickname} is not part of {chain_name}'s asset aliases.")
@@ -945,6 +981,7 @@ class SidechainRepl(cmd.Cmd):
     def complete_ious(
         self: SidechainRepl, text: str, line: str, begidx: int, endidx: int
     ) -> List[str]:
+        """Handle autocompletion for the `ious` REPL command."""
         args = line.split()
         arg_num = len(args)
         if arg_num == 2:  # chain or iou
@@ -954,6 +991,7 @@ class SidechainRepl(cmd.Cmd):
         return []
 
     def help_ious(self: SidechainRepl) -> None:
+        """Print out a help message for the `ious` REPL command."""
         print(
             "\n".join(
                 [
@@ -972,6 +1010,7 @@ class SidechainRepl(cmd.Cmd):
     ##################
     # set_trust
     def do_set_trust(self: SidechainRepl, line: str) -> None:
+        """Implementation of the `set_trust` REPL command."""
         # TODO: fix bug where REPL crashes if account isn't funded yet
         args = line.split()
         if len(args) != 4:
@@ -1024,6 +1063,7 @@ class SidechainRepl(cmd.Cmd):
     def complete_set_trust(
         self: SidechainRepl, text: str, line: str, begidx: int, endidx: int
     ) -> List[str]:
+        """Handle autocompletion for the `set_trust` REPL command."""
         args = line.split()
         arg_num = len(args)
         if arg_num == 2:  # chain
@@ -1035,6 +1075,7 @@ class SidechainRepl(cmd.Cmd):
         return []
 
     def help_set_trust(self: SidechainRepl) -> None:
+        """Print out a help message for the `set_trust` REPL command."""
         print(
             "\n".join(
                 [
@@ -1051,6 +1092,7 @@ class SidechainRepl(cmd.Cmd):
     ##################
     # ledger_accept
     def do_ledger_accept(self: SidechainRepl, line: str) -> None:
+        """Implementation of the `ledger_accept` REPL command."""
         args = line.split()
         if len(args) != 1:
             print(
@@ -1073,12 +1115,14 @@ class SidechainRepl(cmd.Cmd):
     def complete_ledger_accept(
         self: SidechainRepl, text: str, line: str, begidx: int, endidx: int
     ) -> List[str]:
+        """Handle autocompletion for the `ledger_accept` REPL command."""
         arg_num = len(line.split())
         if arg_num == 2:  # chain
             return self._complete_chain(text, line)
         return []
 
     def help_ledger_accept(self: SidechainRepl) -> None:
+        """Print out a help message for the `ledger_accept` REPL command."""
         print(
             "\n".join(
                 [
@@ -1095,6 +1139,7 @@ class SidechainRepl(cmd.Cmd):
     # server_start
 
     def do_server_start(self: SidechainRepl, line: str) -> None:
+        """Implementation of the `server_start` REPL command."""
         args = line.split()
         if len(args) == 0:
             print(
@@ -1120,6 +1165,7 @@ class SidechainRepl(cmd.Cmd):
     def complete_server_start(
         self: SidechainRepl, text: str, line: str, begidx: int, endidx: int
     ) -> List[str]:
+        """Handle autocompletion for the `server_start` REPL command."""
         running_status = self.sc_chain.get_running_status()
         if "all".startswith(text):
             return ["all"]
@@ -1130,6 +1176,7 @@ class SidechainRepl(cmd.Cmd):
         ]
 
     def help_server_start(self: SidechainRepl) -> None:
+        """Print out a help message for the `server_start` REPL command."""
         print(
             "\n".join(
                 [
@@ -1146,6 +1193,7 @@ class SidechainRepl(cmd.Cmd):
     # server_stop
 
     def do_server_stop(self: SidechainRepl, line: str) -> None:
+        """Implementation of the `server_stop` REPL command."""
         args = line.split()
         if len(args) == 0:
             print(
@@ -1171,6 +1219,7 @@ class SidechainRepl(cmd.Cmd):
     def complete_server_stop(
         self: SidechainRepl, text: str, line: str, begidx: int, endidx: int
     ) -> List[str]:
+        """Handle autocompletion for the `server_stop` REPL command."""
         running_status = self.sc_chain.get_running_status()
         if "all".startswith(text):
             return ["all"]
@@ -1181,6 +1230,7 @@ class SidechainRepl(cmd.Cmd):
         ]
 
     def help_server_stop(self: SidechainRepl) -> None:
+        """Print out a help message for the `server_stop` REPL command."""
         print(
             "\n".join(
                 [
@@ -1197,6 +1247,7 @@ class SidechainRepl(cmd.Cmd):
     # setup_accounts
 
     def do_setup_accounts(self: SidechainRepl, line: str) -> None:
+        """Implementation of the `setup_accounts` REPL command."""
         set_up_accounts(self.mc_chain, self.sc_chain)
 
     # setup_accounts
@@ -1206,6 +1257,7 @@ class SidechainRepl(cmd.Cmd):
     # setup_ious
 
     def do_setup_ious(self: SidechainRepl, line: str) -> None:
+        """Implementation of the `setup_ious` REPL command."""
         return set_up_ious(self.mc_chain, self.sc_chain)
 
     # setup_ious
@@ -1215,6 +1267,7 @@ class SidechainRepl(cmd.Cmd):
     # account_tx
 
     def do_account_tx(self: SidechainRepl, line: str) -> None:
+        """Implementation of the `account_tx` REPL command."""
         args = line.split()
         if len(args) < 2:
             print(
@@ -1257,6 +1310,7 @@ class SidechainRepl(cmd.Cmd):
     def complete_account_tx(
         self: SidechainRepl, text: str, line: str, begidx: int, endidx: int
     ) -> List[str]:
+        """Handle autocompletion for the `account_tx` REPL command."""
         args = line.split()
         arg_num = len(args)
         if not text:
@@ -1268,6 +1322,7 @@ class SidechainRepl(cmd.Cmd):
         return []
 
     def help_account_tx(self: SidechainRepl) -> None:
+        """Print out a help message for the `account_tx` REPL command."""
         print(
             "\n".join(
                 [
@@ -1288,6 +1343,7 @@ class SidechainRepl(cmd.Cmd):
     # user to type
     # a new command.
     def do_subscribe(self: SidechainRepl, line: str) -> None:
+        """Implementation of the `subscribe` REPL command."""
         args = line.split()
         if len(args) != 3:
             print(
@@ -1326,6 +1382,7 @@ class SidechainRepl(cmd.Cmd):
     def complete_subscribe(
         self: SidechainRepl, text: str, line: str, begidx: int, endidx: int
     ) -> List[str]:
+        """Handle autocompletion for the `subscribe` REPL command."""
         args = line.split()
         arg_num = len(args)
         if not text:
@@ -1337,6 +1394,7 @@ class SidechainRepl(cmd.Cmd):
         return []
 
     def help_subscribe(self: SidechainRepl) -> None:
+        """Print out a help message for the `subscribe` REPL command."""
         print(
             "\n".join(
                 [
@@ -1353,10 +1411,12 @@ class SidechainRepl(cmd.Cmd):
     ##################
     # quit
     def do_quit(self: SidechainRepl, line: str) -> bool:
+        """Implementation of the `quit` REPL command."""
         print("Thank you for using the sidechain shell. Goodbye.\n\n")
         return True
 
     def help_quit(self: SidechainRepl) -> None:
+        """Print out a help message for the `quit` REPL command."""
         print("Exit the program.")
 
     # quit
@@ -1366,9 +1426,11 @@ class SidechainRepl(cmd.Cmd):
     # q
 
     def do_q(self: SidechainRepl, line: str) -> bool:
+        """Implementation of the `q` REPL command."""
         return self.do_quit(line)
 
     def help_q(self: SidechainRepl) -> None:
+        """Print out a help message for the `q` REPL command."""
         return self.help_quit()
 
     # q
@@ -1377,9 +1439,11 @@ class SidechainRepl(cmd.Cmd):
     ##################
     # EOF
     def do_EOF(self: SidechainRepl, line: str) -> bool:
+        """Implementation of what happens when the user types ctrl-d."""
         return self.do_quit(line)
 
     def help_EOF(self: SidechainRepl) -> None:
+        """Print out a help message for when the user types ctrl-d."""
         print("Exit the program by typing control-d.")
 
     # EOF
