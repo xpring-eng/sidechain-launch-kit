@@ -96,7 +96,15 @@ class Sidechain(Chain):
 
     # TODO: type this better
     def get_node(self: Sidechain, i: Optional[int] = None) -> Node:
-        """Get a specific node from the chain."""
+        """
+        Get a specific node from the chain.
+
+        Args:
+            i: The index of the node to return.
+
+        Returns:
+            The node at index i.
+        """
         assert i is not None
         return self.nodes[i]
 
@@ -128,7 +136,14 @@ class Sidechain(Chain):
         server_indexes: Optional[Union[Set[int], List[int]]] = None,
         server_out: str = os.devnull,
     ) -> None:
-        """Start the servers for the chain."""
+        """
+        Start the servers for the chain.
+
+        Args:
+            server_indexes: The server indexes to start. The default is `None`, which
+                starts all the servers in the chain.
+            server_out: Where to output the results.
+        """
         if server_indexes is None:
             server_indexes = [i for i in range(len(self.nodes))]
 
@@ -151,7 +166,13 @@ class Sidechain(Chain):
     def servers_stop(
         self: Sidechain, server_indexes: Optional[Union[Set[int], List[int]]] = None
     ) -> None:
-        """Stop the servers for the chain."""
+        """
+        Stop the servers for the chain.
+
+        Args:
+            server_indexes: The server indexes to start. The default is `None`, which
+                starts all the servers in the chain.
+        """
         if server_indexes is None:
             server_indexes = self.running_server_indexes.copy()
 
@@ -187,7 +208,13 @@ class Sidechain(Chain):
     def federator_info(
         self: Sidechain, server_indexes: Optional[Union[Set[int], List[int]]] = None
     ) -> Dict[int, Dict[str, Any]]:
-        """Get the federator info of the servers."""
+        """
+        Get the federator info of the servers.
+
+        Args:
+            server_indexes: The servers to query for their federator info. If None,
+                treat as a wildcard. The default is None.
+        """
         # key is server index. value is federator_info result
         result_dict = {}
         if server_indexes is None or len(server_indexes) == 0:

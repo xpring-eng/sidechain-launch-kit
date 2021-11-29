@@ -66,7 +66,15 @@ class Chain(ABC):
 
     @abstractmethod
     def get_node(self: Chain, i: Optional[int] = None) -> Node:
-        """Get a specific node from the chain."""
+        """
+        Get a specific node from the chain.
+
+        Args:
+            i: The index of the node to return.
+
+        Returns:
+            The node at index i.
+        """
         pass
 
     @abstractmethod
@@ -91,33 +99,71 @@ class Chain(ABC):
         server_indexes: Optional[Union[Set[int], List[int]]] = None,
         server_out: str = os.devnull,
     ) -> None:
-        """Start the servers for the chain."""
+        """
+        Start the servers for the chain.
+
+        Args:
+            server_indexes: The server indexes to start. The default is `None`, which
+                starts all the servers in the chain.
+            server_out: Where to output the results.
+        """
         pass
 
     @abstractmethod
     def servers_stop(
         self: Chain, server_indexes: Optional[Union[Set[int], List[int]]] = None
     ) -> None:
-        """Stop the servers for the chain."""
+        """
+        Stop the servers for the chain.
+
+        Args:
+            server_indexes: The server indexes to start. The default is `None`, which
+                starts all the servers in the chain.
+        """
         pass
 
     # rippled stuff
 
     def send_signed(self: Chain, txn: Transaction) -> Dict[str, Any]:
-        """Sign then send the given transaction."""
+        """
+        Sign then send the given transaction.
+
+        Args:
+            txn: The transaction to sign and submit.
+
+        Returns:
+            The result of the submit request.
+        """
         if not self.key_manager.is_account(txn.account):
             raise ValueError("Cannot sign transaction without secret key")
         account_obj = self.key_manager.get_account(txn.account)
         return self.node.sign_and_submit(txn, account_obj.wallet)
 
     def request(self: Chain, req: Request) -> Dict[str, Any]:
-        """Send the request to the rippled server."""
+        """
+        Send the request to the rippled server.
+
+        Args:
+            req: The request to send.
+
+        Returns:
+            The result of the request.
+        """
         return self.node.request(req)
 
     def send_subscribe(
         self: Chain, req: Subscribe, callback: Callable[[Dict[str, Any]], None]
     ) -> Dict[str, Any]:
-        """Send the subscription command to the rippled server."""
+        """
+        Send the subscription command to the rippled server.
+
+        Args:
+            req: The subscribe request to send.
+            callback: The callback to trigger when a subscription is received.
+
+        Returns:
+            The result of the initial request.
+        """
         if not self.node.client.is_open():
             self.node.client.open()
         self.node.client.on("transaction", callback)
@@ -137,6 +183,13 @@ class Chain(ABC):
         """
         Return a dictionary of account info. If account is None, treat as a
         wildcard (use address book)
+
+        Args:
+            account: The account to get info about. If None, will return information
+                about all accounts in the chain. The default is None.
+
+        Returns:
+            A list of the results for the accounts.
         """
         if account is None:
             known_accounts = self.key_manager.known_accounts()
@@ -184,8 +237,16 @@ class Chain(ABC):
         token: Union[Currency, List[Currency]] = XRP(),
     ) -> List[Dict[str, Any]]:
         """
-        Return a list of dicts of account balances. If account is None, treat as a
-        wildcard (use address book)
+        Get the balances for accounts in tokens.
+
+        Args:
+            account: An account or list of accounts to get balances of. If account is
+                None, treat as a wildcard (use address book). The default is None.
+            token: A token or list of tokens in which to get balances. If token is None,
+                treat as a wildcard. The default is None.
+
+        Returns:
+            A list of dicts of account balances.
         """
         if account is None:
             account = self.key_manager.known_accounts()
@@ -237,10 +298,19 @@ class Chain(ABC):
                 return []
 
     def get_balance(self: Chain, account: Account, token: Currency) -> str:
-        """Get a balance from a single account in a single token"""
+        """
+        Get a balance from a single account in a single token.
+
+        Args:
+            account: The account to get the balance from.
+            token: The currency to use as the balance.
+
+        Result:
+            The balance of the token in the account.
+        """
         try:
             result = self.get_balances(account, token)
-            return cast(str, result[0]["balance"])
+            return str(result[0]["balance"])
         except:
             return "0"
 
@@ -248,8 +318,15 @@ class Chain(ABC):
         self: Chain, account: Account, peer: Optional[Account] = None
     ) -> List[Dict[str, Any]]:
         """
-        Return a list of dictionaries representing account trust lines. If peer account
-        is None, treat as a wildcard.
+        Get all the trustlines for an account.
+
+        Args:
+            account: The account to query for the trustlines.
+            peer: The peer of the trustline. If None, treat as a wildcard. The default
+                is None.
+
+        Returns:
+            A list of dictionaries representing account trust lines.
         """
         if peer is None:
             result = self.request(AccountLines(account=account.account_id))
@@ -278,13 +355,27 @@ class Chain(ABC):
     def federator_info(
         self: Chain, server_indexes: Optional[Union[Set[int], List[int]]] = None
     ) -> Dict[int, Dict[str, Any]]:
-        """Get the federator info of the servers."""
+        """
+        Get the federator info of the servers.
+
+        Args:
+            server_indexes: The servers to query for their federator info. If None,
+                treat as a wildcard. The default is None.
+        """
         pass
 
     # Account/asset stuff
 
     def create_account(self: Chain, name: str) -> Account:
-        """Create an account. Use the name as the alias."""
+        """
+        Create an account for an alias.
+
+        Args:
+            name: The alias to use for the account.
+
+        Returns:
+            The created account.
+        """
         assert not self.key_manager.is_alias(name)
 
         account = Account.create(name)
@@ -294,22 +385,50 @@ class Chain(ABC):
     def substitute_nicknames(
         self: Chain, items: Dict[str, Any], cols: List[str] = ["account", "peer"]
     ) -> None:
-        """Substitutes in-place account IDs for nicknames"""
+        """
+        Substitutes in-place account IDs for nicknames.
+
+        Args:
+            items: The dictionary to use for replacements.
+            cols: The columns in which to replace the account IDs. Defaults to "account"
+                and "peer".
+        """
         for c in cols:
             if c not in items:
                 continue
             items[c] = self.key_manager.alias_or_account_id(items[c])
 
     def add_to_keymanager(self: Chain, account: Account) -> None:
-        """Add an account to the known accounts on the chain."""
+        """
+        Add an account to the known accounts on the chain.
+
+        Args:
+            account: Account to add to the key manager.
+        """
         self.key_manager.add(account)
 
     def is_alias(self: Chain, name: str) -> bool:
-        """Determine whether an account name is known."""
+        """
+        Determine whether an account name is known.
+
+        Args:
+            name: The alias to check.
+
+        Returns:
+            Whether the alias is a known account.
+        """
         return self.key_manager.is_alias(name)
 
     def account_from_alias(self: Chain, name: str) -> Account:
-        """Get an account from the account's alias."""
+        """
+        Get an account from the account's alias.
+
+        Args:
+            name: The account's alias.
+
+        Returns:
+            The account that corresponds with the alias.
+        """
         return self.key_manager.account_from_alias(name)
 
     def known_accounts(self: Chain) -> List[Account]:
@@ -325,13 +444,35 @@ class Chain(ABC):
         return self.asset_aliases.known_assets()
 
     def is_asset_alias(self: Chain, name: str) -> bool:
-        """Determine whether an asset name is known."""
+        """
+        Determine whether an asset name is known.
+
+        Args:
+            name: The alias to check.
+
+        Returns:
+            Whether the alias is a known asset.
+        """
         return self.asset_aliases.is_alias(name)
 
     def add_asset_alias(self: Chain, asset: IssuedCurrency, name: str) -> None:
-        """Add an asset to the known assets on the chain."""
+        """
+        Add an asset to the known assets on the chain.
+
+        Args:
+            asset: Token to add.
+            name: The alias to use for the token.
+        """
         self.asset_aliases.add(asset, name)
 
     def asset_from_alias(self: Chain, name: str) -> IssuedCurrency:
-        """Get an asset from the asset's alias."""
+        """
+        Get an asset from the asset's alias.
+
+        Args:
+            name: The asset alias.
+
+        Returns:
+            The asset tied to the alias.
+        """
         return self.asset_aliases.asset_from_alias(name)

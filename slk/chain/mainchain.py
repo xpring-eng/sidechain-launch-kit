@@ -56,7 +56,16 @@ class Mainchain(Chain):
         return []
 
     def get_node(self: Mainchain, i: Optional[int] = None) -> Node:
-        """Get a specific node from the chain."""
+        """
+        Get a specific node from the chain.
+
+        Args:
+            i: The index of the node to return. For a standalone mainchain, this must
+                be None.
+
+        Returns:
+            The node for the chain.
+        """
         assert i is None
         return self.node
 
@@ -82,7 +91,14 @@ class Mainchain(Chain):
         server_indexes: Optional[Union[Set[int], List[int]]] = None,
         server_out: str = os.devnull,
     ) -> None:
-        """Start the servers for the chain."""
+        """
+        Start the servers for the chain.
+
+        Args:
+            server_indexes: The server indexes to start. The default is `None`, which
+                starts all the servers in the chain.
+            server_out: Where to output the results.
+        """
         if server_indexes is not None:
             raise Exception("Mainchain does not have server indexes.")
 
@@ -103,7 +119,13 @@ class Mainchain(Chain):
     def servers_stop(
         self: Mainchain, server_indexes: Optional[Union[Set[int], List[int]]] = None
     ) -> None:
-        """Stop the servers for the chain."""
+        """
+        Stop the servers for the chain.
+
+        Args:
+            server_indexes: The server indexes to start. The default is `None`, which
+                starts all the servers in the chain.
+        """
         if server_indexes is not None:
             raise Exception("Mainchain does not have server indexes.")
         if self.server_running:
@@ -123,7 +145,13 @@ class Mainchain(Chain):
     def federator_info(
         self: Mainchain, server_indexes: Optional[Union[Set[int], List[int]]] = None
     ) -> Dict[int, Dict[str, Any]]:
-        """Get the federator info of the servers."""
+        """
+        Get the federator info of the servers.
+
+        Args:
+            server_indexes: The servers to query for their federator info. If None,
+                treat as a wildcard. The default is None.
+        """
         # key is server index. value is federator_info result
         result_dict = {}
         # TODO: do this more elegantly
