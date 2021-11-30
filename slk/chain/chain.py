@@ -85,7 +85,7 @@ class Chain(ABC):
     def send_signed(self: Chain, txn: Transaction) -> Dict[str, Any]:
         """Sign then send the given transaction"""
         if not self.key_manager.is_account(txn.account):
-            raise ValueError("Cannot sign transaction without secret key")
+            raise ValueError(f"Account {txn.account} not a known account in chain")
         account_obj = self.key_manager.get_account(txn.account)
         return self.node.sign_and_submit(txn, account_obj.wallet)
 

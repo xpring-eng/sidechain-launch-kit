@@ -162,6 +162,10 @@ class SidechainParams:
             if args.mainnet_port:
                 self.mainnet_port = int(args.mainnet_port)
 
+            if "IOU_ISSUER" in _ENV_VARS:
+                self.issuer = _ENV_VARS["IOU_ISSUER"]
+            # TODO: add cli arg
+
         if self.main_standalone:
             # identify mainchain rippled exe file location (for standalone)
             if "RIPPLED_MAINCHAIN_EXE" in _ENV_VARS:

@@ -233,10 +233,13 @@ def main() -> None:
         xchain_assets["xrp_xrp_sidechain_asset"] = XChainAsset(
             XRP(), XRP(), "1", "1", "200", "200"
         )
-
-        root_account = "rHb9CJAWyB4rj91VRWn96DkukG4bwdtyTh"
-        main_iou_asset = IssuedCurrency(currency="USD", issuer=root_account)
-        side_iou_asset = IssuedCurrency(currency="USD", issuer=root_account)
+        root = "rHb9CJAWyB4rj91VRWn96DkukG4bwdtyTh"
+        if params.issuer is not None:
+            issuer = params.issuer.classic_address
+        else:
+            issuer = root
+        main_iou_asset = IssuedCurrency(currency="USD", issuer=issuer)
+        side_iou_asset = IssuedCurrency(currency="USD", issuer=root)
         xchain_assets["iou_iou_sidechain_asset"] = XChainAsset(
             main_iou_asset, side_iou_asset, "1", "1", "0.02", "0.02"
         )

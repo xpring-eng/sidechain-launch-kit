@@ -10,9 +10,9 @@ from xrpl.models import (
     TrustSet,
 )
 from xrpl.utils import xrp_to_drops
-from xrpl.wallet import generate_faucet_wallet
 
 from slk.chain.chain import Chain
+from slk.classes.account import Account
 from slk.sidechain_params import SidechainParams
 
 MAINCHAIN_DOOR_KEEPER = 0
@@ -34,9 +34,12 @@ def setup_mainchain(
     if params.main_standalone:
         issuer = params.genesis_account
     else:
-        issuer = mc_chain.create_account("issuer")
+        issuer = Account.from_seed("issuer", params.issuer)
+        mc_chain.add_to_keymanager(issuer)
+
         mc_chain.node.client.open()
-        generate_faucet_wallet(mc_chain.node.client, issuer.wallet)
+        if not does_account_exist(issuer.account_id, mc_chain.node.client):
+            raise Exception(f"Account {issuer} needs to be funded to exist.")
 
     # Allow rippling through the IOU issuer account
     mc_chain.send_signed(

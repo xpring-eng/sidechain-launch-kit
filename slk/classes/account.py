@@ -17,6 +17,16 @@ class Account:
         self.wallet = Wallet(seed, 0)
 
     @classmethod
+    def from_seed(cls: Type[Account], name: str, seed: str) -> Account:
+        wallet = Wallet(seed, 0)
+
+        return Account(
+            account_id=wallet.classic_address,
+            nickname=name,
+            seed=wallet.seed,
+        )
+
+    @classmethod
     def create(cls: Type[Account], name: str) -> Account:
         wallet = Wallet.create()
         return Account(

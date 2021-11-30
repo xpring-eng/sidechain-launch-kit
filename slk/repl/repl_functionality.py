@@ -267,7 +267,10 @@ def get_balances_data(
             if not in_drops and chain_res["currency"] == "XRP":
                 chain_res["balance"] = drops_to_xrp(chain_res["balance"])
             else:
-                chain_res["balance"] = int(chain_res["balance"])
+                try:
+                    chain_res["balance"] = int(chain_res["balance"])
+                except ValueError:
+                    chain_res["balance"] = float(chain_res["balance"])
             chain_short_name = "main" if chain_name == "mainchain" else "side"
             chain_res["account"] = chain_short_name + " " + chain_res["account"]
         result += chain_result

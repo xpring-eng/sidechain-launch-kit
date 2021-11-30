@@ -4,6 +4,7 @@ import argparse
 import os
 
 from dotenv import dotenv_values
+from xrpl.wallet import Wallet
 
 _ENV_VARS = {
     **os.environ,
@@ -126,3 +127,9 @@ class ConfigParams:
                 self.door_seed = args.door_seed
 
         self.usd = args.usd or False
+
+        self.issuer = None
+        if not self.standalone:
+            if "IOU_ISSUER" in _ENV_VARS:
+                self.issuer = Wallet(_ENV_VARS["IOU_ISSUER"], 0)
+            # TODO: add command line param
