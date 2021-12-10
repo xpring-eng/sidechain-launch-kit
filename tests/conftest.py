@@ -1,3 +1,5 @@
+from typing import Optional
+
 import pytest
 from xrpl.models import XRP, IssuedCurrency
 
@@ -31,14 +33,18 @@ def pytest_addoption(parser):
     _parse_args_helper(wrapped)
 
 
-def _xchain_assets(ratio: int = 1):
+def _xchain_assets(ratio: int = 1, issuer_param: Optional[str] = None):
     assets = {}
     assets["xrp_xrp_sidechain_asset"] = create_config_files.XChainAsset(
         XRP(), XRP(), "1", str(1 * ratio), "200", str(200 * ratio)
     )
     root_account = "rHb9CJAWyB4rj91VRWn96DkukG4bwdtyTh"
-    main_iou_asset = IssuedCurrency(currency="USD", issuer=root_account)
-    side_iou_asset = IssuedCurrency(currency="USD", issuer=root_account)
+    if issuer_param is not None:
+        issuer = issuer_param.classic_address
+    else:
+        issuer = root_account
+    main_iou_asset = IssuedCurrency(currency="USD", issuer=issuer)
+    side_iou_asset = IssuedCurrency(currency="USD", issuer=issuer)
     assets["iou_iou_sidechain_asset"] = create_config_files.XChainAsset(
         main_iou_asset, side_iou_asset, "1", str(1 * ratio), "0.02", str(0.02 * ratio)
     )
@@ -57,7 +63,9 @@ def configs_dirs_dict(tmp_path):
         _config_dirs = {}
         for ratio in (1, 2):
             params.configs_dir = str(tmp_path / f"test_config_files_{ratio}")
-            create_config_files.create_config_files(params, _xchain_assets(ratio))
+            create_config_files.create_config_files(
+                params, _xchain_assets(ratio, params.issuer)
+            )
             _config_dirs[ratio] = params.configs_dir
 
     return _config_dirs
