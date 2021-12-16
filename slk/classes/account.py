@@ -30,7 +30,12 @@ class Account:
 
     @classmethod
     def create(cls: Type[Account], name: str) -> Account:
-        """Create a new account with a new set of keys."""
+        """
+        Create a new account with a new set of keys.
+
+        Args:
+            name: Nickname of the account to create.
+        """
         wallet = Wallet.create()
         return Account(
             account_id=wallet.classic_address,

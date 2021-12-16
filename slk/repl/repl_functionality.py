@@ -63,7 +63,7 @@ def get_server_info(
         chain_names: The names of the chains.
     """
 
-    def data_dict(chain: Chain, chain_name: str) -> Dict[str, Any]:
+    def _data_dict(chain: Chain, chain_name: str) -> Dict[str, Any]:
         """Get the server_info data for a specific chain."""
         # TODO: refactor get_brief_server_info to make this method less clunky
         filenames = [c.get_file_name() for c in chain.get_configs()]
@@ -82,7 +82,7 @@ def get_server_info(
         data.update(bsi)
         return data
 
-    def result_from_dicts(
+    def _result_from_dicts(
         d1: Dict[str, Any], d2: Optional[Dict[str, Any]] = None
     ) -> List[Dict[str, Any]]:
         """Combine the info from the chains, refactor dict for tabulate."""
@@ -103,10 +103,10 @@ def get_server_info(
         return data
 
     data_dicts = [
-        data_dict(chain, _removesuffix(name, "chain"))
+        _data_dict(chain, _removesuffix(name, "chain"))
         for chain, name in zip(chains, chain_names)
     ]
-    return result_from_dicts(*data_dicts)
+    return _result_from_dicts(*data_dicts)
 
 
 def get_federator_info(
