@@ -179,8 +179,9 @@ def create_config_files(
     """
     Create the config files for a network.
 
-    params: The command-line params provided to this method.
-    xchain_assets: The cross-chain assets to allow to cross the network.
+    Args:
+        params: The command-line params provided to this method.
+        xchain_assets: The cross-chain assets to allow to cross the network.
     """
     index = 0
     mainnet = Network(num_nodes=1, start_cfg_index=index)

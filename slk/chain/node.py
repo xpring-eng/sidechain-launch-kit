@@ -66,7 +66,15 @@ class Node:
         return self.pid
 
     def request(self: Node, req: Request) -> Dict[str, Any]:
-        """Send a request to the rippled node and return the response."""
+        """
+        Send a request to the rippled node and return the response.
+
+        Args:
+            req: Request to send to the node.
+
+        Returns:
+            The response from the node.
+        """
         if not self.client.is_open():
             self.client.open()
         response = self.client.request(req)
@@ -75,7 +83,13 @@ class Node:
         raise Exception("failed transaction", response.result)
 
     def sign_and_submit(self: Node, txn: Transaction, wallet: Wallet) -> Dict[str, Any]:
-        """Sign and submit the given transaction."""
+        """
+        Sign and submit the given transaction.
+
+        Args:
+            txn: The transaction to send.
+            wallet: The wallet to use to sign the transaction.
+        """
         if not self.client.is_open():
             self.client.open()
         return safe_sign_and_submit_transaction(txn, wallet, self.client).result
@@ -87,7 +101,14 @@ class Node:
         standalone: bool = False,
         server_out: str = os.devnull,
     ) -> None:
-        """Start up the server."""
+        """
+        Start up the server.
+
+        Args:
+            extra_args: Extra arguments to pass to the server.
+            standalone: Whether to run the server in standalone mode.
+            server_out: The log file for server information.
+        """
         if extra_args is None:
             extra_args = []
         to_run = [self.exe, "--conf", self.config_file_name]
@@ -105,7 +126,12 @@ class Node:
         )
 
     def stop_server(self: Node, *, server_out: str = os.devnull) -> None:
-        """Stop the server."""
+        """
+        Stop the server.
+
+        Args:
+            server_out: The log file for server information.
+        """
         to_run = [self.exe, "--conf", self.config_file_name]
         fout = open(os.devnull, "w")
         subprocess.Popen(to_run + ["stop"], stdout=fout, stderr=subprocess.STDOUT)
