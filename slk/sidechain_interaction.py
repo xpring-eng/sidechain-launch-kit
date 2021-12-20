@@ -21,7 +21,11 @@ from typing import Any, Callable, List
 
 from slk.chain.chain import Chain
 from slk.chain.chain_setup import setup_mainchain, setup_sidechain
-from slk.chain.context_managers import sidechain_network, single_node_chain
+from slk.chain.context_managers import (
+    connect_to_external_chain,
+    sidechain_network,
+    single_node_chain,
+)
 from slk.chain.xchain_transfer import main_to_side_transfer, side_to_main_transfer
 from slk.classes.config_file import ConfigFile
 from slk.repl import set_hooks_dir, start_repl
@@ -92,7 +96,8 @@ def _standalone_with_callback(
     callback: Callable[[Chain, Chain], None],
     setup_user_accounts: bool = True,
 ) -> None:
-
+    # TODO: make more elegant once params is more fleshed out
+    assert params.mainchain_config is not None
     if params.debug_mainchain:
         input("Start mainchain server and press enter to continue: ")
     else:
@@ -193,6 +198,50 @@ def _multinode_with_callback(
             callback(mc_chain, sc_chain)
 
 
+def _external_node_with_callback(
+    params: SidechainParams,
+    callback: Callable[[Chain, Chain], None],
+    setup_user_accounts: bool = True,
+) -> None:
+    assert params.mainnet_port is not None  # TODO: type this better
+    with connect_to_external_chain(
+        # TODO: stop hardcoding this
+        url=params.mainnet_url,
+        port=params.mainnet_port,
+    ) as mc_chain:
+        setup_mainchain(mc_chain, params, setup_user_accounts)
+        if params.with_pauses:
+            input("Pausing after mainchain setup (press enter to continue)")
+
+        testnet_configs = _configs_for_testnet(
+            f"{params.configs_dir}/sidechain_testnet/sidechain_"
+        )
+        for c in testnet_configs:
+            _rm_debug_log(c, params.verbose)
+
+        run_server_list = [True] * len(testnet_configs)
+        if params.debug_sidechain:
+            run_server_list[0] = False
+            input(
+                f"Start testnet server {testnet_configs[0].get_file_name()} and press "
+                "enter to continue: "
+            )
+
+        with sidechain_network(
+            exe=params.sidechain_exe,
+            configs=testnet_configs,
+            run_server=run_server_list,
+        ) as sc_chain:
+
+            if params.with_pauses:
+                input("Pausing after testnet start (press enter to continue)")
+
+            setup_sidechain(sc_chain, params, setup_user_accounts)
+            if params.with_pauses:
+                input("Pausing after sidechain setup (press enter to continue)")
+            callback(mc_chain, sc_chain)
+
+
 def standalone_test(params: SidechainParams) -> None:
     def callback(mc_chain: Chain, sc_chain: Chain) -> None:
         simple_test(mc_chain, sc_chain, params)
@@ -207,12 +256,21 @@ def multinode_test(params: SidechainParams) -> None:
     _multinode_with_callback(params, callback)
 
 
+def external_node_test(params: SidechainParams) -> None:
+    def callback(mc_chain: Chain, sc_chain: Chain) -> None:
+        simple_test(mc_chain, sc_chain, params)
+
+    _external_node_with_callback(params, callback)
+
+
 # The mainchain runs in standalone mode. Most operations - like cross chain
 # payments - will automatically close ledgers. However, some operations, like
 # refunds, need an extra close. This loop automatically closes ledgers.
 def close_mainchain_ledgers(
     stop_token: Any, params: SidechainParams, sleep_time: int = 4
 ) -> None:
+    # TODO: make more elegant once params is more fleshed out
+    assert params.mainchain_config is not None
     with single_node_chain(
         config=params.mainchain_config,
         exe=params.mainchain_exe,
@@ -259,6 +317,24 @@ def multinode_interactive_repl(params: SidechainParams) -> None:
     _multinode_with_callback(params, callback, setup_user_accounts=False)
 
 
+def external_node_interactive_repl(params: SidechainParams) -> None:
+    def callback(mc_chain: Chain, sc_chain: Chain) -> None:
+        # process will run while stop token is non-zero
+        stop_token = Value("i", 1)
+        p = None
+        if mc_chain.standalone:
+            p = Process(target=close_mainchain_ledgers, args=(stop_token, params))
+            p.start()
+        try:
+            start_repl(mc_chain, sc_chain)
+        finally:
+            if p:
+                stop_token.value = 0
+                p.join()
+
+    _external_node_with_callback(params, callback, setup_user_accounts=False)
+
+
 def main() -> None:
     try:
         params = SidechainParams()
@@ -273,10 +349,14 @@ def main() -> None:
         disable_eprint()
 
     if params.interactive:
-        if params.standalone:
+        if not params.main_standalone:
+            external_node_interactive_repl(params)
+        elif params.standalone:
             standalone_interactive_repl(params)
         else:
             multinode_interactive_repl(params)
+    elif not params.main_standalone:
+        external_node_test(params)
     elif params.standalone:
         standalone_test(params)
     else:

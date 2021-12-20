@@ -10,7 +10,6 @@ from xrpl.models import (
     AccountLines,
     Currency,
     IssuedCurrency,
-    IssuedCurrencyAmount,
     LedgerAccept,
     Request,
     Subscribe,
@@ -33,15 +32,13 @@ ROOT_ACCOUNT = Account(
 class Chain(ABC):
     """Representation of one chain (mainchain/sidechain)"""
 
-    def __init__(
-        self: Chain,
-        node: Node,
-    ) -> None:
+    def __init__(self: Chain, node: Node, add_root: bool = True) -> None:
         self.node = node
         self.key_manager = KeyManager()
         self.asset_aliases = AssetAliases()
 
-        self.key_manager.add(ROOT_ACCOUNT)
+        if add_root:
+            self.key_manager.add(ROOT_ACCOUNT)
 
     @property
     @abstractmethod
@@ -88,7 +85,7 @@ class Chain(ABC):
     def send_signed(self: Chain, txn: Transaction) -> Dict[str, Any]:
         """Sign then send the given transaction"""
         if not self.key_manager.is_account(txn.account):
-            raise ValueError("Cannot sign transaction without secret key")
+            raise ValueError(f"Account {txn.account} not a known account in chain")
         account_obj = self.key_manager.get_account(txn.account)
         return self.node.sign_and_submit(txn, account_obj.wallet)
 
@@ -198,7 +195,7 @@ class Chain(ABC):
                     }
                 ]
         else:
-            assert isinstance(token, IssuedCurrencyAmount)  # for typing
+            assert isinstance(token, IssuedCurrency)  # for typing
             try:
                 trustlines = self.get_trust_lines(account)
                 trustlines = [

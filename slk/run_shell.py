@@ -6,6 +6,7 @@ import traceback
 
 from slk.repl import set_hooks_dir
 from slk.sidechain_interaction import (
+    external_node_interactive_repl,
     multinode_interactive_repl,
     standalone_interactive_repl,
 )
@@ -27,7 +28,9 @@ def main() -> None:
     else:
         disable_eprint()
 
-    if params.standalone:
+    if not params.main_standalone:
+        external_node_interactive_repl(params)
+    elif params.standalone:
         standalone_interactive_repl(params)
     else:
         multinode_interactive_repl(params)

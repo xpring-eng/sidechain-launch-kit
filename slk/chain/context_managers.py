@@ -2,6 +2,7 @@ import os
 from contextlib import contextmanager
 from typing import Generator, List, Optional
 
+from slk.chain.external_chain import ExternalChain
 from slk.chain.mainchain import Mainchain
 from slk.chain.sidechain import Sidechain
 from slk.classes.config_file import ConfigFile
@@ -33,6 +34,22 @@ def single_node_chain(
             chain.shutdown()
 
 
+@contextmanager
+def connect_to_external_chain(
+    *,
+    url: str,
+    port: int,
+) -> Generator[ExternalChain, None, None]:
+    """Start a ripple server and return a chain"""
+    chain = None
+    try:
+        chain = ExternalChain(url, port)
+        yield chain
+    finally:
+        if chain:
+            chain.shutdown()
+
+
 # TODO: rename this method to better represent what it does
 # Start a chain for a network with the config files matched by
 # `config_file_prefix*/rippled.cfg`
@@ -45,6 +62,7 @@ def sidechain_network(
     run_server: Optional[List[bool]] = None,
 ) -> Generator[Sidechain, None, None]:
     """Start a ripple testnet and return a chain"""
+    chain = None
     try:
         chain = Sidechain(
             exe,
