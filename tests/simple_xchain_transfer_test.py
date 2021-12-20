@@ -139,7 +139,7 @@ def simple_iou_test(mc_chain: Chain, sc_chain: Chain, params: SidechainParams):
                 )
                 rcv_asset = IssuedCurrencyAmount.from_issued_currency(mc_asset, value)
                 pre_bal = IssuedCurrencyAmount.from_issued_currency(
-                    to_send_asset, mc_chain.get_balance(alice, to_send_asset)
+                    mc_asset, mc_chain.get_balance(alice, rcv_asset)
                 )
                 side_to_main_transfer(
                     mc_chain, sc_chain, adam, alice, to_send_asset, params
@@ -158,7 +158,7 @@ def run(mc_chain: Chain, sc_chain: Chain, params: SidechainParams):
         # TODO: Tests fail without this sleep. Fix this bug.
         time.sleep(10)
         setup_accounts(mc_chain, sc_chain, params)
-        # simple_xrp_test(mc_chain, sc_chain, params)
+        simple_xrp_test(mc_chain, sc_chain, params)
         simple_iou_test(mc_chain, sc_chain, params)
     finally:
         if p:

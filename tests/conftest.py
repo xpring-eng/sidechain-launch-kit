@@ -44,7 +44,7 @@ def _xchain_assets(ratio: int = 1, issuer_param: Optional[str] = None):
     else:
         issuer = root_account
     main_iou_asset = IssuedCurrency(currency="USD", issuer=issuer)
-    side_iou_asset = IssuedCurrency(currency="USD", issuer=issuer)
+    side_iou_asset = IssuedCurrency(currency="USD", issuer=root_account)
     assets["iou_iou_sidechain_asset"] = create_config_files.XChainAsset(
         main_iou_asset, side_iou_asset, "1", str(1 * ratio), "0.02", str(0.02 * ratio)
     )
