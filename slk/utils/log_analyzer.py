@@ -63,7 +63,12 @@ class LogLine:
             eprint(f"init exception: {e} line: {line}")
 
     def to_mixed_json(self: LogLine) -> str:
-        """Return a pretty-printed string as mixed JSON."""
+        """
+        Return a pretty-printed string as mixed JSON.
+
+        Returns:
+            A string of mixed JSON.
+        """
         try:
             r = f"{self.timestamp} {self.module}:{self.level} {self.msg}"
             if self.json_data:
@@ -74,7 +79,12 @@ class LogLine:
             return self.raw_line
 
     def to_pure_json(self: LogLine) -> str:
-        """Return a pretty-printed string as pure JSON."""
+        """
+        Return a pretty-printed string as pure JSON.
+
+        Returns:
+            A string of pure JSON.
+        """
         try:
             dict = {}
             dict["t"] = self.timestamp
