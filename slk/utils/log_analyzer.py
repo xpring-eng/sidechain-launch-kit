@@ -109,6 +109,9 @@ def convert_log(
         out_file_name: The file to dump the result in.
         pure_json: Whether it should be pure JSON or only half (some log info is still
             raw).
+
+    Raises:
+        Exception: if something goes wrong (?).
     """
     try:
         prev_lines = None

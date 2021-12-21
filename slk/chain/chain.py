@@ -133,9 +133,12 @@ class Chain(ABC):
 
         Returns:
             The result of the submit request.
+
+        Raises:
+            ValueError: If the txn's account is not a known account.
         """
         if not self.key_manager.is_account(txn.account):
-            raise ValueError("Cannot sign transaction without secret key")
+            raise ValueError("Cannot sign transaction for an unknown account.")
         account_obj = self.key_manager.get_account(txn.account)
         return self.node.sign_and_submit(txn, account_obj.wallet)
 
@@ -190,6 +193,9 @@ class Chain(ABC):
 
         Returns:
             A list of the results for the accounts.
+
+        Raises:
+            ValueError: If the account_info command fails.
         """
         if account is None:
             known_accounts = self.key_manager.known_accounts()
@@ -327,6 +333,9 @@ class Chain(ABC):
 
         Returns:
             A list of dictionaries representing account trust lines.
+
+        Raises:
+            ValueError: If the account_lines command fails.
         """
         if peer is None:
             result = self.request(AccountLines(account=account.account_id))

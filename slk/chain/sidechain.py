@@ -34,6 +34,9 @@ class Sidechain(Chain):
             configs: The config files associated with this chain.
             command_logs: The location of the log files.
             run_server: Whether to start each of the servers.
+
+        Raises:
+            ValueError: If `len(run_server) != len(configs)`
         """
         if not configs:
             raise ValueError("Must specify at least one config")
@@ -163,6 +166,9 @@ class Sidechain(Chain):
             server_indexes: The server indexes to start. The default is `None`, which
                 starts all the servers in the chain.
             server_out: Where to output the results.
+
+        Raises:
+            Exception: If the servers take too long to start.
         """
         if server_indexes is None:
             server_indexes = [i for i in range(len(self.nodes))]

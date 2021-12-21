@@ -84,6 +84,9 @@ class Node:
 
         Returns:
             The response from the node.
+
+        Raises:
+            Exception: If the transaction fails.
         """
         if not self.client.is_open():
             self.client.open()
@@ -166,7 +169,12 @@ class Node:
             return result == 0  # means the WS port is open for connections
 
     def wait_for_validated_ledger(self: Node) -> None:
-        """Wait for the server to have validated ledgers."""
+        """
+        Wait for the server to have validated ledgers.
+
+        Raises:
+            ValueError: if the servers were unable to sync.
+        """
         for i in range(600):
             r = self.request(ServerInfo())
             state = None

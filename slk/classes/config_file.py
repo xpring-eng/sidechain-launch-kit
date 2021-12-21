@@ -94,6 +94,9 @@ class ConfigFile:
 
         Args:
             file_name: The name/location of the config file.
+
+        Raises:
+            ValueError: If there is an error in parsing the config file.
         """
         # parse the file
         self._file_name = file_name
@@ -159,6 +162,9 @@ class ConfigFile:
 
         Returns:
             The section with the provided name.
+
+        Raises:
+            AttributeError: if a section with the provided name does not exist.
         """
         try:
             return self._sections[name]

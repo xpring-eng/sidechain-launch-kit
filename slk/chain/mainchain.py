@@ -118,6 +118,9 @@ class Mainchain(Chain):
             server_indexes: The server indexes to start. The default is `None`, which
                 starts all the servers in the chain.
             server_out: Where to output the results.
+
+        Raises:
+            Exception: If the server takes too long to start.
         """
         if server_indexes is not None:
             raise Exception("Mainchain does not have server indexes.")
@@ -145,6 +148,9 @@ class Mainchain(Chain):
         Args:
             server_indexes: The server indexes to start. The default is `None`, which
                 starts all the servers in the chain.
+
+        Raises:
+            Exception: if server_indexes is passed in.
         """
         if server_indexes is not None:
             raise Exception("Mainchain does not have server indexes.")

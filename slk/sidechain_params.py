@@ -115,6 +115,9 @@ class SidechainParams:
             configs_dir: Pass the config folder directly in. Usually passed in via
                 command args/env vars.
             interactive: Whether the REPL should be started.
+
+        Raises:
+            Exception: if the arguments provided are invalid.
         """
         args = _parse_args()
 
