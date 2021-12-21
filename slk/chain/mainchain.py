@@ -46,11 +46,21 @@ class Mainchain(Chain):
 
     @property
     def standalone(self: Mainchain) -> bool:
-        """Return whether the chain is in standalone mode."""
+        """
+        Return whether the chain is in standalone mode.
+
+        Returns:
+            True, because this chain is in standalone mode.
+        """
         return True
 
     def get_pids(self: Mainchain) -> List[int]:
-        """Return a list of process IDs for the nodes in the chain."""
+        """
+        Return a list of process IDs for the nodes in the chain.
+
+        Returns:
+            A list of process IDs for the nodes in the chain.
+        """
         if pid := self.node.get_pid():
             return [pid]
         return []
@@ -70,11 +80,21 @@ class Mainchain(Chain):
         return self.node
 
     def get_configs(self: Mainchain) -> List[ConfigFile]:
-        """Get a list of all the config files for the nodes in the chain."""
+        """
+        Get a list of all the config files for the nodes in the chain.
+
+        Returns:
+            A list of all the config files for the nodes in the chain.
+        """
         return [self.node.config]
 
     def get_running_status(self: Mainchain) -> List[bool]:
-        """Return whether the chain is up and running."""
+        """
+        Return whether the chain is up and running.
+
+        Returns:
+            A list of the running statuses of the nodes in the chain.
+        """
         if self.node.get_pid():
             return [True]
         else:
@@ -136,6 +156,10 @@ class Mainchain(Chain):
         """
         Get a dictionary of the server_state, validated_ledger_seq, and
         complete_ledgers for all the nodes in the chain.
+
+        Returns:
+            A dictionary of the server_state, validated_ledger_seq, and
+            complete_ledgers for all the nodes in the chain
         """
         ret = {}
         for (k, v) in self.node.get_brief_server_info().items():
@@ -151,6 +175,9 @@ class Mainchain(Chain):
         Args:
             server_indexes: The servers to query for their federator info. If None,
                 treat as a wildcard. The default is None.
+
+        Returns:
+            The federator info of the servers.
         """
         # key is server index. value is federator_info result
         result_dict = {}

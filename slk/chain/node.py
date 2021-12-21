@@ -54,7 +54,12 @@ class Node:
 
     @property
     def config_file_name(self: Node) -> str:
-        """Get the file name/location for the config file that this node is using."""
+        """
+        Get the file name/location for the config file that this node is using.
+
+        Returns:
+            The config file name/location.
+        """
         return self.config.get_file_name()
 
     def shutdown(self: Node) -> None:
@@ -62,7 +67,12 @@ class Node:
         self.client.close()
 
     def get_pid(self: Node) -> Optional[int]:
-        """Get the process id for the server the node is running."""
+        """
+        Get the process id for the server the node is running.
+
+        Returns:
+            The process id for the server the node is running.
+        """
         return self.pid
 
     def request(self: Node, req: Request) -> Dict[str, Any]:
@@ -89,6 +99,9 @@ class Node:
         Args:
             txn: The transaction to send.
             wallet: The wallet to use to sign the transaction.
+
+        Returns:
+            The result from the server for the transaction's submission.
         """
         if not self.client.is_open():
             self.client.open()
@@ -188,6 +201,10 @@ class Node:
         """
         Get a dictionary of the server_state, validated_ledger_seq, and
         complete_ledgers for the node.
+
+        Returns:
+            A dictionary of the server_state, validated_ledger_seq, and
+            complete_ledgers for the node.
         """
         ret = {"server_state": "NA", "ledger_seq": "NA", "complete_ledgers": "NA"}
         if not self.pid:

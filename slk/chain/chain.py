@@ -305,7 +305,7 @@ class Chain(ABC):
             account: The account to get the balance from.
             token: The currency to use as the balance.
 
-        Result:
+        Returns:
             The balance of the token in the account.
         """
         try:
@@ -432,15 +432,30 @@ class Chain(ABC):
         return self.key_manager.account_from_alias(name)
 
     def known_accounts(self: Chain) -> List[Account]:
-        """Get a list of all known accounts on the chain."""
+        """
+        Get a list of all known accounts on the chain.
+
+        Returns:
+            A list of all known accounts on the chain.
+        """
         return self.key_manager.known_accounts()
 
     def known_asset_aliases(self: Chain) -> List[str]:
-        """Get a list of all known token aliases on the chain."""
+        """
+        Get a list of all known token aliases on the chain.
+
+        Returns:
+            A list of all known token aliases on the chain.
+        """
         return self.asset_aliases.known_aliases()
 
     def known_iou_assets(self: Chain) -> List[IssuedCurrency]:
-        """Get a list of all known tokens on the chain."""
+        """
+        Get a list of all known tokens on the chain.
+
+        Returns:
+            A list of all known tokens on the chain.
+        """
         return self.asset_aliases.known_assets()
 
     def is_asset_alias(self: Chain, name: str) -> bool:
