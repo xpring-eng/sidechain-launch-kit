@@ -19,7 +19,16 @@ def single_node_chain(
     run_server: bool = True,
     exe: str,
 ) -> Generator[Mainchain, None, None]:
-    """Start a ripple server and return a chain"""
+    """
+    Start a rippled server and return a chain.
+
+    Args:
+        config: The config file to use for rippled.
+        command_log: The log file.
+        server_out: The location to output stdout to. The default is os.devnull.
+        run_server: Whether to start the server. The default is True.
+        exe: The file location of the rippled executable.
+    """
     chain = None
     try:
         chain = Mainchain(
@@ -46,7 +55,15 @@ def sidechain_network(
     command_logs: Optional[List[Optional[str]]] = None,
     run_server: Optional[List[bool]] = None,
 ) -> Generator[Sidechain, None, None]:
-    """Start a ripple testnet and return a chain"""
+    """
+    Start an XRPL testnet and return a chain.
+
+    Args:
+        exe: The file location of the rippled executable.
+        configs: The config files to use for rippled.
+        command_logs: The log files. Optional.
+        run_server: Whether to start the server. Optional.
+    """
     try:
         chain = Sidechain(
             exe,
