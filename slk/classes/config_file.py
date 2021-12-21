@@ -22,6 +22,9 @@ class _Section:
 
         Args:
             line: The line of the section.
+
+        Returns:
+            The section name, if it exists. Else, none.
         """
         if line.startswith("[") and line.endswith("]"):
             return line[1:-1]
@@ -121,11 +124,21 @@ class ConfigFile:
         self._sections[s.get_name()] = s
 
     def get_file_name(self: ConfigFile) -> str:
-        """Get the file name/location of the config file."""
+        """
+        Get the file name/location of the config file.
+
+        Returns:
+            The config file name/location.
+        """
         return self._file_name
 
     def __getstate__(self: ConfigFile) -> Dict[str, Any]:
-        """Get the state of a ConfigFile."""
+        """
+        Get the state of a ConfigFile.
+
+        Returns:
+            The state of the ConfigFile.
+        """
         return vars(self)
 
     def __setstate__(self: ConfigFile, state: Dict[str, Any]) -> None:
@@ -143,6 +156,9 @@ class ConfigFile:
 
         Args:
             name: Name of the section.
+
+        Returns:
+            The section with the provided name.
         """
         try:
             return self._sections[name]

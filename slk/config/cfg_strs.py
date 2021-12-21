@@ -40,6 +40,9 @@ def get_ips_stanza(
         fixed_ips: The ips for the sidechain network.
         peer_port: The peer port of the node whose config file this is.
         main_net: Whether this is on the mainnet (or testnet). #TODO: not sure if needed
+
+    Returns:
+        The `[ips]` and `[ips_fixed]` stanzas for `rippled.cfg`.
     """
     ips_stanza = ""
     if fixed_ips:
@@ -116,6 +119,9 @@ def generate_sidechain_stanza(
         mainchain_cfg_file: File location of the mainchain's cfg file. Only relevant
             for standalone mode. Only used in a comment.
         xchain_assets: Cross-chain asset information.
+
+    Returns:
+        The `[sidechain]` stanzas for `rippled.cfg` and `sidechain_bootstrap.cfg`.
     """
     assets_stanzas = _generate_asset_stanzas(xchain_assets)
 
@@ -172,6 +178,9 @@ def get_cfg_str(
         disable_shards: Whether or not to comment out the shards stuff.
         sidechain_stanza: The [sidechain] stanza.
         with_hooks: Whether or not to have hooks support in the chain.
+
+    Returns:
+        The bulk of `rippled.cfg`.
     """
     db_path = sub_dir + "/db"
     debug_logfile = sub_dir + "/debug.log"
