@@ -37,6 +37,9 @@ def get_account_info(
         chains: A list of the chains to search.
         chain_names: The names of the chains.
         account_ids: The account IDs to search.
+
+    Returns:
+        The account info of the accounts.
     """
     results: List[Dict[str, Any]] = []
     for chain, chain_name, acc in zip(chains, chain_names, account_ids):
@@ -61,6 +64,9 @@ def get_server_info(
     Args:
         chains: A list of the chains to search.
         chain_names: The names of the chains.
+
+    Returns:
+        The server info of the node(s) in the chain(s).
     """
     # Get the server_info data for a specific chain.
     def _data_dict(chain: Chain, chain_name: str) -> Dict[str, Any]:
@@ -118,6 +124,9 @@ def get_federator_info(
         info_dict: The raw federator_info data.
         verbose: Whether to gather all the details or be more succinct. The default is
             false.
+
+    Returns:
+        The federator info of the node(s) in the chain(s).
     """
 
     def get_fed_info_table(
@@ -298,6 +307,9 @@ def get_balances_data(
         account_ids: The account IDs to search.
         assets: The list of assets to get information on.
         in_drops: Whether to return the value in drops (or in XRP).
+
+    Returns:
+        The balances of the account(s) in the provided asset(s).
     """
     if account_ids is None:
         account_ids = [None] * len(chains)

@@ -103,6 +103,9 @@ class SidechainRepl(cmd.Cmd):
 
         Args:
             text: The text to autocomplete.
+
+        Returns:
+            The chain names that could autocomplete the provided text.
         """
         if not text:
             return ["mainchain", "sidechain"]
@@ -115,6 +118,9 @@ class SidechainRepl(cmd.Cmd):
 
         Args:
             text: The text to autocomplete.
+
+        Returns:
+            The unit names that could autocomplete the provided text.
         """
         if not text:
             return ["drops", "xrp"]
@@ -131,6 +137,9 @@ class SidechainRepl(cmd.Cmd):
             text: The text to autocomplete.
             chain_name: The chain to search for accounts. If None, treat as a wildcard.
                 The default is None.
+
+        Returns:
+            The account nicknames that could autocomplete the provided text.
         """
         known_accounts: Set[str] = set()
         chains = [self.mc_chain, self.sc_chain]
@@ -157,6 +166,9 @@ class SidechainRepl(cmd.Cmd):
             text: The text to autocomplete.
             chain_name: The chain to search for assets. If None, treat as a wildcard.
                 The default is None.
+
+        Returns:
+            The asset names that could autocomplete the provided text.
         """
         known_assets: Set[str] = set()
         chains = [self.mc_chain, self.sc_chain]
@@ -1537,7 +1549,7 @@ class SidechainRepl(cmd.Cmd):
         Args:
             line: The command-line arguments.
         """
-        return set_up_ious(self.mc_chain, self.sc_chain)
+        set_up_ious(self.mc_chain, self.sc_chain)
 
     # setup_ious
     ##################
@@ -1727,6 +1739,9 @@ class SidechainRepl(cmd.Cmd):
 
         Args:
             line: The command-line arguments.
+
+        Returns:
+            True, so that the REPL closes.
         """
         print("Thank you for using the sidechain shell. Goodbye.\n\n")
         return True
@@ -1747,12 +1762,15 @@ class SidechainRepl(cmd.Cmd):
 
         Args:
             line: The command-line arguments.
+
+        Returns:
+            True, so that the REPL closes.
         """
         return self.do_quit(line)
 
     def help_q(self: SidechainRepl) -> None:
         """Print out a help message for the `q` REPL command."""
-        return self.help_quit()
+        self.help_quit()
 
     # q
     ##################
@@ -1765,6 +1783,9 @@ class SidechainRepl(cmd.Cmd):
 
         Args:
             line: The command-line arguments.
+
+        Returns:
+            True, so that the REPL closes.
         """
         return self.do_quit(line)
 
