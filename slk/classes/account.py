@@ -30,6 +30,16 @@ class Account:
 
     @classmethod
     def from_seed(cls: Type[Account], name: str, seed: str) -> Account:
+        """
+        Create an account from a seed.
+
+        Args:
+            name: The nickname of the account.
+            seed: The seed of the account.
+
+        Returns:
+            The Account that corresponds to the provided information.
+        """
         wallet = Wallet(seed, 0)
 
         return Account(

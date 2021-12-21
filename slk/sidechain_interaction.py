@@ -279,6 +279,14 @@ def multinode_test(params: SidechainParams) -> None:
 
 
 def external_node_test(params: SidechainParams) -> None:
+    """
+    Run a connection to an external chainand a multi-node sidechain and run basic tests
+    on it.
+
+    Args:
+        params: The command-line args for running the sidechain.
+    """
+
     def callback(mc_chain: Chain, sc_chain: Chain) -> None:
         _simple_test(mc_chain, sc_chain, params)
 
@@ -298,6 +306,7 @@ def close_mainchain_ledgers(
         params: The command-line args for running the sidechain.
         sleep_time: How long to wait for a ledger close.
     """
+    assert params.mainchain_config is not None  # TODO: type this better
     with single_node_chain(
         config=params.mainchain_config,
         exe=params.mainchain_exe,
@@ -361,6 +370,14 @@ def multinode_interactive_repl(params: SidechainParams) -> None:
 
 
 def external_node_interactive_repl(params: SidechainParams) -> None:
+    """
+    Run a connection to an external standalone node, and a multi-node sidechain, and
+    start up the REPL to interact with them.
+
+    Args:
+        params: The command-line args for running the sidechain.
+    """
+
     def callback(mc_chain: Chain, sc_chain: Chain) -> None:
         # process will run while stop token is non-zero
         stop_token = Value("i", 1)

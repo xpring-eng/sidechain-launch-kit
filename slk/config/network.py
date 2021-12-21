@@ -25,7 +25,7 @@ class Network:
 
         Args:
             num_nodes: The number of nodes in the network.
-            start_cfg_index: The port number the ports should start at.
+            ports: The Ports for the network.
         """
         self.url = "127.0.0.1"
         self.num_nodes = num_nodes
@@ -33,7 +33,16 @@ class Network:
 
 
 class StandaloneNetwork(Network):
+    """Represents a network that is standalone and running locally."""
+
     def __init__(self: StandaloneNetwork, num_nodes: int, start_cfg_index: int) -> None:
+        """
+        Initializes a StandaloneNetwork.
+
+        Args:
+            num_nodes: The number of nodes in the network.
+            start_cfg_index: The port number the set of ports should start at.
+        """
         ports = [Ports.generate(start_cfg_index + i) for i in range(num_nodes)]
         super().__init__(num_nodes, ports)
         self.validator_keypairs = self._generate_node_keypairs()
@@ -55,7 +64,16 @@ class StandaloneNetwork(Network):
 
 
 class ExternalNetwork(Network):
+    """Represents a connection to an external network (e.g. devnet/testnet/mainnet)."""
+
     def __init__(self: ExternalNetwork, url: str, ws_port: int) -> None:
+        """
+        Initialize an ExternalNetwork for config files.
+
+        Args:
+            url: The URL of the external network.
+            ws_port: The port number of the WS port (to connect to the network).
+        """
         ports = [Ports(None, None, ws_port, None)]
         super().__init__(1, ports)
         self.url = url
@@ -68,7 +86,6 @@ class SidechainNetwork(StandaloneNetwork):
         self: SidechainNetwork,
         num_federators: int,
         start_cfg_index: int,
-        num_nodes: Optional[int] = None,
         main_door_seed: Optional[str] = None,
     ) -> None:
         """
@@ -77,6 +94,9 @@ class SidechainNetwork(StandaloneNetwork):
         Args:
             num_federators: The number of federators in the network.
             start_cfg_index: The port number the ports should start at.
+            main_door_seed: The secret seed of the door account on the mainchain. Only
+                needed if the mainchain is an external chain (e.g.
+                mainnet/devnet/testnet).
         """
         super().__init__(num_federators, start_cfg_index)
         self.num_federators = num_federators

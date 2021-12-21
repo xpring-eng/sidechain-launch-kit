@@ -33,6 +33,9 @@ def setup_mainchain(
         params: The command-line arguments for setup.
         setup_user_accounts: Whether to create + fund a user account. The default is
             True.
+
+    Raises:
+        Exception: If the issuer on an external network doesn't exist.
     """
     mc_chain.add_to_keymanager(params.mc_door_account)
     if setup_user_accounts:

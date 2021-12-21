@@ -68,6 +68,12 @@ class Node:
 
     @property
     def running(self: Node) -> bool:
+        """
+        Returns whether the chain is running.
+
+        Returns:
+            Whether the chain is running.
+        """
         return self.pid is not None
 
     def get_pid(self: Node) -> Optional[int]:

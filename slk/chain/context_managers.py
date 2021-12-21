@@ -54,7 +54,16 @@ def connect_to_external_chain(
     url: str,
     port: int,
 ) -> Generator[ExternalChain, None, None]:
-    """Start a ripple server and return a chain"""
+    """
+    Start a connection to an external network and return a chain.
+
+    Args:
+        url: The URL of a node on the external network.
+        port: The public WS port on the node.
+
+    Yields:
+        A representation of the external chain.
+    """
     chain = None
     try:
         chain = ExternalChain(url, port)

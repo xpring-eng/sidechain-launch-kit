@@ -112,8 +112,9 @@ def generate_sidechain_stanza(
     the sidechain_bootstrap.cfg file.
 
     Args:
-        mainchain_ports: The ports of the mainchain that this sidechain is connecting
-            to.
+        mainchain_url: The URL of the mainchain. If the chain is local, it is 127.0.0.1.
+        mainchain_ws_port: The WS port of the mainchain that this sidechain is
+            connecting to.
         main_account: The Wallet for the door account on the mainchain.
         federators: The federators in the network.
         signing_key: The signing key used for this node.
