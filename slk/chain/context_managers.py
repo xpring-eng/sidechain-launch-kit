@@ -28,6 +28,9 @@ def single_node_chain(
         server_out: The location to output stdout to. The default is os.devnull.
         run_server: Whether to start the server. The default is True.
         exe: The file location of the rippled executable.
+
+    Yields:
+        A standalone single-node chain.
     """
     chain = None
     try:
@@ -63,6 +66,9 @@ def sidechain_network(
         configs: The config files to use for rippled.
         command_logs: The log files. Optional.
         run_server: Whether to start the server. Optional.
+
+    Yields:
+        A locally-running sidechain.
     """
     try:
         chain = Sidechain(
