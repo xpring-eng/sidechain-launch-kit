@@ -397,7 +397,7 @@ class SidechainRepl(cmd.Cmd):
             )
         elif arg_num == 4:  # unit
             return self._complete_unit(text) + self._complete_asset(
-                text, line, chain_name=args[1]
+                text, chain_name=args[1]
             )
         return []
 
@@ -643,7 +643,7 @@ class SidechainRepl(cmd.Cmd):
             return []
         elif arg_num == 6:  # drops or xrp or asset
             return self._complete_unit(text) + self._complete_asset(
-                text, line, chain_name=args[1]
+                text, chain_name=args[1]
             )
         return []
 
@@ -822,7 +822,7 @@ class SidechainRepl(cmd.Cmd):
             return []
         elif arg_num == 6:  # drops or xrp or asset
             return self._complete_unit(text) + self._complete_asset(
-                text, line, chain_name=args[1]
+                text, chain_name=args[1]
             )
         return []
 

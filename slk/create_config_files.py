@@ -49,6 +49,7 @@ ED264807102805220DA0F312E71FC2C69E1552C9C5790F6C25E3729DEB573D5860
 """
 
 
+# Generate the rippled.cfg and validators.txt files for a rippled node.
 def _generate_cfg_dir(
     *,
     ports: Ports,
@@ -64,7 +65,6 @@ def _generate_cfg_dir(
     full_history: bool = False,
     with_hooks: bool = False,
 ) -> str:
-    """Generate the rippled.cfg and validators.txt files for a rippled node."""
     disable_shards = "" if with_shards else "# "
     validation_seed_stanza = f"\n[validation_seed]\n{validation_seed}\n"
     shard_str = "shards" if with_shards else "no_shards"
@@ -115,13 +115,13 @@ def _generate_cfg_dir(
     return sub_dir + "/rippled.cfg"
 
 
+# Generate all the config files for a mainchain-sidechain setup.
 def _generate_all_configs(
     out_dir: str,
     mainnet: Network,
     sidenet: SidechainNetwork,
     xchain_assets: Optional[Dict[str, XChainAsset]] = None,
 ) -> None:
-    """Generate all the config files for a mainchain-sidechain setup."""
     # clear directory
     if os.path.exists(out_dir):
         for filename in os.listdir(out_dir):

@@ -18,8 +18,10 @@ class _Section:
     @classmethod
     def section_header(cls: Type[_Section], line: str) -> Optional[str]:
         """
-        If the line is a section header, return the section name
-        otherwise return None
+        If the line is a section header, return the section name. Otherwise return None.
+
+        Args:
+            line: The line of the section.
         """
         if line.startswith("[") and line.endswith("]"):
             return line[1:-1]
@@ -127,7 +129,12 @@ class ConfigFile:
         return vars(self)
 
     def __setstate__(self: ConfigFile, state: Dict[str, Any]) -> None:
-        """Set the state of a ConfigFile."""
+        """
+        Set the state of a ConfigFile.
+
+        Args:
+            state: The state to update the object with.
+        """
         vars(self).update(state)
 
     def __getattr__(self: ConfigFile, name: str) -> _Section:

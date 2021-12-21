@@ -19,7 +19,13 @@ def enable_eprint() -> None:
 
 
 def eprint(*args: Any, **kwargs: Any) -> None:
-    """Print a logging statement if logging is enabled."""
+    """
+    Print a logging statement if logging is enabled.
+
+    Args:
+        args: Things to print.
+        kwargs: More things to print.
+    """
     if not EPRINT_ENABLED:
         return
     print(*args, file=sys.stderr, flush=True, **kwargs)

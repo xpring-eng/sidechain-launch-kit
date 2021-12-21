@@ -122,7 +122,14 @@ def _standalone_with_callback(
 def _convert_log_files_to_json(
     to_convert: List[ConfigFile], suffix: str, verbose: bool
 ) -> None:
-    """Convert the log file to json"""
+    """
+    Convert the log file to json.
+
+    Args:
+        to_convert: A list of config files to convert the debug files of.
+        suffix: The suffix of the log file.
+        verbose: Whether to print out extra information.
+    """
     for c in to_convert:
         try:
             debug_log = c.debug_logfile.get_line()
