@@ -6,6 +6,7 @@ import argparse
 import os
 
 from dotenv import dotenv_values
+from xrpl.wallet import Wallet
 
 _ENV_VARS = {
     **os.environ,
@@ -39,6 +40,33 @@ def _parse_args() -> argparse.Namespace:
         "-nf",
         help=(
             "how many federators to create config files for. Must be between 1 and 8."
+        ),
+    )
+
+    parser.add_argument(
+        "--mainnet",
+        "-m",
+        help=(
+            "URl of the mainnet. Defaults to standalone. Type `standalone` to use a "
+            "standalone node."
+        ),
+    )
+
+    parser.add_argument(
+        "--mainnet_port",
+        "-mp",
+        help=(
+            "The WebSocket port for the mainnet network. Defaults to 6005. Ignored if "
+            "in standalone."
+        ),
+    )
+
+    parser.add_argument(
+        "--door_seed",
+        "-d",
+        help=(
+            "The seed of the door account to use on the main network. Only required if "
+            "not connecting to standalone mode."
         ),
     )
 
@@ -87,4 +115,34 @@ class ConfigParams:
                 f"(inclusive), received {self.num_federators}"
             )
 
+        mainnet = None
+        if "MAINNET" in _ENV_VARS:
+            mainnet = _ENV_VARS["MAINNET"]
+        if args.mainnet:
+            mainnet = args.mainnet
+        if not mainnet:
+            mainnet = "standalone"
+        self.mainnet_url = "127.0.0.1" if mainnet == "standalone" else mainnet
+        self.standalone = mainnet == "standalone" or mainnet == "127.0.0.1"
+
+        self.mainnet_port = None
+        if not self.standalone:
+            if "MAINNET_PORT" in _ENV_VARS:
+                self.mainnet_port = int(_ENV_VARS["MAINNET_PORT"])
+            if args.mainnet_port:
+                self.mainnet_port = int(args.mainnet_port)
+
+        self.door_seed = None
+        if not self.standalone:
+            if "DOOR_ACCOUNT_SEED" in _ENV_VARS:
+                self.door_seed = _ENV_VARS["DOOR_ACCOUNT_SEED"]
+            if args.door_seed:
+                self.door_seed = args.door_seed
+
         self.usd = args.usd or False
+
+        self.issuer = None
+        if not self.standalone:
+            if "IOU_ISSUER" in _ENV_VARS:
+                self.issuer = Wallet(_ENV_VARS["IOU_ISSUER"], 0)
+            # TODO: add command line param

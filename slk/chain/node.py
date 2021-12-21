@@ -39,7 +39,7 @@ class Node:
         section = config.port_ws_admin_local
         self.websocket_uri = f"{section.protocol}://{section.ip}:{section.port}"
         self.ip = section.ip
-        self.port = section.port
+        self.port = int(section.port)
         self.name = name
         self.client = WebsocketClient(url=self.websocket_uri)
         self.config = config
@@ -65,6 +65,10 @@ class Node:
     def shutdown(self: Node) -> None:
         """Shut down the connection to the server."""
         self.client.close()
+
+    @property
+    def running(self: Node) -> bool:
+        return self.pid is not None
 
     def get_pid(self: Node) -> Optional[int]:
         """
@@ -165,7 +169,7 @@ class Node:
             Whether the socket is open and ready to accept a WebSocket connection.
         """
         with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as sock:
-            result = sock.connect_ex((self.ip, int(self.port)))
+            result = sock.connect_ex((self.ip, self.port))
             return result == 0  # means the WS port is open for connections
 
     def wait_for_validated_ledger(self: Node) -> None:
@@ -203,7 +207,7 @@ class Node:
                 )
             time.sleep(1)
 
-        raise ValueError("Could not sync server {self.config_file_name}")
+        raise ValueError(f"Could not sync server {self.name}")
 
     def get_brief_server_info(self: Node) -> Dict[str, Any]:
         """
@@ -215,7 +219,7 @@ class Node:
             complete_ledgers for the node.
         """
         ret = {"server_state": "NA", "ledger_seq": "NA", "complete_ledgers": "NA"}
-        if not self.pid:
+        if not self.running:
             return ret
         r = self.client.request(ServerInfo()).result
         if "info" not in r:

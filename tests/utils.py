@@ -6,7 +6,7 @@ from contextlib import contextmanager
 from typing import Optional
 
 from tabulate import tabulate
-from xrpl.models import XRP, Amount, IssuedCurrencyAmount, Subscribe
+from xrpl.models import XRP, AccountTx, Amount, IssuedCurrencyAmount, Subscribe
 
 from slk.chain.chain import Chain
 from slk.classes.account import Account
@@ -89,6 +89,9 @@ def log_chain_state(mc_chain, sc_chain, log, msg="Chain State"):
     log(f"{msg} Balances: \n{data_as_str}")
     federator_info = sc_chain.federator_info()
     log(f"{msg} Federator Info: \n{pprint.pformat(federator_info)}")
+    side_door = sc_chain.account_from_alias("door")
+    door_account_tx = sc_chain.request(AccountTx(account=side_door.account_id))
+    log(f"{msg} Side Door Txs: \n{pprint.pformat(door_account_tx)}")
 
 
 def value_diff(bigger: Amount, smaller: Amount) -> Amount:
@@ -122,16 +125,16 @@ def tst_context(mc_chain, sc_chain, verbose_logging: Optional[bool] = None):
     global test_context_verbose_logging
     if verbose_logging is None:
         verbose_logging = test_context_verbose_logging
+    if verbose_logging:
+        log_chain_state(mc_chain, sc_chain, logging.info)
+    start_time = time.monotonic()
     try:
-        if verbose_logging:
-            log_chain_state(mc_chain, sc_chain, logging.info)
-        start_time = time.monotonic()
         yield
     except:
         log_chain_state(mc_chain, sc_chain, logging.error)
         raise
     finally:
-        elapased_time = time.monotonic() - start_time
-        logging.info(f"Test elapsed time: {elapased_time}")
+        elapsed_time = time.monotonic() - start_time
+        logging.info(f"Test elapsed time: {elapsed_time}")
     if verbose_logging:
         log_chain_state(mc_chain, sc_chain, logging.info)

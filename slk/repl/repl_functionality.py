@@ -68,8 +68,9 @@ def get_server_info(
     Returns:
         The server info of the node(s) in the chain(s).
     """
-    # Get the server_info data for a specific chain.
+    # TODO: handle external networks better
     def _data_dict(chain: Chain, chain_name: str) -> Dict[str, Any]:
+        # get the server_info data for a specific chain
         # TODO: refactor get_brief_server_info to make this method less clunky
         filenames = [c.get_file_name() for c in chain.get_configs()]
         chains = []
@@ -329,7 +330,10 @@ def get_balances_data(
             if not in_drops and chain_res["currency"] == "XRP":
                 chain_res["balance"] = drops_to_xrp(chain_res["balance"])
             else:
-                chain_res["balance"] = int(chain_res["balance"])
+                try:
+                    chain_res["balance"] = int(chain_res["balance"])
+                except ValueError:
+                    chain_res["balance"] = float(chain_res["balance"])
             chain_short_name = "main" if chain_name == "mainchain" else "side"
             chain_res["account"] = chain_short_name + " " + chain_res["account"]
         result += chain_result

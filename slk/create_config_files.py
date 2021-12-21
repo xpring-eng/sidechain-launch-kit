@@ -22,14 +22,19 @@ import shutil
 import sys
 import traceback
 from pathlib import Path
-from typing import Dict, List, Optional
+from typing import Dict, List, Optional, cast
 
 from xrpl.models import XRP, IssuedCurrency
 
 from slk.config.cfg_strs import generate_sidechain_stanza, get_cfg_str, get_ips_stanza
 from slk.config.config_params import ConfigParams
 from slk.config.helper_classes import Ports, XChainAsset
-from slk.config.network import Network, SidechainNetwork
+from slk.config.network import (
+    ExternalNetwork,
+    Network,
+    SidechainNetwork,
+    StandaloneNetwork,
+)
 from slk.utils.eprint import eprint
 
 MAINNET_VALIDATORS = """
@@ -79,6 +84,7 @@ def _generate_cfg_dir(
     for path in ["", "/db", "/shards"]:
         Path(sub_dir + path).mkdir(parents=True, exist_ok=True)
 
+    assert ports.peer_port is not None  # TODO: better error handling/port typing
     ips_stanza = get_ips_stanza(fixed_ips, ports.peer_port, main_net)
 
     cfg_str = get_cfg_str(
@@ -120,6 +126,7 @@ def _generate_all_configs(
     out_dir: str,
     mainnet: Network,
     sidenet: SidechainNetwork,
+    standalone: bool = True,
     xchain_assets: Optional[Dict[str, XChainAsset]] = None,
 ) -> None:
     # clear directory
@@ -135,28 +142,34 @@ def _generate_all_configs(
                 print("Failed to delete %s. Reason: %s" % (file_path, e))
 
     mainnet_cfgs = []
-    for i in range(len(mainnet.ports)):
-        validator_kp = mainnet.validator_keypairs[i]
-        ports = mainnet.ports[i]
-        mainchain_cfg_file = _generate_cfg_dir(
-            ports=ports,
-            cfg_type=f"mainchain_{i}",
-            validation_seed=validator_kp.secret_key,
-            data_dir=out_dir,
-        )
-        mainnet_cfgs.append(mainchain_cfg_file)
+    if standalone:
+        mainnet = cast(StandaloneNetwork, mainnet)
+        for i in range(len(mainnet.ports)):
+            validator_kp = mainnet.validator_keypairs[i]
+            ports = mainnet.ports[i]
+            mainchain_cfg_file = _generate_cfg_dir(
+                ports=ports,
+                cfg_type=f"mainchain_{i}",
+                validation_seed=validator_kp.secret_key,
+                data_dir=out_dir,
+            )
+            mainnet_cfgs.append(mainchain_cfg_file)
 
     for i in range(len(sidenet.ports)):
         validator_kp = sidenet.validator_keypairs[i]
         ports = sidenet.ports[i]
 
         mainnet_i = i % len(mainnet.ports)
+        mainnet_cfg = None
+        if standalone:
+            mainnet_cfg = mainnet_cfgs[mainnet_i]
         sidechain_stanza, sidechain_bootstrap_stanza = generate_sidechain_stanza(
-            mainnet.ports[mainnet_i],
+            mainnet.url,
+            mainnet.ports[mainnet_i].ws_public_port,
             sidenet.main_account,
             sidenet.federator_keypairs,
             sidenet.federator_keypairs[i].secret_key,
-            mainnet_cfgs[mainnet_i],
+            mainnet_cfg,
             xchain_assets,
         )
 
@@ -184,16 +197,22 @@ def create_config_files(
         xchain_assets: The cross-chain assets to allow to cross the network.
     """
     index = 0
-    mainnet = Network(num_nodes=1, start_cfg_index=index)
+    if params.standalone:
+        mainnet: Network = StandaloneNetwork(num_nodes=1, start_cfg_index=index)
+    else:
+        assert params.mainnet_port is not None  # TODO: better error handling
+        mainnet = ExternalNetwork(url=params.mainnet_url, ws_port=params.mainnet_port)
     sidenet = SidechainNetwork(
         num_federators=params.num_federators,
         start_cfg_index=index + 1,
+        main_door_seed=params.door_seed,
     )
     _generate_all_configs(
         out_dir=f"{params.configs_dir}/sidechain_testnet",
         mainnet=mainnet,
         sidenet=sidenet,
         xchain_assets=xchain_assets,
+        standalone=params.standalone,
     )
     index = index + 2
 
@@ -216,10 +235,13 @@ def main() -> None:
         xchain_assets["xrp_xrp_sidechain_asset"] = XChainAsset(
             XRP(), XRP(), "1", "1", "200", "200"
         )
-
-        root_account = "rHb9CJAWyB4rj91VRWn96DkukG4bwdtyTh"
-        main_iou_asset = IssuedCurrency(currency="USD", issuer=root_account)
-        side_iou_asset = IssuedCurrency(currency="USD", issuer=root_account)
+        root = "rHb9CJAWyB4rj91VRWn96DkukG4bwdtyTh"
+        if params.issuer is not None:
+            issuer = params.issuer.classic_address
+        else:
+            issuer = root
+        main_iou_asset = IssuedCurrency(currency="USD", issuer=issuer)
+        side_iou_asset = IssuedCurrency(currency="USD", issuer=root)
         xchain_assets["iou_iou_sidechain_asset"] = XChainAsset(
             main_iou_asset, side_iou_asset, "1", "1", "0.02", "0.02"
         )

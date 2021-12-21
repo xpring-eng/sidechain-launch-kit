@@ -12,7 +12,6 @@ from xrpl.models import (
     AccountLines,
     Currency,
     IssuedCurrency,
-    IssuedCurrencyAmount,
     LedgerAccept,
     Request,
     Subscribe,
@@ -35,10 +34,7 @@ ROOT_ACCOUNT = Account(
 class Chain(ABC):
     """Representation of one chain (e.g. mainchain/sidechain)."""
 
-    def __init__(
-        self: Chain,
-        node: Node,
-    ) -> None:
+    def __init__(self: Chain, node: Node, add_root: bool = True) -> None:
         """
         Initializes a chain.
 
@@ -46,12 +42,15 @@ class Chain(ABC):
 
         Args:
             node: The node to use with this chain.
+            add_root: Whether the root account should be added to the key manager. The
+                default is True.
         """
         self.node = node
         self.key_manager = KeyManager()
         self.asset_aliases = AssetAliases()
 
-        self.key_manager.add(ROOT_ACCOUNT)
+        if add_root:
+            self.key_manager.add(ROOT_ACCOUNT)
 
     @property
     @abstractmethod
@@ -138,7 +137,7 @@ class Chain(ABC):
             ValueError: If the txn's account is not a known account.
         """
         if not self.key_manager.is_account(txn.account):
-            raise ValueError("Cannot sign transaction for an unknown account.")
+            raise ValueError(f"Account {txn.account} not a known account in chain.")
         account_obj = self.key_manager.get_account(txn.account)
         return self.node.sign_and_submit(txn, account_obj.wallet)
 
@@ -284,7 +283,7 @@ class Chain(ABC):
                     }
                 ]
         else:
-            assert isinstance(token, IssuedCurrencyAmount)  # for typing
+            assert isinstance(token, IssuedCurrency)  # for typing
             try:
                 trustlines = self.get_trust_lines(account)
                 trustlines = [
