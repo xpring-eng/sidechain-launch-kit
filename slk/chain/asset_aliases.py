@@ -20,28 +20,70 @@ class AssetAliases:
         self._aliases: Dict[str, IssuedCurrency] = {}  # alias -> IssuedCurrency
 
     def add(self: AssetAliases, asset: IssuedCurrency, name: str) -> None:
-        """Add an asset with the given name."""
+        """
+        Add an asset with the given name.
+
+        Args:
+            asset: The token to add.
+            name: The token's nickname.
+        """
         self._aliases[name] = asset
 
     def is_alias(self: AssetAliases, name: str) -> bool:
-        """Determine whether an asset name is a known asset."""
+        """
+        Determine whether an asset name is a known asset.
+
+        Args:
+            name: The token's nickname.
+
+        Returns:
+            True if the asset name is a known asset. False otherwise.
+        """
         return name in self._aliases
 
     def asset_from_alias(self: AssetAliases, name: str) -> IssuedCurrency:
-        """Get the asset information for a given alias."""
+        """
+        Get the asset information for a given alias.
+
+        Args:
+            name: The token's nickname.
+
+        Returns:
+            The token associated with the given nicknamme.
+        """
         assert name in self._aliases
         return self._aliases[name]
 
     def known_aliases(self: AssetAliases) -> List[str]:
-        """Return a list of all known aliases for the assets."""
+        """
+        Return a list of all known aliases for the assets.
+
+        Returns:
+            A list of all known aliases for the assets.
+        """
         return list(self._aliases.keys())
 
     def known_assets(self: AssetAliases) -> List[IssuedCurrency]:
-        """Return a list of all known assets."""
+        """
+        Return a list of all known assets.
+
+        Returns:
+            A list of all known assets.
+        """
         return list(self._aliases.values())
 
     def to_string(self: AssetAliases, nickname: Optional[str] = None) -> str:
-        """Return a string representation of the assets."""
+        """
+        Return a string representation of the assets.
+
+        Args:
+            nickname: The token to get information about. If None, returns a string
+                with all of the tokens' information. The default is None.
+
+        Returns:
+            A string representation of the token(s).
+        """
+        # TODO: use asset_from_alias instead of to_string(nickname)
         data = []
         if nickname:
             if nickname in self._aliases:
