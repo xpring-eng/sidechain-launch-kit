@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import os
 from abc import ABC, abstractmethod
-from typing import Any, Callable, Dict, List, Optional, Set, Union, cast
+from typing import Any, Dict, List, Optional, Set, Union, cast
 
 from xrpl.models import (
     XRP,
@@ -12,7 +12,6 @@ from xrpl.models import (
     GenericRequest,
     IssuedCurrency,
     Request,
-    Subscribe,
     Transaction,
 )
 
@@ -91,15 +90,6 @@ class Chain(ABC):
 
     def request(self: Chain, req: Request) -> Dict[str, Any]:
         """Send the command to the rippled server"""
-        return self.node.request(req)
-
-    def send_subscribe(
-        self: Chain, req: Subscribe, callback: Callable[[Dict[str, Any]], None]
-    ) -> Dict[str, Any]:
-        """Send the subscription command to the rippled server."""
-        if not self.node.client.is_open():
-            self.node.client.open()
-        self.node.client.on("transaction", callback)
         return self.node.request(req)
 
     # specific rippled methods
