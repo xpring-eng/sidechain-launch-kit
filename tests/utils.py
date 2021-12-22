@@ -47,10 +47,7 @@ def wait_for_balance_change(
     )
     for i in range(30):
         currency = XRP() if isinstance(pre_balance, str) else pre_balance
-        new_bal = IssuedCurrencyAmount.from_issued_currency(
-            currency,
-            chain.get_balance(acc, currency),
-        )
+        new_bal = currency.to_amount(chain.get_balance(acc, currency))
         diff = value_diff(new_bal, pre_balance)
         if new_bal != pre_balance:
             logging.info(

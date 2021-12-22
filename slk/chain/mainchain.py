@@ -4,7 +4,7 @@ import os
 import time
 from typing import Any, Dict, List, Optional, Set, Union
 
-from xrpl.models import FederatorInfo
+from xrpl.models import GenericRequest
 
 from slk.chain.chain import Chain
 from slk.chain.node import Node
@@ -104,5 +104,6 @@ class Mainchain(Chain):
         result_dict = {}
         # TODO: do this more elegantly
         if server_indexes is not None and 0 in server_indexes:
-            result_dict[0] = self.node.request(FederatorInfo())
+            request = GenericRequest(command="federator_info")  # type: ignore
+            result_dict[0] = self.node.request(request)
         return result_dict

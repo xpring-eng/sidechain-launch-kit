@@ -3,7 +3,7 @@ import time
 from multiprocessing import Process, Value
 from typing import Dict
 
-from xrpl.models import XRP, IssuedCurrency, IssuedCurrencyAmount, Payment, TrustSet
+from xrpl.models import XRP, IssuedCurrency, Payment, TrustSet
 from xrpl.utils import xrp_to_drops
 from xrpl.wallet import generate_faucet_wallet
 
@@ -85,31 +85,21 @@ def simple_iou_test(mc_chain: Chain, sc_chain: Chain, params: SidechainParams):
 
     # create a trust line to alice and pay her USD.root/issuer
     mc_chain.send_signed(
-        TrustSet(
-            account=alice.account_id,
-            limit_amount=IssuedCurrencyAmount.from_issued_currency(
-                mc_asset, str(1_000_000)
-            ),
-        )
+        TrustSet(account=alice.account_id, limit_amount=mc_asset.to_amount(1_000_000))
     )
     mc_chain.maybe_ledger_accept()
     mc_chain.send_signed(
         Payment(
             account=mc_chain.account_from_alias(iou_issuer).account_id,
             destination=alice.account_id,
-            amount=IssuedCurrencyAmount.from_issued_currency(mc_asset, str(10_000)),
+            amount=mc_asset.to_amount(10_000),
         )
     )
     mc_chain.maybe_ledger_accept()
 
     # create a trust line for adam
     sc_chain.send_signed(
-        TrustSet(
-            account=adam.account_id,
-            limit_amount=IssuedCurrencyAmount.from_issued_currency(
-                sc_asset, str(1_000_000)
-            ),
-        )
+        TrustSet(account=adam.account_id, limit_amount=sc_asset.to_amount(1_000_000))
     )
 
     for i in range(2):
@@ -117,13 +107,9 @@ def simple_iou_test(mc_chain: Chain, sc_chain: Chain, params: SidechainParams):
         for value in range(10, 20, 2):
             with tst_context(mc_chain, sc_chain):
                 value = str(value)
-                to_send_asset = IssuedCurrencyAmount.from_issued_currency(
-                    mc_asset, value
-                )
-                rcv_asset = IssuedCurrencyAmount.from_issued_currency(sc_asset, value)
-                pre_bal = IssuedCurrencyAmount.from_issued_currency(
-                    sc_asset, sc_chain.get_balance(adam, rcv_asset)
-                )
+                to_send_asset = mc_asset.to_amount(value)
+                rcv_asset = sc_asset.to_amount(value)
+                pre_bal = sc_asset.to_amount(sc_chain.get_balance(adam, rcv_asset))
                 main_to_side_transfer(
                     mc_chain, sc_chain, alice, adam, to_send_asset, params
                 )
@@ -134,13 +120,9 @@ def simple_iou_test(mc_chain: Chain, sc_chain: Chain, params: SidechainParams):
         for value in range(9, 19, 2):
             with tst_context(mc_chain, sc_chain):
                 value = str(value)
-                to_send_asset = IssuedCurrencyAmount.from_issued_currency(
-                    sc_asset, value
-                )
-                rcv_asset = IssuedCurrencyAmount.from_issued_currency(mc_asset, value)
-                pre_bal = IssuedCurrencyAmount.from_issued_currency(
-                    mc_asset, mc_chain.get_balance(alice, rcv_asset)
-                )
+                to_send_asset = sc_asset.to_amount(value)
+                rcv_asset = mc_asset.to_amount(value)
+                pre_bal = mc_asset.to_amount(mc_chain.get_balance(alice, rcv_asset))
                 side_to_main_transfer(
                     mc_chain, sc_chain, adam, alice, to_send_asset, params
                 )

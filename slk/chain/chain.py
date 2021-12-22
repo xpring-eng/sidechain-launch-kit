@@ -9,8 +9,8 @@ from xrpl.models import (
     AccountInfo,
     AccountLines,
     Currency,
+    GenericRequest,
     IssuedCurrency,
-    LedgerAccept,
     Request,
     Subscribe,
     Transaction,
@@ -107,7 +107,7 @@ class Chain(ABC):
     def maybe_ledger_accept(self: Chain) -> None:
         if not self.standalone:
             return
-        self.request(LedgerAccept())
+        self.request(GenericRequest(command="ledger_accept"))  # type: ignore
 
     def get_account_info(
         self: Chain, account: Optional[Account] = None

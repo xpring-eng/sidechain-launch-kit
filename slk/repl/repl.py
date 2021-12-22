@@ -1001,12 +1001,7 @@ class SidechainRepl(cmd.Cmd):
             print(f"Error: Invalid amount {amount_str}")
             return
 
-        asset = cast(
-            IssuedCurrencyAmount,
-            IssuedCurrencyAmount.from_issued_currency(
-                chain.asset_from_alias(alias), str(amount)
-            ),
-        )
+        asset = chain.asset_from_alias(alias).to_amount(amount)
         # TODO: resolve error where repl crashes if account doesn't exist
         chain.send_signed(TrustSet(account=account.account_id, limit_amount=asset))
         chain.maybe_ledger_accept()
