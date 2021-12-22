@@ -70,6 +70,15 @@ def _parse_args() -> argparse.Namespace:
         ),
     )
 
+    parser.add_argument(
+        "--iou_issuer",
+        "-iou",
+        help=(
+            "The seed of the IOU issuer to use on the main network. Only required if "
+            "not connecting to standalone mode."
+        ),
+    )
+
     return parser.parse_known_args()[0]
 
 
@@ -145,4 +154,5 @@ class ConfigParams:
         if not self.standalone:
             if "IOU_ISSUER" in _ENV_VARS:
                 self.issuer = Wallet(_ENV_VARS["IOU_ISSUER"], 0)
-            # TODO: add command line param
+            if args.iou_issuer:
+                self.issuer = Wallet(args.iou_issuer, 0)
