@@ -10,8 +10,6 @@ from pathlib import Path
 from typing import List, Optional, Set, Tuple, Union, cast
 
 from tabulate import tabulate
-
-# from slk.transaction import SetHook, Payment, Trust
 from xrpl.models import (
     XRP,
     AccountTx,
