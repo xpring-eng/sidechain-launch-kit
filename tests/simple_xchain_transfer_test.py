@@ -3,9 +3,10 @@ import time
 from multiprocessing import Process, Value
 from typing import Dict
 
+from xrpl.clients import Client, JsonRpcClient
 from xrpl.models import XRP, IssuedCurrency, Payment, TrustSet
 from xrpl.utils import xrp_to_drops
-from xrpl.wallet import generate_faucet_wallet
+from xrpl.wallet import Wallet, generate_faucet_wallet
 
 from slk.chain.chain import Chain
 from slk.chain.mainchain import Mainchain
@@ -161,6 +162,14 @@ def standalone_test(params: SidechainParams):
     _standalone_with_callback(params, callback, setup_user_accounts=False)
 
 
+def generate_mainchain_account(client: Client, wallet: Wallet) -> None:
+    if "34.83.125.234" in client.url:  # devnet
+        new_client = JsonRpcClient("https://s.devnet.rippletest.net:51234")
+        generate_faucet_wallet(new_client, wallet)
+    else:
+        raise Exception(f"Unknown mainnet: {client.url}")
+
+
 def setup_accounts(mc_chain: Chain, sc_chain: Chain, params: SidechainParams):
     # Setup a funded user account on the main chain, and add an unfunded account.
     # Setup address book and add a funded account on the mainchain.
@@ -180,7 +189,7 @@ def setup_accounts(mc_chain: Chain, sc_chain: Chain, params: SidechainParams):
             )
         )
     else:
-        generate_faucet_wallet(mc_chain.node.client, alice.wallet)
+        generate_mainchain_account(mc_chain.node.client, alice.wallet)
     mc_chain.maybe_ledger_accept()
 
     # Typical male names are addresses on the sidechain.
