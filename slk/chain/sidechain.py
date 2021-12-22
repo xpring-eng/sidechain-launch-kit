@@ -6,7 +6,7 @@ import os
 import time
 from typing import Any, Dict, List, Optional, Set, Union
 
-from xrpl.models import FederatorInfo
+from xrpl.models import GenericRequest
 
 from slk.chain.chain import Chain
 from slk.chain.node import Node
@@ -158,7 +158,9 @@ class Sidechain(Chain):
             server_indexes = [i for i in range(len(self.nodes)) if self.is_running(i)]
         for i in server_indexes:
             if self.is_running(i):
-                result_dict[i] = self.get_node(i).request(FederatorInfo())
+                result_dict[i] = self.get_node(i).request(
+                    GenericRequest(command="federator_info")  # type: ignore
+                )
         return result_dict
 
     # Get a dict of the server_state, validated_ledger_seq, and complete_ledgers

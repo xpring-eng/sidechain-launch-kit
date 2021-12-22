@@ -2,17 +2,16 @@ from __future__ import annotations
 
 import os
 from abc import ABC, abstractmethod
-from typing import Any, Callable, Dict, List, Optional, Set, Union, cast
+from typing import Any, Dict, List, Optional, Set, Union, cast
 
 from xrpl.models import (
     XRP,
     AccountInfo,
     AccountLines,
     Currency,
+    GenericRequest,
     IssuedCurrency,
-    LedgerAccept,
     Request,
-    Subscribe,
     Transaction,
 )
 
@@ -93,21 +92,12 @@ class Chain(ABC):
         """Send the command to the rippled server"""
         return self.node.request(req)
 
-    def send_subscribe(
-        self: Chain, req: Subscribe, callback: Callable[[Dict[str, Any]], None]
-    ) -> Dict[str, Any]:
-        """Send the subscription command to the rippled server."""
-        if not self.node.client.is_open():
-            self.node.client.open()
-        self.node.client.on("transaction", callback)
-        return self.node.request(req)
-
     # specific rippled methods
 
     def maybe_ledger_accept(self: Chain) -> None:
         if not self.standalone:
             return
-        self.request(LedgerAccept())
+        self.request(GenericRequest(command="ledger_accept"))  # type: ignore
 
     def get_account_info(
         self: Chain, account: Optional[Account] = None
