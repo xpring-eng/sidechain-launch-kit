@@ -1,4 +1,3 @@
-import json
 import logging
 import pprint
 import time
@@ -6,36 +5,11 @@ from contextlib import contextmanager
 from typing import Optional
 
 from tabulate import tabulate
-from xrpl.models import XRP, AccountTx, Amount, IssuedCurrencyAmount, Subscribe
+from xrpl.models import XRP, AccountTx, Amount, IssuedCurrencyAmount
 
 from slk.chain.chain import Chain
 from slk.classes.account import Account
 from slk.repl.repl_functionality import get_balances_data
-
-MC_SUBSCRIBE_QUEUE = []
-SC_SUBSCRIBE_QUEUE = []
-
-
-def _mc_subscribe_callback(v: dict):
-    MC_SUBSCRIBE_QUEUE.append(v)
-    logging.info(f"mc subscribe_callback:\n{json.dumps(v, indent=1)}")
-
-
-def _sc_subscribe_callback(v: dict):
-    SC_SUBSCRIBE_QUEUE.append(v)
-    logging.info(f"sc subscribe_callback:\n{json.dumps(v, indent=1)}")
-
-
-def mc_connect_subscription(chain: Chain, door_account: Account):
-    chain.send_subscribe(
-        Subscribe(accounts=[door_account.account_id]), _mc_subscribe_callback
-    )
-
-
-def sc_connect_subscription(chain: Chain, door_account: Account):
-    chain.send_subscribe(
-        Subscribe(accounts=[door_account.account_id]), _sc_subscribe_callback
-    )
 
 
 def wait_for_balance_change(
@@ -99,11 +73,7 @@ def value_diff(bigger: Amount, smaller: Amount) -> Amount:
         assert isinstance(smaller, IssuedCurrencyAmount)
         assert bigger.issuer == smaller.issuer
         assert bigger.currency == smaller.currency
-        return IssuedCurrencyAmount(
-            value=str(int(bigger.value) - int(smaller.value)),
-            issuer=bigger.issuer,
-            currency=bigger.currency,
-        )
+        return bigger.to_amount(int(bigger.value) - int(smaller.value))
 
 
 # Tests can set this to True to help debug test failures by showing account

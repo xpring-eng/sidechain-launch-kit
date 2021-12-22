@@ -473,9 +473,7 @@ class SidechainRepl(cmd.Cmd):
             amt_value *= 1_000_000
 
         if asset is not None:
-            amt: Amount = IssuedCurrencyAmount(
-                value=str(amt_value), issuer=asset.issuer, currency=asset.currency
-            )
+            amt: Amount = asset.to_amount(amt_value)
         else:
             amt = str(amt_value)
 
@@ -621,9 +619,7 @@ class SidechainRepl(cmd.Cmd):
             amt_value *= 1_000_000
 
         if asset is not None:
-            amt: Amount = IssuedCurrencyAmount(
-                value=str(amt_value), issuer=asset.issuer, currency=asset.currency
-            )
+            amt: Amount = asset.to_amount(str(amt_value))
         else:
             amt = str(amt_value)
 

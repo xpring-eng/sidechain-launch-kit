@@ -20,8 +20,6 @@ from slk.sidechain_interaction import (
 from slk.sidechain_params import SidechainParams
 from slk.utils.eprint import disable_eprint, eprint
 from tests.utils import (
-    mc_connect_subscription,
-    sc_connect_subscription,
     set_test_context_verbose_logging,
     tst_context,
     wait_for_balance_change,
@@ -158,8 +156,6 @@ def run(mc_chain: Chain, sc_chain: Chain, params: SidechainParams):
 
 def standalone_test(params: SidechainParams):
     def callback(mc_chain: Chain, sc_chain: Chain):
-        mc_connect_subscription(mc_chain, params.mc_door_account)
-        sc_connect_subscription(sc_chain, params.sc_door_account)
         run(mc_chain, sc_chain, params)
 
     _standalone_with_callback(params, callback, setup_user_accounts=False)
@@ -198,8 +194,6 @@ def setup_accounts(mc_chain: Chain, sc_chain: Chain, params: SidechainParams):
 
 def multinode_test(params: SidechainParams):
     def callback(mc_chain: Chain, sc_chain: Chain):
-        mc_connect_subscription(mc_chain, params.mc_door_account)
-        sc_connect_subscription(sc_chain, params.sc_door_account)
         run(mc_chain, sc_chain, params)
 
     _multinode_with_callback(params, callback, setup_user_accounts=False)
@@ -207,8 +201,6 @@ def multinode_test(params: SidechainParams):
 
 def external_node_test(params: SidechainParams) -> None:
     def callback(mc_chain: Chain, sc_chain: Chain):
-        mc_connect_subscription(mc_chain, params.mc_door_account)
-        sc_connect_subscription(sc_chain, params.sc_door_account)
         run(mc_chain, sc_chain, params)
 
     _external_node_with_callback(params, callback, setup_user_accounts=False)
