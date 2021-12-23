@@ -3,10 +3,8 @@ import time
 from multiprocessing import Process, Value
 from typing import Dict
 
-from xrpl.clients import JsonRpcClient
 from xrpl.models import XRP, IssuedCurrency, Payment, TrustSet
 from xrpl.utils import xrp_to_drops
-from xrpl.wallet import Wallet, generate_faucet_wallet
 
 from slk.chain.chain import Chain
 from slk.chain.mainchain import Mainchain
@@ -21,6 +19,7 @@ from slk.sidechain_interaction import (
 from slk.sidechain_params import SidechainParams
 from slk.utils.eprint import disable_eprint, eprint
 from tests.utils import (
+    generate_mainchain_account,
     set_test_context_verbose_logging,
     tst_context,
     wait_for_balance_change,
@@ -162,14 +161,6 @@ def standalone_test(params: SidechainParams):
     _standalone_with_callback(params, callback, setup_user_accounts=False)
 
 
-def generate_mainchain_account(url: str, wallet: Wallet) -> None:
-    if "34.83.125.234" in url:  # devnet
-        new_client = JsonRpcClient("https://s.devnet.rippletest.net:51234")
-        generate_faucet_wallet(new_client, wallet)
-    else:
-        raise Exception(f"Unknown mainnet: {url}")
-
-
 def setup_accounts(mc_chain: Chain, sc_chain: Chain, params: SidechainParams):
     # Setup a funded user account on the main chain, and add an unfunded account.
     # Setup address book and add a funded account on the mainchain.
@@ -231,11 +222,6 @@ def test_simple_xchain(configs_dirs_dict: Dict[int, str]):
     set_test_context_verbose_logging(True)
 
     if not params.main_standalone:
-        # set up new door seed
-        wallet = Wallet.create()
-        generate_mainchain_account(params.mainnet_url, wallet)
-        params.door_seed = wallet.seed
-
         external_node_test(params)
     elif params.standalone:
         standalone_test(params)
