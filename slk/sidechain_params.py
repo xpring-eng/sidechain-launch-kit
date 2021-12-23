@@ -1,3 +1,5 @@
+"""Parsing and storage of command-line args for starting a sidechain."""
+
 from __future__ import annotations
 
 import argparse
@@ -116,12 +118,25 @@ def _parse_args() -> argparse.Namespace:
 
 
 class SidechainParams:
+    """A class that parses and stores command-line args for starting a sidechain."""
+
     def __init__(
         self: SidechainParams,
         *,
         configs_dir: Optional[str] = None,
         interactive: bool = False,
     ) -> None:
+        """
+        Process command-line args for spinning up a sidechain.
+
+        Args:
+            configs_dir: Pass the config folder directly in. Usually passed in via
+                command args/env vars.
+            interactive: Whether the REPL should be started.
+
+        Raises:
+            Exception: if the arguments provided are invalid.
+        """
         args = _parse_args()
 
         # set up debug params

@@ -1,3 +1,5 @@
+"""Representation of one chain (e.g. mainchain/sidechain)."""
+
 from __future__ import annotations
 
 import os
@@ -29,9 +31,19 @@ ROOT_ACCOUNT = Account(
 
 
 class Chain(ABC):
-    """Representation of one chain (mainchain/sidechain)"""
+    """Representation of one chain (e.g. mainchain/sidechain)."""
 
     def __init__(self: Chain, node: Node, add_root: bool = True) -> None:
+        """
+        Initializes a chain.
+
+        Note: Do not use this __init__, only use it with the child classes.
+
+        Args:
+            node: The node to use with this chain.
+            add_root: Specifies if the root account should be added to the key manager.
+                The default is True.
+        """
         self.node = node
         self.key_manager = KeyManager()
         self.asset_aliases = AssetAliases()
@@ -42,26 +54,40 @@ class Chain(ABC):
     @property
     @abstractmethod
     def standalone(self: Chain) -> bool:
+        """Return whether the chain is in standalone mode."""
         pass
 
     @abstractmethod
     def get_pids(self: Chain) -> List[int]:
+        """Return a list of process IDs for the nodes in the chain."""
         pass
 
     @abstractmethod
     def get_node(self: Chain, i: Optional[int] = None) -> Node:
+        """
+        Get a specific node from the chain.
+
+        Args:
+            i: The index of the node to return.
+
+        Returns:
+            The node at index i.
+        """
         pass
 
     @abstractmethod
     def get_configs(self: Chain) -> List[ConfigFile]:
+        """List all config files for the nodes in the chain."""
         pass
 
     @abstractmethod
     def get_running_status(self: Chain) -> List[bool]:
+        """Return whether the chain is up and running."""
         pass
 
     @abstractmethod
     def shutdown(self: Chain) -> None:
+        """Shut down the chain."""
         pass
 
     @abstractmethod
@@ -71,30 +97,65 @@ class Chain(ABC):
         server_indexes: Optional[Union[Set[int], List[int]]] = None,
         server_out: str = os.devnull,
     ) -> None:
+        """
+        Start the servers specified by `server_indexes` for the chain.
+
+        Args:
+            server_indexes: The server indexes to start. The default is `None`, which
+                starts all the servers in the chain.
+            server_out: Where to output the results.
+        """
         pass
 
     @abstractmethod
     def servers_stop(
         self: Chain, server_indexes: Optional[Union[Set[int], List[int]]] = None
     ) -> None:
+        """
+        Stop the servers specified by `server_indexes` for the chain.
+
+        Args:
+            server_indexes: The server indexes to start. The default is `None`, which
+                starts all the servers in the chain.
+        """
         pass
 
     # rippled stuff
 
     def send_signed(self: Chain, txn: Transaction) -> Dict[str, Any]:
-        """Sign then send the given transaction"""
+        """
+        Sign and then send the given transaction.
+
+        Args:
+            txn: The transaction to sign and submit.
+
+        Returns:
+            The result of the submitted transaction.
+
+        Raises:
+            ValueError: If the transaction's account is not a known account.
+        """
         if not self.key_manager.is_account(txn.account):
-            raise ValueError(f"Account {txn.account} not a known account in chain")
+            raise ValueError(f"Account {txn.account} not a known account in chain.")
         account_obj = self.key_manager.get_account(txn.account)
         return self.node.sign_and_submit(txn, account_obj.wallet)
 
     def request(self: Chain, req: Request) -> Dict[str, Any]:
-        """Send the command to the rippled server"""
+        """
+        Send the request to the rippled server.
+
+        Args:
+            req: The request to send.
+
+        Returns:
+            The result of the request.
+        """
         return self.node.request(req)
 
     # specific rippled methods
 
     def maybe_ledger_accept(self: Chain) -> None:
+        """Advance the ledger if the chain is in standalone mode."""
         if not self.standalone:
             return
         self.request(GenericRequest(command="ledger_accept"))  # type: ignore
@@ -103,8 +164,18 @@ class Chain(ABC):
         self: Chain, account: Optional[Account] = None
     ) -> List[Dict[str, Any]]:
         """
-        Return a dictionary of account info. If account is None, treat as a
-        wildcard (use address book)
+        Return a dictionary of account info. If account is None, use the address book
+        to return information about all accounts.
+
+        Args:
+            account: The account to get information about. If None, will return
+                information about all accounts in the chain. The default is None.
+
+        Returns:
+            A list of the results for the accounts.
+
+        Raises:
+            ValueError: If the account_info command fails.
         """
         if account is None:
             known_accounts = self.key_manager.known_accounts()
@@ -152,8 +223,16 @@ class Chain(ABC):
         token: Union[Currency, List[Currency]] = XRP(),
     ) -> List[Dict[str, Any]]:
         """
-        Return a list of dicts of account balances. If account is None, treat as a
-        wildcard (use address book)
+        Get the balances for accounts in tokens.
+
+        Args:
+            account: An account or list of accounts to get balances of. If account is
+                None, treat as a wildcard (use address book). The default is None.
+            token: A token or list of tokens in which to get balances. If token is None,
+                treat as a wildcard. The default is None.
+
+        Returns:
+            A list of dictionaries of account balances.
         """
         if account is None:
             account = self.key_manager.known_accounts()
@@ -205,10 +284,19 @@ class Chain(ABC):
                 return []
 
     def get_balance(self: Chain, account: Account, token: Currency) -> str:
-        """Get a balance from a single account in a single token"""
+        """
+        Get a balance from a single account in a single token.
+
+        Args:
+            account: The account to get the balance from.
+            token: The currency to use as the balance.
+
+        Returns:
+            The balance of the token in the account.
+        """
         try:
             result = self.get_balances(account, token)
-            return cast(str, result[0]["balance"])
+            return str(result[0]["balance"])
         except:
             return "0"
 
@@ -216,8 +304,18 @@ class Chain(ABC):
         self: Chain, account: Account, peer: Optional[Account] = None
     ) -> List[Dict[str, Any]]:
         """
-        Return a list of dictionaries representing account trust lines. If peer account
-        is None, treat as a wildcard.
+        Get all trustlines for the specified account.
+
+        Args:
+            account: The account to query for the trustlines.
+            peer: The peer of the trustline. If None, treat as a wildcard. The default
+                is None.
+
+        Returns:
+            A list of dictionaries representing account trust lines.
+
+        Raises:
+            ValueError: If the account_lines command fails.
         """
         if peer is None:
             result = self.request(AccountLines(account=account.account_id))
@@ -234,21 +332,39 @@ class Chain(ABC):
             account_line["account"] = address
         return cast(List[Dict[str, Any]], account_lines)
 
-    # Get a dict of the server_state, validated_ledger_seq, and complete_ledgers
     @abstractmethod
     def get_brief_server_info(self: Chain) -> Dict[str, List[Dict[str, Any]]]:
+        """
+        Get a dictionary of the server_state, validated_ledger_seq, and
+        complete_ledgers for all the nodes in the chain.
+        """
         pass
 
     @abstractmethod
     def federator_info(
         self: Chain, server_indexes: Optional[Union[Set[int], List[int]]] = None
     ) -> Dict[int, Dict[str, Any]]:
+        """
+        Get the federator info of the servers.
+
+        Args:
+            server_indexes: The servers to query for their federator info. If None,
+                treat as a wildcard. The default is None.
+        """
         pass
 
     # Account/asset stuff
 
     def create_account(self: Chain, name: str) -> Account:
-        """Create an account. Use the name as the alias."""
+        """
+        Create an account for the specified alias.
+
+        Args:
+            name: The alias to use for the account.
+
+        Returns:
+            The created account.
+        """
         assert not self.key_manager.is_alias(name)
 
         account = Account.create(name)
@@ -258,35 +374,109 @@ class Chain(ABC):
     def substitute_nicknames(
         self: Chain, items: Dict[str, Any], cols: List[str] = ["account", "peer"]
     ) -> None:
-        """Substitutes in-place account IDs for nicknames"""
+        """
+        Substitutes in-place account IDs for nicknames.
+
+        Args:
+            items: The dictionary to use for replacements.
+            cols: The columns in which to replace the account IDs. Defaults to "account"
+                and "peer".
+        """
         for c in cols:
             if c not in items:
                 continue
             items[c] = self.key_manager.alias_or_account_id(items[c])
 
     def add_to_keymanager(self: Chain, account: Account) -> None:
+        """
+        Add an account to the bank of known accounts on the chain.
+
+        Args:
+            account: Account to add to the key manager.
+        """
         self.key_manager.add(account)
 
     def is_alias(self: Chain, name: str) -> bool:
+        """
+        Determine whether an account name is known.
+
+        Args:
+            name: The alias to check.
+
+        Returns:
+            Whether the alias is a known account.
+        """
         return self.key_manager.is_alias(name)
 
     def account_from_alias(self: Chain, name: str) -> Account:
+        """
+        Get an account from the account's alias.
+
+        Args:
+            name: The account's alias.
+
+        Returns:
+            The account that corresponds with the alias.
+        """
         return self.key_manager.account_from_alias(name)
 
     def known_accounts(self: Chain) -> List[Account]:
+        """
+        Get a list of all known accounts on the chain.
+
+        Returns:
+            A list of all known accounts on the chain.
+        """
         return self.key_manager.known_accounts()
 
     def known_asset_aliases(self: Chain) -> List[str]:
+        """
+        Get a list of all known token aliases on the chain.
+
+        Returns:
+            A list of all known token aliases on the chain.
+        """
         return self.asset_aliases.known_aliases()
 
     def known_iou_assets(self: Chain) -> List[IssuedCurrency]:
+        """
+        Get a list of all known tokens on the chain.
+
+        Returns:
+            A list of all known tokens on the chain.
+        """
         return self.asset_aliases.known_assets()
 
     def is_asset_alias(self: Chain, name: str) -> bool:
+        """
+        Determine whether an asset name is known.
+
+        Args:
+            name: The alias to check.
+
+        Returns:
+            Whether the alias is a known asset.
+        """
         return self.asset_aliases.is_alias(name)
 
     def add_asset_alias(self: Chain, asset: IssuedCurrency, name: str) -> None:
+        """
+        Add an asset to the known assets on the chain.
+
+        Args:
+            asset: The token to add.
+            name: The alias to use for the token.
+        """
         self.asset_aliases.add(asset, name)
 
     def asset_from_alias(self: Chain, name: str) -> IssuedCurrency:
+        """
+        Get an asset from the asset's alias.
+
+        Args:
+            name: The asset alias.
+
+        Returns:
+            The asset tied to the alias.
+        """
         return self.asset_aliases.asset_from_alias(name)

@@ -1,3 +1,5 @@
+"""Parsing and storage of command-line args for creating the config files."""
+
 from __future__ import annotations
 
 import argparse
@@ -72,7 +74,18 @@ def _parse_args() -> argparse.Namespace:
 
 
 class ConfigParams:
+    """
+    A class that parses and stores the command-line arguments for creating the config
+    files.
+    """
+
     def __init__(self: ConfigParams) -> None:
+        """
+        Process command-line args for creating the config files.
+
+        Raises:
+            Exception: if the arguments provided are invalid.
+        """
         args = _parse_args()
 
         if "RIPPLED_SIDECHAIN_CFG_DIR" in _ENV_VARS:

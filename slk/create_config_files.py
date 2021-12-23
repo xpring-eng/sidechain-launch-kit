@@ -54,7 +54,8 @@ ED264807102805220DA0F312E71FC2C69E1552C9C5790F6C25E3729DEB573D5860
 """
 
 
-def generate_cfg_dir(
+# Generate the rippled.cfg and validators.txt files for a rippled node.
+def _generate_cfg_dir(
     *,
     ports: Ports,
     with_shards: bool = False,
@@ -70,12 +71,6 @@ def generate_cfg_dir(
     with_hooks: bool = False,
 ) -> str:
     disable_shards = "" if with_shards else "# "
-    disable_delete = "#" if full_history else ""
-    history_line = "full" if full_history else "256"
-    earliest_seq_line = ""
-    if sidechain_stanza:
-        earliest_seq_line = "earliest_seq=1"
-    hooks_line = "Hooks" if with_hooks else ""
     validation_seed_stanza = f"\n[validation_seed]\n{validation_seed}\n"
     shard_str = "shards" if with_shards else "no_shards"
     net_str = "main" if main_net else "test"
@@ -94,15 +89,13 @@ def generate_cfg_dir(
 
     cfg_str = get_cfg_str(
         ports,
-        history_line,
+        full_history,
         sub_dir,
-        earliest_seq_line,
-        disable_delete,
         ips_stanza,
         validation_seed_stanza,
         disable_shards,
         sidechain_stanza,
-        hooks_line,
+        with_hooks,
     )
 
     # add the rippled.cfg file
@@ -128,7 +121,8 @@ def generate_cfg_dir(
     return sub_dir + "/rippled.cfg"
 
 
-def generate_multinode_net(
+# Generate all the config files for a mainchain-sidechain setup.
+def _generate_all_configs(
     out_dir: str,
     mainnet: Network,
     sidenet: SidechainNetwork,
@@ -153,7 +147,7 @@ def generate_multinode_net(
         for i in range(len(mainnet.ports)):
             validator_kp = mainnet.validator_keypairs[i]
             ports = mainnet.ports[i]
-            mainchain_cfg_file = generate_cfg_dir(
+            mainchain_cfg_file = _generate_cfg_dir(
                 ports=ports,
                 cfg_type=f"mainchain_{i}",
                 validation_seed=validator_kp.secret_key,
@@ -179,7 +173,7 @@ def generate_multinode_net(
             xchain_assets,
         )
 
-        generate_cfg_dir(
+        _generate_cfg_dir(
             ports=ports,
             cfg_type=f"sidechain_{i}",
             sidechain_stanza=sidechain_stanza,
@@ -195,6 +189,14 @@ def generate_multinode_net(
 def create_config_files(
     params: ConfigParams, xchain_assets: Optional[Dict[str, XChainAsset]] = None
 ) -> None:
+    """
+    Create the config files for a network.
+
+    Args:
+        params: The command-line params provided to this method.
+        xchain_assets: The cross-chain assets that are allowed to cross the network
+            bridge.
+    """
     index = 0
     if params.standalone:
         mainnet: Network = StandaloneNetwork(num_nodes=1, start_cfg_index=index)
@@ -206,7 +208,7 @@ def create_config_files(
         start_cfg_index=index + 1,
         main_door_seed=params.door_seed,
     )
-    generate_multinode_net(
+    _generate_all_configs(
         out_dir=f"{params.configs_dir}/sidechain_testnet",
         mainnet=mainnet,
         sidenet=sidenet,
@@ -219,6 +221,7 @@ def create_config_files(
 
 
 def main() -> None:
+    """Create the config files for a network, with the given command-line params."""
     # TODO: add support for real sidechains to only generate one federator's config file
     # since real sidechain networks will have federators running on different machines
     try:

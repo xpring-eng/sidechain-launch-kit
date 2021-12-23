@@ -1,3 +1,9 @@
+"""
+Classes related to networks for generating the config files.
+
+A network is basically a representation of nodes and keypairs.
+"""
+
 from __future__ import annotations
 
 from typing import List, Optional
@@ -11,20 +17,38 @@ from slk.config.helper_classes import Keypair, Ports
 
 
 class Network:
+    """Represents a network of validator nodes and their keypairs."""
+
     def __init__(self: Network, num_nodes: int, ports: List[Ports]) -> None:
+        """
+        Initialize a Network for config files.
+
+        Args:
+            num_nodes: The number of nodes in the network.
+            ports: The Ports for the network.
+        """
         self.url = "127.0.0.1"
         self.num_nodes = num_nodes
         self.ports = ports
 
 
 class StandaloneNetwork(Network):
+    """Represents a network that is standalone and running locally."""
+
     def __init__(self: StandaloneNetwork, num_nodes: int, start_cfg_index: int) -> None:
+        """
+        Initializes a StandaloneNetwork.
+
+        Args:
+            num_nodes: The number of nodes in the network.
+            start_cfg_index: The port number the set of ports should start at.
+        """
         ports = [Ports.generate(start_cfg_index + i) for i in range(num_nodes)]
         super().__init__(num_nodes, ports)
         self.validator_keypairs = self._generate_node_keypairs()
 
     def _generate_node_keypairs(self: StandaloneNetwork) -> List[Keypair]:
-        """generate keypairs suitable for validator keys"""
+        # Generate keypairs suitable for validator keys
         result = []
         for i in range(self.num_nodes):
             seed = generate_seed(None, CryptoAlgorithm.SECP256K1)
@@ -40,21 +64,41 @@ class StandaloneNetwork(Network):
 
 
 class ExternalNetwork(Network):
+    """Represents a connection to an external network (e.g. devnet/testnet/mainnet)."""
+
     def __init__(self: ExternalNetwork, url: str, ws_port: int) -> None:
+        """
+        Initialize an ExternalNetwork for config files.
+
+        Args:
+            url: The URL of the external network.
+            ws_port: The port number of the WS port (to connect to the network).
+        """
         ports = [Ports(None, None, ws_port, None)]
         super().__init__(1, ports)
         self.url = url
 
 
 class SidechainNetwork(StandaloneNetwork):
+    """Represents a sidechain network of federator nodes and their keypairs."""
+
     def __init__(
         self: SidechainNetwork,
         num_federators: int,
         start_cfg_index: int,
-        num_nodes: Optional[int] = None,
         main_door_seed: Optional[str] = None,
     ) -> None:
-        super().__init__(num_nodes or num_federators, start_cfg_index)
+        """
+        Initialize a SidechainNetwork for config files.
+
+        Args:
+            num_federators: The number of federators in the network.
+            start_cfg_index: The port number the ports should start at.
+            main_door_seed: The secret seed of the door account on the mainchain. Only
+                needed if the mainchain is an external chain (e.g.
+                mainnet/devnet/testnet).
+        """
+        super().__init__(num_federators, start_cfg_index)
         self.num_federators = num_federators
         self.federator_keypairs = self._generate_federator_keypairs()
         # TODO: main_account needs to be user-defined for external networks
@@ -64,7 +108,7 @@ class SidechainNetwork(StandaloneNetwork):
             self.main_account = Wallet(main_door_seed, 0)
 
     def _generate_federator_keypairs(self: SidechainNetwork) -> List[Keypair]:
-        """generate keypairs suitable for federator keys"""
+        # Generate keypairs suitable for federator keys
         result = []
         for i in range(self.num_federators):
             wallet = Wallet.create(crypto_algorithm=CryptoAlgorithm.ED25519)

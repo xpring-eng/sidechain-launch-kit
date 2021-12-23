@@ -1,4 +1,4 @@
-"""Bring up a rippled sidechain network from a set of config files with fixed ips."""
+"""Representation of a local sidechain."""
 from __future__ import annotations
 
 import glob
@@ -14,6 +14,8 @@ from slk.classes.config_file import ConfigFile
 
 
 class Sidechain(Chain):
+    """Representation of a local sidechain."""
+
     # If run_server is None, run all the servers.
     # This is useful to help debugging
     def __init__(
@@ -24,6 +26,18 @@ class Sidechain(Chain):
         command_logs: Optional[List[Optional[str]]] = None,
         run_server: Optional[List[bool]] = None,
     ) -> None:
+        """
+        Initialize a Sidechain.
+
+        Args:
+            exe: The location of the rippled exe.
+            configs: The config files associated with this chain.
+            command_logs: The location of the log files.
+            run_server: Whether to start each of the servers.
+
+        Raises:
+            ValueError: If `len(run_server) != len(configs)`
+        """
         if not configs:
             raise ValueError("Must specify at least one config")
 
@@ -76,17 +90,45 @@ class Sidechain(Chain):
 
     @property
     def standalone(self: Sidechain) -> bool:
+        """
+        Return whether the chain is in standalone mode.
+
+        Returns:
+            True when the chain is in standalone mode, and False otherwise. A sidechain
+            is by definition not in standalone, so it returns False.
+        """
         return False
 
     def get_pids(self: Sidechain) -> List[int]:
+        """
+        Return a list of process IDs for the nodes in the chain.
+
+        Returns:
+            A list of process IDs for the nodes in the chain.
+        """
         return [pid for c in self.nodes if (pid := c.get_pid()) is not None]
 
     # TODO: type this better
     def get_node(self: Sidechain, i: Optional[int] = None) -> Node:
+        """
+        Get a specific node from the chain.
+
+        Args:
+            i: The index of the node to return.
+
+        Returns:
+            The node at index i.
+        """
         assert i is not None
         return self.nodes[i]
 
     def get_configs(self: Sidechain) -> List[ConfigFile]:
+        """
+        Get a list of all the config files for the nodes in the chain.
+
+        Returns:
+            A list of all the config files for the nodes in the chain.
+        """
         return [c.config for c in self.nodes]
 
     # returns true if the server is running, false if not. Note, this relies on
@@ -94,12 +136,19 @@ class Sidechain(Chain):
     # crashes, or is started or stopped through other means, an incorrect status
     # may be reported.
     def get_running_status(self: Sidechain) -> List[bool]:
+        """
+        Return whether the chain is up and running.
+
+        Returns:
+            A list of the running statuses of the nodes in the chain.
+        """
         return [i in self.running_server_indexes for i in range(len(self.nodes))]
 
-    def is_running(self: Sidechain, index: int) -> bool:
+    def _is_running(self: Sidechain, index: int) -> bool:
         return index in self.running_server_indexes
 
     def shutdown(self: Sidechain) -> None:
+        """Shut down the chain."""
         for a in self.nodes:
             a.shutdown()
 
@@ -111,6 +160,17 @@ class Sidechain(Chain):
         server_indexes: Optional[Union[Set[int], List[int]]] = None,
         server_out: str = os.devnull,
     ) -> None:
+        """
+        Start the servers for the chain.
+
+        Args:
+            server_indexes: The server indexes to start. The default is `None`, which
+                starts all the servers in the chain.
+            server_out: Where to output the results.
+
+        Raises:
+            Exception: If the servers take too long to start.
+        """
         if server_indexes is None:
             server_indexes = [i for i in range(len(self.nodes))]
 
@@ -136,6 +196,13 @@ class Sidechain(Chain):
     def servers_stop(
         self: Sidechain, server_indexes: Optional[Union[Set[int], List[int]]] = None
     ) -> None:
+        """
+        Stop the servers for the chain.
+
+        Args:
+            server_indexes: The server indexes to start. The default is `None`, which
+                starts all the servers in the chain.
+        """
         if server_indexes is None:
             server_indexes = self.running_server_indexes.copy()
 
@@ -152,22 +219,15 @@ class Sidechain(Chain):
             node.stop_server()
             self.running_server_indexes.discard(i)
 
-    def federator_info(
-        self: Sidechain, server_indexes: Optional[Union[Set[int], List[int]]] = None
-    ) -> Dict[int, Dict[str, Any]]:
-        # key is server index. value is federator_info result
-        result_dict = {}
-        if server_indexes is None or len(server_indexes) == 0:
-            server_indexes = [i for i in range(len(self.nodes)) if self.is_running(i)]
-        for i in server_indexes:
-            if self.is_running(i):
-                result_dict[i] = self.get_node(i).request(
-                    GenericRequest(command="federator_info")  # type: ignore
-                )
-        return result_dict
-
-    # Get a dict of the server_state, validated_ledger_seq, and complete_ledgers
     def get_brief_server_info(self: Sidechain) -> Dict[str, List[Dict[str, Any]]]:
+        """
+        Get a dictionary of the server_state, validated_ledger_seq, and
+        complete_ledgers for all the nodes in the chain.
+
+        Returns:
+            A dictionary of the server_state, validated_ledger_seq, and
+            complete_ledgers for all the nodes in the chain
+        """
         ret: Dict[str, List[Dict[str, Any]]] = {
             "server_state": [],
             "ledger_seq": [],
@@ -179,8 +239,32 @@ class Sidechain(Chain):
                 ret[k].append(v)
         return ret
 
+    def federator_info(
+        self: Sidechain, server_indexes: Optional[Union[Set[int], List[int]]] = None
+    ) -> Dict[int, Dict[str, Any]]:
+        """
+        Get the federator info of the servers.
+
+        Args:
+            server_indexes: The servers to query for their federator info. If None,
+                treat as a wildcard. The default is None.
+
+        Returns:
+            The federator info of the servers.
+        """
+        # key is server index. value is federator_info result
+        result_dict = {}
+        if server_indexes is None or len(server_indexes) == 0:
+            server_indexes = [i for i in range(len(self.nodes)) if self._is_running(i)]
+        for i in server_indexes:
+            if self._is_running(i):
+                result_dict[i] = self.get_node(i).request(
+                    GenericRequest(command="federator_info")  # type: ignore
+                )
+        return result_dict
+
     def wait_for_validated_ledger(self: Sidechain) -> None:
-        """Don't return until the network has at least one validated ledger"""
+        """Don't return until the network has at least one validated ledger."""
         print("")  # adds some spacing after the rippled startup messages
         for i in range(len(self.nodes)):
             self.nodes[i].wait_for_validated_ledger()

@@ -34,7 +34,7 @@ from slk.utils.eprint import disable_eprint, eprint
 from slk.utils.log_analyzer import convert_log
 
 
-def simple_test(mc_chain: Chain, sc_chain: Chain, params: SidechainParams) -> None:
+def _simple_test(mc_chain: Chain, sc_chain: Chain, params: SidechainParams) -> None:
     try:
         bob = sc_chain.create_account("bob")
         main_to_side_transfer(
@@ -127,7 +127,14 @@ def _standalone_with_callback(
 def _convert_log_files_to_json(
     to_convert: List[ConfigFile], suffix: str, verbose: bool
 ) -> None:
-    """Convert the log file to json"""
+    """
+    Convert the log file to json.
+
+    Args:
+        to_convert: A list of config files to convert the debug files of.
+        suffix: The suffix of the log file.
+        verbose: Whether to print out extra information.
+    """
     for c in to_convert:
         try:
             debug_log = c.debug_logfile.get_line()
@@ -243,34 +250,63 @@ def _external_node_with_callback(
 
 
 def standalone_test(params: SidechainParams) -> None:
+    """
+    Run a mainchain and sidechain in standalone mode and run basic tests on it.
+
+    Args:
+        params: The command-line args for running the sidechain.
+    """
+
     def callback(mc_chain: Chain, sc_chain: Chain) -> None:
-        simple_test(mc_chain, sc_chain, params)
+        _simple_test(mc_chain, sc_chain, params)
 
     _standalone_with_callback(params, callback)
 
 
 def multinode_test(params: SidechainParams) -> None:
+    """
+    Run a mainchain in standalone mode and a multi-node sidechain and run basic tests
+    on it.
+
+    Args:
+        params: The command-line args for running the sidechain.
+    """
+
     def callback(mc_chain: Chain, sc_chain: Chain) -> None:
-        simple_test(mc_chain, sc_chain, params)
+        _simple_test(mc_chain, sc_chain, params)
 
     _multinode_with_callback(params, callback)
 
 
 def external_node_test(params: SidechainParams) -> None:
+    """
+    Run a connection to an external chainand a multi-node sidechain and run basic tests
+    on it.
+
+    Args:
+        params: The command-line args for running the sidechain.
+    """
+
     def callback(mc_chain: Chain, sc_chain: Chain) -> None:
-        simple_test(mc_chain, sc_chain, params)
+        _simple_test(mc_chain, sc_chain, params)
 
     _external_node_with_callback(params, callback)
 
 
-# The mainchain runs in standalone mode. Most operations - like cross chain
-# payments - will automatically close ledgers. However, some operations, like
-# refunds, need an extra close. This loop automatically closes ledgers.
 def close_mainchain_ledgers(
     stop_token: Any, params: SidechainParams, sleep_time: int = 4
 ) -> None:
-    # TODO: make more elegant once params is more fleshed out
-    assert params.mainchain_config is not None
+    """
+    The mainchain runs in standalone mode. Most operations - like cross chain payments -
+    will automatically close ledgers. However, some operations, like refunds, need an
+    extra close. This loop automatically closes ledgers.
+
+    Args:
+        stop_token: Something to use to know when to stop.
+        params: The command-line args for running the sidechain.
+        sleep_time: How long to wait for a ledger close.
+    """
+    assert params.mainchain_config is not None  # TODO: type this better
     with single_node_chain(
         config=params.mainchain_config,
         exe=params.mainchain_exe,
@@ -282,6 +318,14 @@ def close_mainchain_ledgers(
 
 
 def standalone_interactive_repl(params: SidechainParams) -> None:
+    """
+    Run a mainchain and sidechain in standalone mode and start up the REPL to interact
+    with them.
+
+    Args:
+        params: The command-line args for running the sidechain.
+    """
+
     def callback(mc_chain: Chain, sc_chain: Chain) -> None:
         # process will run while stop token is non-zero
         stop_token = Value("i", 1)
@@ -300,6 +344,14 @@ def standalone_interactive_repl(params: SidechainParams) -> None:
 
 
 def multinode_interactive_repl(params: SidechainParams) -> None:
+    """
+    Run a mainchain in standalone mode and a multi-node sidechain and start up the REPL
+    to interact with them.
+
+    Args:
+        params: The command-line args for running the sidechain.
+    """
+
     def callback(mc_chain: Chain, sc_chain: Chain) -> None:
         # process will run while stop token is non-zero
         stop_token = Value("i", 1)
@@ -318,6 +370,14 @@ def multinode_interactive_repl(params: SidechainParams) -> None:
 
 
 def external_node_interactive_repl(params: SidechainParams) -> None:
+    """
+    Run a connection to an external standalone node, and a multi-node sidechain, and
+    start up the REPL to interact with them.
+
+    Args:
+        params: The command-line args for running the sidechain.
+    """
+
     def callback(mc_chain: Chain, sc_chain: Chain) -> None:
         # process will run while stop token is non-zero
         stop_token = Value("i", 1)
@@ -336,6 +396,7 @@ def external_node_interactive_repl(params: SidechainParams) -> None:
 
 
 def main() -> None:
+    """Initialize the mainchain-sidechain network, with command-line arguments."""
     try:
         params = SidechainParams()
     except Exception as e:

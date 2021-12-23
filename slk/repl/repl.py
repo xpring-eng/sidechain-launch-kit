@@ -1,3 +1,5 @@
+"""Simple REPL for interacting with side chains."""
+
 from __future__ import annotations
 
 import binascii
@@ -33,7 +35,7 @@ from slk.repl.repl_functionality import (
 )
 
 
-def clear_screen() -> None:
+def _clear_screen() -> None:
     if os.name == "nt":
         _ = os.system("cls")
     else:
@@ -46,6 +48,12 @@ HOOKS_DIR = Path()
 
 
 def set_hooks_dir(hooks_dir_to_set: Optional[str]) -> None:
+    """
+    Set the hooks directory.
+
+    Args:
+        hooks_dir_to_set: The location of the hooks directory.
+    """
     global HOOKS_DIR
     if hooks_dir_to_set:
         HOOKS_DIR = Path(hooks_dir_to_set)
@@ -61,15 +69,23 @@ def _file_to_hex(filename: Path) -> str:
 
 
 class SidechainRepl(cmd.Cmd):
-    """Simple repl for interacting with side chains"""
+    """Simple REPL for interacting with side chains."""
 
     intro = "\n\nWelcome to the sidechain shell.   Type help or ? to list commands.\n"
     prompt = "SSX> "
 
     def preloop(self: SidechainRepl) -> None:
-        clear_screen()
+        """Clear the screen before the REPL starts up."""
+        _clear_screen()
 
     def __init__(self: SidechainRepl, mc_chain: Chain, sc_chain: Chain) -> None:
+        """
+        Initialize the sidechain REPL.
+
+        Args:
+            mc_chain: The Chain representing the mainchain.
+            sc_chain: The Chain representing the sidechain.
+        """
         super().__init__()
         assert mc_chain.is_alias("door") and sc_chain.is_alias("door")
         self.mc_chain = mc_chain
@@ -78,21 +94,50 @@ class SidechainRepl(cmd.Cmd):
     ##################
     # complete helpers
 
-    def _complete_chain(self: SidechainRepl, text: str, line: str) -> List[str]:
+    def _complete_chain(self: SidechainRepl, text: str) -> List[str]:
+        """
+        Helper method to complete the chain name.
+
+        Args:
+            text: The text to autocomplete.
+
+        Returns:
+            The chain names that could autocomplete the provided text.
+        """
         if not text:
             return ["mainchain", "sidechain"]
         else:
             return [c for c in ["mainchain", "sidechain"] if c.startswith(text)]
 
-    def _complete_unit(self: SidechainRepl, text: str, line: str) -> List[str]:
+    def _complete_unit(self: SidechainRepl, text: str) -> List[str]:
+        """
+        Helper method to complete the unit.
+
+        Args:
+            text: The text to autocomplete.
+
+        Returns:
+            The unit names that could autocomplete the provided text.
+        """
         if not text:
             return ["drops", "xrp"]
         else:
             return [c for c in ["drops", "xrp"] if c.startswith(text)]
 
     def _complete_account(
-        self: SidechainRepl, text: str, line: str, chain_name: Optional[str] = None
+        self: SidechainRepl, text: str, chain_name: Optional[str] = None
     ) -> List[str]:
+        """
+        Helper method to complete the account alias name.
+
+        Args:
+            text: The text to autocomplete.
+            chain_name: The chain to search for accounts. If None, treat as a wildcard.
+                The default is None.
+
+        Returns:
+            The account nicknames that could autocomplete the provided text.
+        """
         known_accounts: Set[str] = set()
         chains = [self.mc_chain, self.sc_chain]
         if chain_name == "mainchain":
@@ -109,8 +154,19 @@ class SidechainRepl(cmd.Cmd):
             return [c for c in known_accounts if c.startswith(text)]
 
     def _complete_asset(
-        self: SidechainRepl, text: str, line: str, chain_name: Optional[str] = None
+        self: SidechainRepl, text: str, chain_name: Optional[str] = None
     ) -> List[str]:
+        """
+        Helper method to complete the asset alias name.
+
+        Args:
+            text: The text to autocomplete.
+            chain_name: The chain to search for assets. If None, treat as a wildcard.
+                The default is None.
+
+        Returns:
+            The asset names that could autocomplete the provided text.
+        """
         known_assets: Set[str] = set()
         chains = [self.mc_chain, self.sc_chain]
         if chain_name == "mainchain":
@@ -130,26 +186,44 @@ class SidechainRepl(cmd.Cmd):
     ##################
     # do helpers
     def _get_chain_args(
-        self: SidechainRepl, args: List[str]
+        self: SidechainRepl, chain_args: List[str]
     ) -> Tuple[List[Chain], List[str]]:
+        """
+        Helper method to get the chains/names.
+
+        Args:
+            chain_args: The names of the chains to get.
+
+        Returns:
+            The chains and chain names of the chains.
+        """
         chains = [self.mc_chain, self.sc_chain]
         chain_names = ["mainchain", "sidechain"]
 
-        if args and args[0] in chain_names:
-            chain_names = [args[0]]
-            if args[0] == "mainchain":
+        if chain_args and chain_args[0] in chain_names:
+            chain_names = [chain_args[0]]
+            if chain_args[0] == "mainchain":
                 chains = [self.mc_chain]
             else:
                 chains = [self.sc_chain]
-            args.pop(0)
+            chain_args.pop(0)
 
         return chains, chain_names
 
-    def _get_chain_arg(self: SidechainRepl, arg: str) -> Optional[Chain]:
-        if arg not in ["mainchain", "sidechain"]:
+    def _get_chain_arg(self: SidechainRepl, chain_arg: str) -> Optional[Chain]:
+        """
+        Helper method to get the chain arg.
+
+        Args:
+            chain_arg: The name of the chain to fetch.
+
+        Returns:
+            The chain that corresponds to the chain name.
+        """
+        if chain_arg not in ["mainchain", "sidechain"]:
             print('Error: First argument must specify the chain. Type "help" for help.')
             return None
-        if arg == "mainchain":
+        if chain_arg == "mainchain":
             return self.mc_chain
         return self.sc_chain
 
@@ -159,6 +233,12 @@ class SidechainRepl(cmd.Cmd):
     ##################
     # addressbook
     def do_addressbook(self: SidechainRepl, line: str) -> None:
+        """
+        Implementation of the `addressbook` REPL command.
+
+        Args:
+            line: The command-line arguments.
+        """
         args = line.split()
         if len(args) > 2:
             print(
@@ -182,15 +262,28 @@ class SidechainRepl(cmd.Cmd):
     def complete_addressbook(
         self: SidechainRepl, text: str, line: str, begidx: int, endidx: int
     ) -> List[str]:
+        """
+        Handle autocompletion for the `addressbook` REPL command.
+
+        Args:
+            line: The command-line args so far.
+            text: The text to autocomplete.
+            begidx: The beginning index of the prefix text.
+            endidx: The end index of the prefix text.
+
+        Returns:
+            The list of possible auto-complete results.
+        """
         args = line.split()
         arg_num = len(args)
         if arg_num == 2:  # chain
-            return self._complete_chain(text, line) + self._complete_account(text, line)
+            return self._complete_chain(text) + self._complete_account(text)
         if arg_num == 3:  # account
-            return self._complete_account(text, line, chain_name=args[1])
+            return self._complete_account(text, chain_name=args[1])
         return []
 
     def help_addressbook(self: SidechainRepl) -> None:
+        """Print out a help message for the `addressbook` REPL command."""
         print(
             "\n".join(
                 [
@@ -209,6 +302,12 @@ class SidechainRepl(cmd.Cmd):
     ##################
     # balance
     def do_balance(self: SidechainRepl, line: str) -> None:
+        """
+        Implementation of the `balance` REPL command.
+
+        Args:
+            line: The command-line arguments.
+        """
         args = line.split()
         arg_index = 0
 
@@ -283,23 +382,36 @@ class SidechainRepl(cmd.Cmd):
     def complete_balance(
         self: SidechainRepl, text: str, line: str, begidx: int, endidx: int
     ) -> List[str]:
+        """
+        Handle autocompletion for the `balance` REPL command.
+
+        Args:
+            line: The command-line args so far.
+            text: The text to autocomplete.
+            begidx: The beginning index of the prefix text.
+            endidx: The end index of the prefix text.
+
+        Returns:
+            The list of possible auto-complete results.
+        """
         args = line.split()
         arg_num = len(args)
         if arg_num == 2:  # chain or account
-            return self._complete_chain(text, line) + self._complete_account(text, line)
+            return self._complete_chain(text) + self._complete_account(text)
         elif arg_num == 3:  # account or unit or asset_alias
             return (
-                self._complete_account(text, line)
-                + self._complete_unit(text, line)
-                + self._complete_asset(text, line, chain_name=args[1])
+                self._complete_account(text)
+                + self._complete_unit(text)
+                + self._complete_asset(text, chain_name=args[1])
             )
         elif arg_num == 4:  # unit
-            return self._complete_unit(text, line) + self._complete_asset(
-                text, line, chain_name=args[1]
+            return self._complete_unit(text) + self._complete_asset(
+                text, chain_name=args[1]
             )
         return []
 
     def help_balance(self: SidechainRepl) -> None:
+        """Print out a help message for the `balance` REPL command."""
         print(
             "\n".join(
                 [
@@ -323,6 +435,12 @@ class SidechainRepl(cmd.Cmd):
     # account_info
 
     def do_account_info(self: SidechainRepl, line: str) -> None:
+        """
+        Implementation of the `account_info` REPL command.
+
+        Args:
+            line: The command-line arguments.
+        """
         args = line.split()
         if len(args) > 2:
             print(
@@ -360,15 +478,28 @@ class SidechainRepl(cmd.Cmd):
     def complete_account_info(
         self: SidechainRepl, text: str, line: str, begidx: int, endidx: int
     ) -> List[str]:
+        """
+        Handle autocompletion for the `account_info` REPL command.
+
+        Args:
+            line: The command-line args so far.
+            text: The text to autocomplete.
+            begidx: The beginning index of the prefix text.
+            endidx: The end index of the prefix text.
+
+        Returns:
+            The list of possible auto-complete results.
+        """
         args = line.split()
         arg_num = len(args)
         if arg_num == 2:  # chain or account
-            return self._complete_chain(text, line) + self._complete_account(text, line)
+            return self._complete_chain(text) + self._complete_account(text)
         elif arg_num == 3:  # account
-            return self._complete_account(text, line)
+            return self._complete_account(text)
         return []
 
     def help_account_info(self: SidechainRepl) -> None:
+        """Print out a help message for the `account_info` REPL command."""
         print(
             "\n".join(
                 [
@@ -387,6 +518,12 @@ class SidechainRepl(cmd.Cmd):
     ##################
     # pay
     def do_pay(self: SidechainRepl, line: str) -> None:
+        """
+        Implementation of the `pay` REPL command.
+
+        Args:
+            line: The command-line arguments.
+        """
         args = line.split()
         if len(args) < 4:
             print('Error: Too few arguments to pay command. Type "help" for help.')
@@ -487,25 +624,38 @@ class SidechainRepl(cmd.Cmd):
     def complete_pay(
         self: SidechainRepl, text: str, line: str, begidx: int, endidx: int
     ) -> List[str]:
+        """
+        Handle autocompletion for the `pay` REPL command.
+
+        Args:
+            line: The command-line args so far.
+            text: The text to autocomplete.
+            begidx: The beginning index of the prefix text.
+            endidx: The end index of the prefix text.
+
+        Returns:
+            The list of possible auto-complete results.
+        """
         args = line.split()
         arg_num = len(args)
         if not text:
             arg_num += 1
         if arg_num == 2:  # chain
-            return self._complete_chain(text, line)
+            return self._complete_chain(text)
         elif arg_num == 3:  # account
-            return self._complete_account(text, line, chain_name=args[1])
+            return self._complete_account(text, chain_name=args[1])
         elif arg_num == 4:  # account
-            return self._complete_account(text, line, chain_name=args[1])
+            return self._complete_account(text, chain_name=args[1])
         elif arg_num == 5:  # amount
             return []
         elif arg_num == 6:  # drops or xrp or asset
-            return self._complete_unit(text, line) + self._complete_asset(
-                text, line, chain_name=args[1]
+            return self._complete_unit(text) + self._complete_asset(
+                text, chain_name=args[1]
             )
         return []
 
     def help_pay(self: SidechainRepl) -> None:
+        """Print out a help message for the `pay` REPL command."""
         print(
             "\n".join(
                 [
@@ -526,6 +676,12 @@ class SidechainRepl(cmd.Cmd):
     ##################
     # xchain
     def do_xchain(self: SidechainRepl, line: str) -> None:
+        """
+        Implementation of the `xchain` REPL command.
+
+        Args:
+            line: The command-line arguments.
+        """
         args = line.split()
         if len(args) < 4:
             print('Error: Too few arguments to pay command. Type "help" for help.')
@@ -640,30 +796,43 @@ class SidechainRepl(cmd.Cmd):
     def complete_xchain(
         self: SidechainRepl, text: str, line: str, begidx: int, endidx: int
     ) -> List[str]:
+        """
+        Handle autocompletion for the `xchain` REPL command.
+
+        Args:
+            line: The command-line args so far.
+            text: The text to autocomplete.
+            begidx: The beginning index of the prefix text.
+            endidx: The end index of the prefix text.
+
+        Returns:
+            The list of possible auto-complete results.
+        """
         args = line.split()
         arg_num = len(args)
         if not text:
             arg_num += 1
         if arg_num == 2:  # chain
-            return self._complete_chain(text, line)
+            return self._complete_chain(text)
         elif arg_num == 3:  # this chain account
-            return self._complete_account(text, line, chain_name=args[1])
+            return self._complete_account(text, chain_name=args[1])
         elif arg_num == 4:  # other chain account
             other_chain_name = None
             if args[1] == "mainchain":
                 other_chain_name = "sidechain"
             if args[1] == "sidechain":
                 other_chain_name = "mainchain"
-            return self._complete_account(text, line, chain_name=other_chain_name)
+            return self._complete_account(text, chain_name=other_chain_name)
         elif arg_num == 5:  # amount
             return []
         elif arg_num == 6:  # drops or xrp or asset
-            return self._complete_unit(text, line) + self._complete_asset(
-                text, line, chain_name=args[1]
+            return self._complete_unit(text) + self._complete_asset(
+                text, chain_name=args[1]
             )
         return []
 
     def help_xchain(self: SidechainRepl) -> None:
+        """Print out a help message for the `xchain` REPL command."""
         print(
             "\n".join(
                 [
@@ -682,6 +851,12 @@ class SidechainRepl(cmd.Cmd):
     ##################
     # server_info
     def do_server_info(self: SidechainRepl, line: str) -> None:
+        """
+        Implementation of the `server_info` REPL command.
+
+        Args:
+            line: The command-line arguments.
+        """
         args = line.split()
         if len(args) > 1:
             print(
@@ -705,12 +880,25 @@ class SidechainRepl(cmd.Cmd):
     def complete_server_info(
         self: SidechainRepl, text: str, line: str, begidx: int, endidx: int
     ) -> List[str]:
+        """
+        Handle autocompletion for the `server_info` REPL command.
+
+        Args:
+            line: The command-line args so far.
+            text: The text to autocomplete.
+            begidx: The beginning index of the prefix text.
+            endidx: The end index of the prefix text.
+
+        Returns:
+            The list of possible auto-complete results.
+        """
         arg_num = len(line.split())
         if arg_num == 2:  # chain
-            return self._complete_chain(text, line)
+            return self._complete_chain(text)
         return []
 
     def help_server_info(self: SidechainRepl) -> None:
+        """Print out a help message for the `server_info` REPL command."""
         print(
             "\n".join(
                 [
@@ -729,6 +917,12 @@ class SidechainRepl(cmd.Cmd):
     # federator_info
 
     def do_federator_info(self: SidechainRepl, line: str) -> None:
+        """
+        Implementation of the `federator_info` REPL command.
+
+        Args:
+            line: The command-line arguments.
+        """
         args = line.split()
         indexes = set()
         verbose = False
@@ -775,6 +969,18 @@ class SidechainRepl(cmd.Cmd):
     def complete_federator_info(
         self: SidechainRepl, text: str, line: str, begidx: int, endidx: int
     ) -> List[str]:
+        """
+        Handle autocompletion for the `federator_info` REPL command.
+
+        Args:
+            line: The command-line args so far.
+            text: The text to autocomplete.
+            begidx: The beginning index of the prefix text.
+            endidx: The end index of the prefix text.
+
+        Returns:
+            The list of possible auto-complete results.
+        """
         args = line.split()
         if "verbose".startswith(args[-1]):
             return ["verbose"]
@@ -788,6 +994,7 @@ class SidechainRepl(cmd.Cmd):
         ]
 
     def help_federator_info(self: SidechainRepl) -> None:
+        """Print out a help message for the `federator_info` REPL command."""
         print(
             "\n".join(
                 [
@@ -806,6 +1013,12 @@ class SidechainRepl(cmd.Cmd):
     ##################
     # new_account
     def do_new_account(self: SidechainRepl, line: str) -> None:
+        """
+        Implementation of the `new_account` REPL command.
+
+        Args:
+            line: The command-line arguments.
+        """
         args = line.split()
         if len(args) < 2:
             print(
@@ -828,12 +1041,25 @@ class SidechainRepl(cmd.Cmd):
     def complete_new_account(
         self: SidechainRepl, text: str, line: str, begidx: int, endidx: int
     ) -> List[str]:
+        """
+        Handle autocompletion for the `new_account` REPL command.
+
+        Args:
+            line: The command-line args so far.
+            text: The text to autocomplete.
+            begidx: The beginning index of the prefix text.
+            endidx: The end index of the prefix text.
+
+        Returns:
+            The list of possible auto-complete results.
+        """
         arg_num = len(line.split())
         if arg_num == 2:  # chain
-            return self._complete_chain(text, line)
+            return self._complete_chain(text)
         return []
 
     def help_new_account(self: SidechainRepl) -> None:
+        """Print out a help message for the `new_account` REPL command."""
         print(
             "\n".join(
                 [
@@ -849,6 +1075,12 @@ class SidechainRepl(cmd.Cmd):
     ##################
     # new_iou
     def do_new_iou(self: SidechainRepl, line: str) -> None:
+        """
+        Implementation of the `new_iou` REPL command.
+
+        Args:
+            line: The command-line arguments.
+        """
         args = line.split()
         if len(args) != 4:
             print(
@@ -882,14 +1114,27 @@ class SidechainRepl(cmd.Cmd):
     def complete_new_iou(
         self: SidechainRepl, text: str, line: str, begidx: int, endidx: int
     ) -> List[str]:
+        """
+        Handle autocompletion for the `new_iou` REPL command.
+
+        Args:
+            line: The command-line args so far.
+            text: The text to autocomplete.
+            begidx: The beginning index of the prefix text.
+            endidx: The end index of the prefix text.
+
+        Returns:
+            The list of possible auto-complete results.
+        """
         arg_num = len(line.split())
         if arg_num == 2:  # chain
-            return self._complete_chain(text, line)
+            return self._complete_chain(text)
         if arg_num == 5:  # issuer
-            return self._complete_account(text, line)
+            return self._complete_account(text)
         return []
 
     def help_new_iou(self: SidechainRepl) -> None:
+        """Print out a help message for the `new_iou` REPL command."""
         print(
             "\n".join(
                 [
@@ -905,6 +1150,13 @@ class SidechainRepl(cmd.Cmd):
     ##################
     # ious
     def do_ious(self: SidechainRepl, line: str) -> None:
+        """
+        Implementation of the `ious` REPL command.
+
+        Args:
+            line: The command-line arguments.
+        """
+
         def print_ious(chain: Chain, chain_name: str, nickname: Optional[str]) -> None:
             if nickname and not chain.is_asset_alias(nickname):
                 print(f"{nickname} is not part of {chain_name}'s asset aliases.")
@@ -928,15 +1180,28 @@ class SidechainRepl(cmd.Cmd):
     def complete_ious(
         self: SidechainRepl, text: str, line: str, begidx: int, endidx: int
     ) -> List[str]:
+        """
+        Handle autocompletion for the `ious` REPL command.
+
+        Args:
+            line: The command-line args so far.
+            text: The text to autocomplete.
+            begidx: The beginning index of the prefix text.
+            endidx: The end index of the prefix text.
+
+        Returns:
+            The list of possible auto-complete results.
+        """
         args = line.split()
         arg_num = len(args)
         if arg_num == 2:  # chain or iou
-            return self._complete_chain(text, line) + self._complete_asset(text, line)
+            return self._complete_chain(text) + self._complete_asset(text)
         if arg_num == 3:  # iou
-            return self._complete_asset(text, line, chain_name=args[1])
+            return self._complete_asset(text, chain_name=args[1])
         return []
 
     def help_ious(self: SidechainRepl) -> None:
+        """Print out a help message for the `ious` REPL command."""
         print(
             "\n".join(
                 [
@@ -955,6 +1220,12 @@ class SidechainRepl(cmd.Cmd):
     ##################
     # set_trust
     def do_set_trust(self: SidechainRepl, line: str) -> None:
+        """
+        Implementation of the `set_trust` REPL command.
+
+        Args:
+            line: The command-line arguments.
+        """
         # TODO: fix bug where REPL crashes if account isn't funded yet
         args = line.split()
         if len(args) != 4:
@@ -1002,17 +1273,30 @@ class SidechainRepl(cmd.Cmd):
     def complete_set_trust(
         self: SidechainRepl, text: str, line: str, begidx: int, endidx: int
     ) -> List[str]:
+        """
+        Handle autocompletion for the `set_trust` REPL command.
+
+        Args:
+            line: The command-line args so far.
+            text: The text to autocomplete.
+            begidx: The beginning index of the prefix text.
+            endidx: The end index of the prefix text.
+
+        Returns:
+            The list of possible auto-complete results.
+        """
         args = line.split()
         arg_num = len(args)
         if arg_num == 2:  # chain
-            return self._complete_chain(text, line)
+            return self._complete_chain(text)
         if arg_num == 3:  # iou
-            return self._complete_asset(text, line, chain_name=args[1])
+            return self._complete_asset(text, chain_name=args[1])
         if arg_num == 4:  # account
-            return self._complete_account(text, line, chain_name=args[1])
+            return self._complete_account(text, chain_name=args[1])
         return []
 
     def help_set_trust(self: SidechainRepl) -> None:
+        """Print out a help message for the `set_trust` REPL command."""
         print(
             "\n".join(
                 [
@@ -1029,6 +1313,12 @@ class SidechainRepl(cmd.Cmd):
     ##################
     # ledger_accept
     def do_ledger_accept(self: SidechainRepl, line: str) -> None:
+        """
+        Implementation of the `ledger_accept` REPL command.
+
+        Args:
+            line: The command-line arguments.
+        """
         args = line.split()
         if len(args) != 1:
             print(
@@ -1051,12 +1341,25 @@ class SidechainRepl(cmd.Cmd):
     def complete_ledger_accept(
         self: SidechainRepl, text: str, line: str, begidx: int, endidx: int
     ) -> List[str]:
+        """
+        Handle autocompletion for the `ledger_accept` REPL command.
+
+        Args:
+            line: The command-line args so far.
+            text: The text to autocomplete.
+            begidx: The beginning index of the prefix text.
+            endidx: The end index of the prefix text.
+
+        Returns:
+            The list of possible auto-complete results.
+        """
         arg_num = len(line.split())
         if arg_num == 2:  # chain
-            return self._complete_chain(text, line)
+            return self._complete_chain(text)
         return []
 
     def help_ledger_accept(self: SidechainRepl) -> None:
+        """Print out a help message for the `ledger_accept` REPL command."""
         print(
             "\n".join(
                 [
@@ -1073,6 +1376,12 @@ class SidechainRepl(cmd.Cmd):
     # server_start
 
     def do_server_start(self: SidechainRepl, line: str) -> None:
+        """
+        Implementation of the `server_start` REPL command.
+
+        Args:
+            line: The command-line arguments.
+        """
         args = line.split()
         if len(args) == 0:
             print(
@@ -1098,6 +1407,18 @@ class SidechainRepl(cmd.Cmd):
     def complete_server_start(
         self: SidechainRepl, text: str, line: str, begidx: int, endidx: int
     ) -> List[str]:
+        """
+        Handle autocompletion for the `server_start` REPL command.
+
+        Args:
+            line: The command-line args so far.
+            text: The text to autocomplete.
+            begidx: The beginning index of the prefix text.
+            endidx: The end index of the prefix text.
+
+        Returns:
+            The list of possible auto-complete results.
+        """
         running_status = self.sc_chain.get_running_status()
         if "all".startswith(text):
             return ["all"]
@@ -1108,6 +1429,7 @@ class SidechainRepl(cmd.Cmd):
         ]
 
     def help_server_start(self: SidechainRepl) -> None:
+        """Print out a help message for the `server_start` REPL command."""
         print(
             "\n".join(
                 [
@@ -1124,6 +1446,12 @@ class SidechainRepl(cmd.Cmd):
     # server_stop
 
     def do_server_stop(self: SidechainRepl, line: str) -> None:
+        """
+        Implementation of the `server_stop` REPL command.
+
+        Args:
+            line: The command-line arguments.
+        """
         args = line.split()
         if len(args) == 0:
             print(
@@ -1149,6 +1477,18 @@ class SidechainRepl(cmd.Cmd):
     def complete_server_stop(
         self: SidechainRepl, text: str, line: str, begidx: int, endidx: int
     ) -> List[str]:
+        """
+        Handle autocompletion for the `server_stop` REPL command.
+
+        Args:
+            line: The command-line args so far.
+            text: The text to autocomplete.
+            begidx: The beginning index of the prefix text.
+            endidx: The end index of the prefix text.
+
+        Returns:
+            The list of possible auto-complete results.
+        """
         running_status = self.sc_chain.get_running_status()
         if "all".startswith(text):
             return ["all"]
@@ -1159,6 +1499,7 @@ class SidechainRepl(cmd.Cmd):
         ]
 
     def help_server_stop(self: SidechainRepl) -> None:
+        """Print out a help message for the `server_stop` REPL command."""
         print(
             "\n".join(
                 [
@@ -1175,6 +1516,12 @@ class SidechainRepl(cmd.Cmd):
     # setup_accounts
 
     def do_setup_accounts(self: SidechainRepl, line: str) -> None:
+        """
+        Implementation of the `setup_accounts` REPL command.
+
+        Args:
+            line: The command-line arguments.
+        """
         set_up_accounts(self.mc_chain, self.sc_chain)
 
     # setup_accounts
@@ -1184,7 +1531,13 @@ class SidechainRepl(cmd.Cmd):
     # setup_ious
 
     def do_setup_ious(self: SidechainRepl, line: str) -> None:
-        return set_up_ious(self.mc_chain, self.sc_chain)
+        """
+        Implementation of the `setup_ious` REPL command.
+
+        Args:
+            line: The command-line arguments.
+        """
+        set_up_ious(self.mc_chain, self.sc_chain)
 
     # setup_ious
     ##################
@@ -1193,6 +1546,12 @@ class SidechainRepl(cmd.Cmd):
     # account_tx
 
     def do_account_tx(self: SidechainRepl, line: str) -> None:
+        """
+        Implementation of the `account_tx` REPL command.
+
+        Args:
+            line: The command-line arguments.
+        """
         args = line.split()
         if len(args) < 2:
             print(
@@ -1235,17 +1594,30 @@ class SidechainRepl(cmd.Cmd):
     def complete_account_tx(
         self: SidechainRepl, text: str, line: str, begidx: int, endidx: int
     ) -> List[str]:
+        """
+        Handle autocompletion for the `account_tx` REPL command.
+
+        Args:
+            line: The command-line args so far.
+            text: The text to autocomplete.
+            begidx: The beginning index of the prefix text.
+            endidx: The end index of the prefix text.
+
+        Returns:
+            The list of possible auto-complete results.
+        """
         args = line.split()
         arg_num = len(args)
         if not text:
             arg_num += 1
         if arg_num == 2:  # chain
-            return self._complete_chain(text, line)
+            return self._complete_chain(text)
         if arg_num == 3:  # account
-            return self._complete_account(text, line, chain_name=args[1])
+            return self._complete_account(text, chain_name=args[1])
         return []
 
     def help_account_tx(self: SidechainRepl) -> None:
+        """Print out a help message for the `account_tx` REPL command."""
         print(
             "\n".join(
                 [
@@ -1261,10 +1633,20 @@ class SidechainRepl(cmd.Cmd):
     ##################
     # quit
     def do_quit(self: SidechainRepl, line: str) -> bool:
+        """
+        Implementation of the `quit` REPL command.
+
+        Args:
+            line: The command-line arguments.
+
+        Returns:
+            True, so that the REPL closes.
+        """
         print("Thank you for using the sidechain shell. Goodbye.\n\n")
         return True
 
     def help_quit(self: SidechainRepl) -> None:
+        """Print out a help message for the `quit` REPL command."""
         print("Exit the program.")
 
     # quit
@@ -1274,10 +1656,20 @@ class SidechainRepl(cmd.Cmd):
     # q
 
     def do_q(self: SidechainRepl, line: str) -> bool:
+        """
+        Implementation of the `q` REPL command.
+
+        Args:
+            line: The command-line arguments.
+
+        Returns:
+            True, so that the REPL closes.
+        """
         return self.do_quit(line)
 
     def help_q(self: SidechainRepl) -> None:
-        return self.help_quit()
+        """Print out a help message for the `q` REPL command."""
+        self.help_quit()
 
     # q
     ##################
@@ -1285,9 +1677,19 @@ class SidechainRepl(cmd.Cmd):
     ##################
     # EOF
     def do_EOF(self: SidechainRepl, line: str) -> bool:
+        """
+        Implementation of what happens when the user types ctrl-d.
+
+        Args:
+            line: The command-line arguments.
+
+        Returns:
+            True, so that the REPL closes.
+        """
         return self.do_quit(line)
 
     def help_EOF(self: SidechainRepl) -> None:
+        """Print out a help message for when the user types ctrl-d."""
         print("Exit the program by typing control-d.")
 
     # EOF
@@ -1295,4 +1697,11 @@ class SidechainRepl(cmd.Cmd):
 
 
 def start_repl(mc_chain: Chain, sc_chain: Chain) -> None:
+    """
+    Start the REPL.
+
+    Args:
+        mc_chain: The mainchain of the network.
+        sc_chain: The sidechain of the network.
+    """
     SidechainRepl(mc_chain, sc_chain).cmdloop()

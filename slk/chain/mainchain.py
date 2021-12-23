@@ -1,3 +1,5 @@
+"""Representation of a standalone mainchain."""
+
 from __future__ import annotations
 
 import os
@@ -12,7 +14,7 @@ from slk.classes.config_file import ConfigFile
 
 
 class Mainchain(Chain):
-    """Representation of a mainchain."""
+    """Representation of a standalone mainchain."""
 
     def __init__(
         self: Mainchain,
@@ -23,6 +25,16 @@ class Mainchain(Chain):
         run_server: bool = False,
         server_out: str = os.devnull,
     ) -> None:
+        """
+        Initializes a mainchain.
+
+        Args:
+            exe: The location of the rippled exe to run in standalone mode.
+            config: The config file associated with this chain.
+            command_log: The location of the log file.
+            run_server: Whether to start the server.
+            server_out: The file location for server output.
+        """
         node = Node(config=config, command_log=command_log, exe=exe, name="mainchain")
 
         self.server_running = False
@@ -34,27 +46,64 @@ class Mainchain(Chain):
 
     @property
     def standalone(self: Mainchain) -> bool:
+        """
+        Return whether the chain is in standalone mode.
+
+        Returns:
+            True when the chain is in standalone mode, and False otherwise. The
+            standalone mainchain is by definition in standalone mode, so this returns
+            True.
+        """
         return True
 
     def get_pids(self: Mainchain) -> List[int]:
+        """
+        Return a list of process IDs for the nodes in the chain.
+
+        Returns:
+            A list of process IDs for the nodes in the chain.
+        """
         if pid := self.node.get_pid():
             return [pid]
         return []
 
     def get_node(self: Mainchain, i: Optional[int] = None) -> Node:
+        """
+        Get a specific node from the chain.
+
+        Args:
+            i: The index of the node to return. For a standalone mainchain, this must
+                be None.
+
+        Returns:
+            The node for the chain.
+        """
         assert i is None
         return self.node
 
     def get_configs(self: Mainchain) -> List[ConfigFile]:
+        """
+        Get a list of all the config files for the nodes in the chain.
+
+        Returns:
+            A list of all the config files for the nodes in the chain.
+        """
         return [self.node.config]
 
     def get_running_status(self: Mainchain) -> List[bool]:
+        """
+        Return whether the chain is up and running.
+
+        Returns:
+            A list of the running statuses of the nodes in the chain.
+        """
         if self.node.get_pid():
             return [True]
         else:
             return [False]
 
     def shutdown(self: Mainchain) -> None:
+        """Shut down the chain."""
         self.node.shutdown()
         self.servers_stop()
 
@@ -64,6 +113,17 @@ class Mainchain(Chain):
         server_indexes: Optional[Union[Set[int], List[int]]] = None,
         server_out: str = os.devnull,
     ) -> None:
+        """
+        Start the servers for the chain.
+
+        Args:
+            server_indexes: The server indexes to start. The default is `None`, which
+                starts all the servers in the chain.
+            server_out: Where to output the results.
+
+        Raises:
+            Exception: If the server takes too long to start.
+        """
         if server_indexes is not None:
             raise Exception("Mainchain does not have server indexes.")
 
@@ -86,14 +146,31 @@ class Mainchain(Chain):
     def servers_stop(
         self: Mainchain, server_indexes: Optional[Union[Set[int], List[int]]] = None
     ) -> None:
+        """
+        Stop the servers for the chain.
+
+        Args:
+            server_indexes: The server indexes to start. The default is `None`, which
+                starts all the servers in the chain.
+
+        Raises:
+            Exception: if server_indexes is passed in.
+        """
         if server_indexes is not None:
             raise Exception("Mainchain does not have server indexes.")
         if self.server_running:
             self.node.stop_server()
             self.server_running = False
 
-    # Get a dict of the server_state, validated_ledger_seq, and complete_ledgers
     def get_brief_server_info(self: Mainchain) -> Dict[str, List[Any]]:
+        """
+        Get a dictionary of the server_state, validated_ledger_seq, and
+        complete_ledgers for all the nodes in the chain.
+
+        Returns:
+            A dictionary of the server_state, validated_ledger_seq, and
+            complete_ledgers for all the nodes in the chain.
+        """
         ret = {}
         for (k, v) in self.node.get_brief_server_info().items():
             ret[k] = [v]
@@ -102,6 +179,16 @@ class Mainchain(Chain):
     def federator_info(
         self: Mainchain, server_indexes: Optional[Union[Set[int], List[int]]] = None
     ) -> Dict[int, Dict[str, Any]]:
+        """
+        Get the federator info of the servers.
+
+        Args:
+            server_indexes: The servers to query for their federator info. If None,
+                treat as a wildcard. The default is None.
+
+        Returns:
+            The federator info of the servers.
+        """
         # key is server index. value is federator_info result
         result_dict = {}
         # TODO: do this more elegantly

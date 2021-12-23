@@ -1,4 +1,4 @@
-#!/usr/bin/env python3
+"""Python script to convert log files to JSON."""
 from __future__ import annotations
 
 import argparse
@@ -9,6 +9,8 @@ from slk.utils.eprint import eprint
 
 
 class LogLine:
+    """A computer-readable representation of a line in a log file."""
+
     UNSTRUCTURED_RE = re.compile(
         r"""(?x)
                 # The x flag enables insignificant whitespace mode (allowing comments)
@@ -34,6 +36,12 @@ class LogLine:
     )
 
     def __init__(self: LogLine, line: str) -> None:
+        """
+        Initialize a log line.
+
+        Args:
+            line: the text of the log line.
+        """
         self.raw_line = line
         self.json_data = None
 
@@ -55,7 +63,12 @@ class LogLine:
             eprint(f"init exception: {e} line: {line}")
 
     def to_mixed_json(self: LogLine) -> str:
-        """return a pretty printed string as mixed json"""
+        """
+        Return a pretty-printed string as mixed JSON.
+
+        Returns:
+            A string of mixed JSON.
+        """
         try:
             r = f"{self.timestamp} {self.module}:{self.level} {self.msg}"
             if self.json_data:
@@ -66,7 +79,12 @@ class LogLine:
             return self.raw_line
 
     def to_pure_json(self: LogLine) -> str:
-        """return a pretty printed string as pure json"""
+        """
+        Return a pretty-printed string as pure JSON.
+
+        Returns:
+            A string of pure JSON.
+        """
         try:
             dict = {}
             dict["t"] = self.timestamp
@@ -83,6 +101,18 @@ class LogLine:
 def convert_log(
     in_file_name: str, out_file_name: str, *, pure_json: bool = False
 ) -> None:
+    """
+    Convert a log file to JSON and dump the result in another file.
+
+    Args:
+        in_file_name: The log file to convert.
+        out_file_name: The file to dump the result in.
+        pure_json: Whether it should be pure JSON or only half (some log info is still
+            raw).
+
+    Raises:
+        Exception: if something goes wrong (?).
+    """
     try:
         prev_lines = None
         with open(in_file_name) as input:
@@ -117,9 +147,9 @@ def convert_log(
         raise e
 
 
-def parse_args() -> argparse.Namespace:
+def _parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(
-        description=("python script to convert log files to json")
+        description=("Python script to convert log files to JSON.")
     )
 
     parser.add_argument(
@@ -138,5 +168,5 @@ def parse_args() -> argparse.Namespace:
 
 
 if __name__ == "__main__":
-    args = parse_args()
+    args = _parse_args()
     convert_log(args.input, args.output, pure_json=True)

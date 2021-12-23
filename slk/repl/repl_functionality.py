@@ -1,3 +1,5 @@
+"""Helper methods for the REPL that involve interacting with the Ledger."""
+
 import os
 import time
 from typing import Any, Dict, List, Optional, Tuple, cast
@@ -19,6 +21,17 @@ def _removesuffix(phrase: str, suffix: str) -> str:
 def get_account_info(
     chains: List[Chain], chain_names: List[str], account_ids: List[Optional[Account]]
 ) -> List[Dict[str, Any]]:
+    """
+    Get the account info for a set of chains and account IDs.
+
+    Args:
+        chains: A list of the chains to search.
+        chain_names: The names of the chains.
+        account_ids: The account IDs to search.
+
+    Returns:
+        The account info of the accounts.
+    """
     results: List[Dict[str, Any]] = []
     for chain, chain_name, acc in zip(chains, chain_names, account_ids):
         result = chain.get_account_info(acc)
@@ -36,8 +49,18 @@ def get_account_info(
 def get_server_info(
     chains: List[Chain], chain_names: List[str]
 ) -> List[Dict[str, Any]]:
+    """
+    Get the server info for a set of chains.
+
+    Args:
+        chains: A list of the chains to search.
+        chain_names: The names of the chains.
+
+    Returns:
+        The server info of the node(s) in the chain(s).
+    """
     # TODO: handle external networks better
-    def data_dict(chain: Chain, chain_name: str) -> Dict[str, Any]:
+    def _data_dict(chain: Chain, chain_name: str) -> Dict[str, Any]:
         # get the server_info data for a specific chain
         # TODO: refactor get_brief_server_info to make this method less clunky
         filenames = [c.get_file_name() for c in chain.get_configs()]
@@ -56,10 +79,10 @@ def get_server_info(
         data.update(bsi)
         return data
 
-    def result_from_dicts(
+    # Combine the info from the chains, refactor dict for tabulate.
+    def _result_from_dicts(
         d1: Dict[str, Any], d2: Optional[Dict[str, Any]] = None
     ) -> List[Dict[str, Any]]:
-        # combine the info from the chains, refactor dict for tabulate
         data = []
         for i in range(len(d1["node"])):
             new_dict = {key: d1[key][i] for key in d1}
@@ -77,15 +100,27 @@ def get_server_info(
         return data
 
     data_dicts = [
-        data_dict(chain, _removesuffix(name, "chain"))
+        _data_dict(chain, _removesuffix(name, "chain"))
         for chain, name in zip(chains, chain_names)
     ]
-    return result_from_dicts(*data_dicts)
+    return _result_from_dicts(*data_dicts)
 
 
 def get_federator_info(
     info_dict: Dict[int, Dict[str, Any]], verbose: bool = False
 ) -> Tuple[List[Dict[str, Any]], List[Dict[str, Any]]]:
+    """
+    Parse the federator info from a chain.
+
+    Args:
+        info_dict: The raw federator_info data.
+        verbose: Whether to gather all the details or be more succinct. The default is
+            false.
+
+    Returns:
+        The federator info of the node(s) in the chain(s).
+    """
+
     def get_fed_info_table(
         info_dict: Dict[int, Dict[str, Any]]
     ) -> List[Dict[str, Any]]:
@@ -148,6 +183,14 @@ def get_federator_info(
 
 
 def set_up_ious(mc_chain: Chain, sc_chain: Chain) -> None:
+    """
+    Set up some initial IOUs and balances on the chains.
+
+    Args:
+        mc_chain: The mainchain.
+        sc_chain: The sidechain.
+    """
+    # TODO: refactor all of these to use `alias_to_account_id`
     mc_asset = IssuedCurrency(
         currency="USD", issuer=mc_chain.account_from_alias("root").account_id
     )
@@ -208,6 +251,13 @@ def set_up_ious(mc_chain: Chain, sc_chain: Chain) -> None:
 
 
 def set_up_accounts(mc_chain: Chain, sc_chain: Chain) -> None:
+    """
+    Set up some initial accounts and balances on the chains.
+
+    Args:
+        mc_chain: The mainchain.
+        sc_chain: The sidechain.
+    """
     for a in ["alice", "bob"]:
         mc_chain.create_account(a)
     for a in ["brad", "carol"]:
@@ -228,6 +278,19 @@ def get_balances_data(
     assets: Optional[List[List[Currency]]] = None,
     in_drops: bool = False,
 ) -> List[Dict[str, Any]]:
+    """
+    Get the balance info for a set of chains and account IDs in a set of assets.
+
+    Args:
+        chains: A list of the chains to search.
+        chain_names: The names of the chains.
+        account_ids: The account IDs to search.
+        assets: The list of assets to get information on.
+        in_drops: Whether to return the value in drops (or in XRP).
+
+    Returns:
+        The balances of the account(s) in the provided asset(s).
+    """
     if account_ids is None:
         account_ids = [None] * len(chains)
 
