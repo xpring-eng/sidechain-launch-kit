@@ -59,7 +59,6 @@ def setup_mainchain(
 
     door_acct = params.mc_door_account.account_id
 
-    mc_chain.node.client.open()
     # Create and fund the mc door account
     if params.main_standalone:
         mc_chain.send_signed(
