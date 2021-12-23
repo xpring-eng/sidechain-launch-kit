@@ -26,7 +26,6 @@ class ExternalNode(Node):
         self.websocket_uri = f"{protocol}://{ip}:{port}"
         self.ip = ip
         self.port = port
-        self.client = WebsocketClient(url=self.websocket_uri)
         self.name = self.websocket_uri
 
     @property

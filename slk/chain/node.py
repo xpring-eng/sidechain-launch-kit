@@ -30,7 +30,6 @@ class Node:
         self.ip = section.ip
         self.port = int(section.port)
         self.name = name
-        self.client = WebsocketClient(url=self.websocket_uri)
         self.config = config
         self.exe = exe
         self.command_log = command_log
@@ -45,7 +44,7 @@ class Node:
         return self.config.get_file_name()
 
     def shutdown(self: Node) -> None:
-        self.client.close()
+        pass
 
     @property
     def running(self: Node) -> bool:
