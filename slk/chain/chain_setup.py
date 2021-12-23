@@ -1,4 +1,5 @@
 from xrpl.account import does_account_exist
+from xrpl.clients import WebsocketClient
 from xrpl.models import (
     AccountSet,
     AccountSetFlag,
@@ -37,9 +38,9 @@ def setup_mainchain(
         issuer = Account.from_seed("issuer", params.issuer)
         mc_chain.add_to_keymanager(issuer)
 
-        mc_chain.node.client.open()
-        if not does_account_exist(issuer.account_id, mc_chain.node.client):
-            raise Exception(f"Account {issuer} needs to be funded to exist.")
+        with WebsocketClient(mc_chain.node.websocket_uri) as mc_client:
+            if not does_account_exist(issuer.account_id, mc_client):
+                raise Exception(f"Account {issuer} needs to be funded to exist.")
 
     # Allow rippling through the IOU issuer account
     mc_chain.send_signed(
@@ -61,14 +62,12 @@ def setup_mainchain(
         )
         mc_chain.maybe_ledger_accept()
     else:
-        mc_chain.node.client.open()
-        if not does_account_exist(
-            params.mc_door_account.account_id, mc_chain.node.client
-        ):
-            raise Exception(
-                f"Account {params.mc_door_account.account_id} needs to be funded to "
-                "exist."
-            )
+        with WebsocketClient(mc_chain.node.websocket_uri) as mc_client:
+            if not does_account_exist(params.mc_door_account.account_id, mc_client):
+                raise Exception(
+                    f"Account {params.mc_door_account.account_id} needs to be funded "
+                    "to exist."
+                )
 
     # TODO: set up cross-chain ious
     # Create a trust line so USD/root account ious can be sent cross chain
