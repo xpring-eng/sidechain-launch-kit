@@ -5,7 +5,9 @@ from contextlib import contextmanager
 from typing import Optional
 
 from tabulate import tabulate
+from xrpl.clients import JsonRpcClient
 from xrpl.models import XRP, AccountTx, Amount, IssuedCurrencyAmount
+from xrpl.wallet import Wallet, generate_faucet_wallet
 
 from slk.chain.chain import Chain
 from slk.classes.account import Account
@@ -84,6 +86,14 @@ test_context_verbose_logging = False
 def set_test_context_verbose_logging(new_val: bool) -> None:
     global test_context_verbose_logging
     test_context_verbose_logging = new_val
+
+
+def generate_mainchain_account(url: str, wallet: Wallet) -> None:
+    if "34.83.125.234" in url:  # devnet
+        new_client = JsonRpcClient("https://s.devnet.rippletest.net:51234")
+        generate_faucet_wallet(new_client, wallet)
+    else:
+        raise Exception(f"Unknown mainnet: {url}")
 
 
 @contextmanager

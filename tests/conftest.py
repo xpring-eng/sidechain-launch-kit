@@ -2,9 +2,11 @@ from typing import Optional
 
 import pytest
 from xrpl.models import XRP, IssuedCurrency
+from xrpl.wallet import Wallet
 
 import slk.create_config_files as create_config_files
 from slk.sidechain_params import _parse_args_helper
+from tests.utils import generate_mainchain_account
 
 """
 Sidechains uses argparse.ArgumentParser to add command line options.
@@ -63,6 +65,13 @@ def configs_dirs_dict(tmp_path):
         _config_dirs = {}
         for ratio in (1, 2):
             params.configs_dir = str(tmp_path / f"test_config_files_{ratio}")
+
+            if not params.standalone:
+                # set up new door seed
+                wallet = Wallet.create()
+                generate_mainchain_account(params.mainnet_url, wallet)
+                params.door_seed = wallet.seed
+
             create_config_files.create_config_files(
                 params, _xchain_assets(ratio, params.issuer)
             )
