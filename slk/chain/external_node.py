@@ -42,8 +42,6 @@ class ExternalNode(Node):
     def sign_and_submit(
         self: ExternalNode, txn: Transaction, wallet: Wallet
     ) -> Dict[str, Any]:
-        if not self.client.is_open():
-            self.client.open()
         autofilled = safe_sign_and_autofill_transaction(txn, wallet, self.client)
         return send_reliable_submission(autofilled, self.client).result
 

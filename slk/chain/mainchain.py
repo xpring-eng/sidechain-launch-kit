@@ -81,6 +81,8 @@ class Mainchain(Chain):
                 raise Exception("Timeout: server took too long to start.")
             time.sleep(0.5)
 
+        self.node.client.open()
+
     def servers_stop(
         self: Mainchain, server_indexes: Optional[Union[Set[int], List[int]]] = None
     ) -> None:

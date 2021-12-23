@@ -19,6 +19,7 @@ class ExternalChain(Chain):
     ) -> None:
         pass
         super().__init__(ExternalNode("ws", url, port), add_root=False)
+        self.node.client.open()
 
     @property
     def standalone(self: ExternalChain) -> bool:
