@@ -94,7 +94,8 @@ class Sidechain(Chain):
         Return whether the chain is in standalone mode.
 
         Returns:
-            False, because this chain is not in standalone mode.
+            True when the chain is in standalone mode, and False otherwise. A sidechain
+            is by definition not in standalone, so it returns False.
         """
         return False
 

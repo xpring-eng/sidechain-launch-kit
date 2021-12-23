@@ -34,7 +34,8 @@ class ExternalChain(Chain):
         Return whether the chain is in standalone mode.
 
         Returns:
-            False, because this chain is not in standalone mode.
+            True when the chain is in standalone mode, and False otherwise. An external
+            chain is by definition not in standalone, so it returns False.
         """
         return False
 
@@ -77,7 +78,9 @@ class ExternalChain(Chain):
         Return whether the chain is up and running.
 
         Returns:
-            [True], because the chain is already up and running.
+            A list of booleans where each element is True if the node is already up and
+            running, and false otherwise. An external chain is by definition already up
+            and running, so this method returns [True].
         """
         return [True]
 
@@ -138,7 +141,7 @@ class ExternalChain(Chain):
         self: ExternalChain, server_indexes: Optional[Union[Set[int], List[int]]] = None
     ) -> Dict[int, Dict[str, Any]]:
         """
-        Get the federator info of the servers.
+        Get the federator info from the specified servers.
 
         Args:
             server_indexes: The servers to query for their federator info. If None,

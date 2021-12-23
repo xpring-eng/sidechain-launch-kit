@@ -84,7 +84,7 @@ class XChainAsset:
         side_refund_penalty: str,
     ) -> None:
         """
-        Initialize an XChainAsset.
+        Initialize a cross-chain asset (XChainAsset).
 
         Args:
             main_asset: Mainchain asset.

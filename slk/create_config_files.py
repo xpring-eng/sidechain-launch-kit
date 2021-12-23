@@ -194,7 +194,8 @@ def create_config_files(
 
     Args:
         params: The command-line params provided to this method.
-        xchain_assets: The cross-chain assets to allow to cross the network.
+        xchain_assets: The cross-chain assets that are allowed to cross the network
+            bridge.
     """
     index = 0
     if params.standalone:

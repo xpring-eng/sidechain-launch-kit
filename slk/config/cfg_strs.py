@@ -37,9 +37,9 @@ def get_ips_stanza(
     These are [ips_fixed] and [ips].
 
     Args:
-        fixed_ips: The ips for the sidechain network.
+        fixed_ips: The IPs for the sidechain network.
         peer_port: The peer port of the node whose config file this is.
-        main_net: Whether this is on the mainnet (or testnet). #TODO: not sure if needed
+        main_net: Whether this is on the mainnet (or testnet).
 
     Returns:
         The `[ips]` and `[ips_fixed]` stanzas for `rippled.cfg`.
@@ -56,6 +56,7 @@ def get_ips_stanza(
     else:
         ips_stanza = "# Where to find some other servers speaking Ripple protocol.\n"
         ips_stanza += "[ips]\n"
+        # TODO: not sure if the `main_net` part is needed
         if main_net:
             ips_stanza += "r.ripple.com 51235\n"
         else:

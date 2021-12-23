@@ -32,7 +32,7 @@ class KeyManager:
         Determine whether an account name is a known account.
 
         Args:
-            name: The nickname to check.
+            name: The account nickname to check.
 
         Returns:
             Whether the name is an account in the key manager.

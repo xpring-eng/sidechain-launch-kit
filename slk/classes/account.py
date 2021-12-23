@@ -9,7 +9,7 @@ from xrpl.wallet import Wallet
 
 
 class Account:
-    """Representation of an account in the XRPL"""
+    """Representation of an account in the XRPL."""
 
     def __init__(self: Account, *, account_id: str, nickname: str, seed: str) -> None:
         """
@@ -72,8 +72,8 @@ class Account:
         """
         Returns whether an Account and something else are equal.
 
-        Accounts are equal if they represent the same account on the ledger
-        I.e. only check the account_id field for equality.
+        Accounts are equal if they represent the same account on the ledger,
+        i.e. only check the account_id field for equality.
 
         Args:
             lhs: The object with which to compare for equality.
@@ -113,7 +113,7 @@ class Account:
 
     def account_id_str_as_hex(self: Account) -> str:
         """
-        Get the account ID in hex (for xchain payments).
+        Get the account ID in hex (for cross-chain payments).
 
         Returns:
             The account ID in hex form.

@@ -218,7 +218,7 @@ class SidechainRepl(cmd.Cmd):
         Helper method to get the chain arg.
 
         Args:
-            chain_arg: The name of the chain to get.
+            chain_arg: The name of the chain to fetch.
 
         Returns:
             The chain that corresponds to the chain name.

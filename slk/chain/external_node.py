@@ -46,7 +46,7 @@ class ExternalNode(Node):
     @property
     def config_file_name(self: ExternalNode) -> str:
         """
-        Get the file name/location for the config file that this node is using.
+        Get the file name/location for the config file that the specified node is using.
 
         Raises:
             Exception: The config file doesn't exist for an external node.
@@ -55,10 +55,11 @@ class ExternalNode(Node):
 
     def get_pid(self: ExternalNode) -> Optional[int]:
         """
-        Get the process id for the server the node is running.
+        Get the process id for the server running on the specified node.
 
         Raises:
-            Exception: The PID doesn't exist for an external node.
+            Exception: The PID doesn't exist for an external node, since it is not
+                running on this machine.
         """
         raise Exception("No pid for an external node")
 
@@ -79,7 +80,7 @@ class ExternalNode(Node):
 
         Args:
             txn: The transaction to send.
-            wallet: The wallet to use to sign the transaction.
+            wallet: The wallet to be used to sign the transaction.
 
         Returns:
             The result from the server for the transaction's submission.

@@ -38,12 +38,12 @@ class Chain(ABC):
         """
         Initializes a chain.
 
-        Note: Do not use this __init__, only use it with Chain.
+        Note: Do not use this __init__, only use it with the child classes.
 
         Args:
             node: The node to use with this chain.
-            add_root: Whether the root account should be added to the key manager. The
-                default is True.
+            add_root: Specifies if the root account should be added to the key manager.
+                The default is True.
         """
         self.node = node
         self.key_manager = KeyManager()
@@ -78,7 +78,7 @@ class Chain(ABC):
 
     @abstractmethod
     def get_configs(self: Chain) -> List[ConfigFile]:
-        """Get a list of all the config files for the nodes in the chain."""
+        """List all config files for the nodes in the chain."""
         pass
 
     @abstractmethod
@@ -99,7 +99,7 @@ class Chain(ABC):
         server_out: str = os.devnull,
     ) -> None:
         """
-        Start the servers for the chain.
+        Start the servers specified by `server_indexes` for the chain.
 
         Args:
             server_indexes: The server indexes to start. The default is `None`, which
@@ -113,7 +113,7 @@ class Chain(ABC):
         self: Chain, server_indexes: Optional[Union[Set[int], List[int]]] = None
     ) -> None:
         """
-        Stop the servers for the chain.
+        Stop the servers specified by `server_indexes` for the chain.
 
         Args:
             server_indexes: The server indexes to start. The default is `None`, which
@@ -125,16 +125,16 @@ class Chain(ABC):
 
     def send_signed(self: Chain, txn: Transaction) -> Dict[str, Any]:
         """
-        Sign then send the given transaction.
+        Sign and then send the given transaction.
 
         Args:
             txn: The transaction to sign and submit.
 
         Returns:
-            The result of the submit request.
+            The result of the submitted transaction.
 
         Raises:
-            ValueError: If the txn's account is not a known account.
+            ValueError: If the transaction's account is not a known account.
         """
         if not self.key_manager.is_account(txn.account):
             raise ValueError(f"Account {txn.account} not a known account in chain.")
@@ -183,12 +183,12 @@ class Chain(ABC):
         self: Chain, account: Optional[Account] = None
     ) -> List[Dict[str, Any]]:
         """
-        Return a dictionary of account info. If account is None, treat as a
-        wildcard (use address book)
+        Return a dictionary of account info. If account is None, use the address book
+        to return information about all accounts.
 
         Args:
-            account: The account to get info about. If None, will return information
-                about all accounts in the chain. The default is None.
+            account: The account to get information about. If None, will return
+                information about all accounts in the chain. The default is None.
 
         Returns:
             A list of the results for the accounts.
@@ -251,7 +251,7 @@ class Chain(ABC):
                 treat as a wildcard. The default is None.
 
         Returns:
-            A list of dicts of account balances.
+            A list of dictionaries of account balances.
         """
         if account is None:
             account = self.key_manager.known_accounts()
@@ -323,7 +323,7 @@ class Chain(ABC):
         self: Chain, account: Account, peer: Optional[Account] = None
     ) -> List[Dict[str, Any]]:
         """
-        Get all the trustlines for an account.
+        Get all trustlines for the specified account.
 
         Args:
             account: The account to query for the trustlines.
@@ -376,7 +376,7 @@ class Chain(ABC):
 
     def create_account(self: Chain, name: str) -> Account:
         """
-        Create an account for an alias.
+        Create an account for the specified alias.
 
         Args:
             name: The alias to use for the account.
@@ -408,7 +408,7 @@ class Chain(ABC):
 
     def add_to_keymanager(self: Chain, account: Account) -> None:
         """
-        Add an account to the known accounts on the chain.
+        Add an account to the bank of known accounts on the chain.
 
         Args:
             account: Account to add to the key manager.
@@ -483,7 +483,7 @@ class Chain(ABC):
         Add an asset to the known assets on the chain.
 
         Args:
-            asset: Token to add.
+            asset: The token to add.
             name: The alias to use for the token.
         """
         self.asset_aliases.add(asset, name)

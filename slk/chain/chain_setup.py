@@ -31,8 +31,8 @@ def setup_mainchain(
     Args:
         mc_chain: The mainchain.
         params: The command-line arguments for setup.
-        setup_user_accounts: Whether to create + fund a user account. The default is
-            True.
+        setup_user_accounts: Whether to create and fund a user account and add it to
+            the list of known accounts under the name "alice". The default is True.
 
     Raises:
         Exception: If the issuer on an external network doesn't exist.
@@ -166,8 +166,8 @@ def setup_sidechain(
     Args:
         sc_chain: The sidechain.
         params: The command-line arguments for setup.
-        setup_user_accounts: Whether to create + fund a user account. The default is
-            True.
+        setup_user_accounts: Whether to create and fund a user account and add it to
+            the list of known accounts under the name "alice". The default is True.
     """
     sc_chain.add_to_keymanager(params.sc_door_account)
     if setup_user_accounts:

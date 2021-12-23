@@ -77,8 +77,8 @@ class AssetAliases:
         Return a string representation of the assets.
 
         Args:
-            nickname: The token to get information about. If None, returns a string
-                with all of the tokens' information. The default is None.
+            nickname: Nickname of the token to get information about. The default is
+                None. When set to None, returns a string with information of all tokens.
 
         Returns:
             A string representation of the token(s).

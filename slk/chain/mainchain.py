@@ -50,7 +50,9 @@ class Mainchain(Chain):
         Return whether the chain is in standalone mode.
 
         Returns:
-            True, because this chain is in standalone mode.
+            True when the chain is in standalone mode, and False otherwise. The
+            standalone mainchain is by definition in standalone mode, so this returns
+            True.
         """
         return True
 
@@ -165,7 +167,7 @@ class Mainchain(Chain):
 
         Returns:
             A dictionary of the server_state, validated_ledger_seq, and
-            complete_ledgers for all the nodes in the chain
+            complete_ledgers for all the nodes in the chain.
         """
         ret = {}
         for (k, v) in self.node.get_brief_server_info().items():

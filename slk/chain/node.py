@@ -72,16 +72,16 @@ class Node:
         Returns whether the chain is running.
 
         Returns:
-            Whether the chain is running.
+            True if the chain is running, False otherwise.
         """
         return self.pid is not None
 
     def get_pid(self: Node) -> Optional[int]:
         """
-        Get the process id for the server the node is running.
+        Get the process id for the server running on the specified node.
 
         Returns:
-            The process id for the server the node is running.
+            The process id for the server running on the specified node.
         """
         return self.pid
 
