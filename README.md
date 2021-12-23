@@ -13,11 +13,8 @@ This section describes how to install the python dependencies, create the enviro
 ### Install the sidechain launch kit
 
 ```
-pip install sidechain-launch-kit
+pip install sidechain-launch-kit --pre
 ```
-
-<!-- TODO: remove when we publish on pip -->
-(If you're working with a pre-release version of the launch kit, you'll instead need to clone the repo locally and [install `poetry`](CONTRIBUTING.md#manage-dependencies-and-virtual-environments), and run the CLI commands in the shell that is created when you enter `poetry shell`.)
 
 ### Build rippled
 
@@ -31,6 +28,13 @@ The python scripts need to know the locations of two files and one directory. Th
 2. The location of the rippled executable used for side chain servers. Either set the environment variable `RIPPLED_SIDECHAIN_EXE` (in your system or in the `.env` file) or use the command line switch `--exe_sidechain`. This should be the rippled executable built from the sidechain branch.
 3. The location of the directory that has the rippled configuration files. Either set the environment variable `RIPPLED_SIDECHAIN_CFG_DIR` (in your system or in the `.env` file) or use the command line switch `--cfgs_dir`. The configuration files do not exist yet. There is a script to create these for you. For now, just choose a location  where the files should live and make sure that directory exists.
 4. The number of federators to have in the sidechain. This must be a number between 1 and 8. Either set the environment variable `NUM_FEDERATORS` (in your system or in the `.env` file) or use the command line switch `--num_federators`. The script that creates the config files uses this number to create the right config files for that number of federators.
+
+#### Additional environment variables for connecting to mainnet/devnet/testnet
+
+5. The IP address of a node on the mainchain. Either set the environment variable `MAINNET` (in your system or in the `.env` file) or use the command line switch `--mainnet`. This is used in both the script that creates the config files and in the script that runs the sidechain.
+6. The public Websocket port of the mainchain node. Either set the environment variable `MAINNET_PORT` (in your system or in the `.env` file) or use the command line switch `--mainnet_port`. This is used in both the script that creates the config files and in the script that runs the sidechain.
+7. The seed of the issuer of the cross-chain token. Either set the environment variable `IOU_ISSUER` (in your system or in the `.env` file) or use the command line switch `--iou_issuer`. This is used in both the script that creates the config files and in the script that runs the sidechain.
+8. The public Websocket port of the mainchain node. Either set the environment variable `DOOR_ACCOUNT_SEED` (in your system or in the `.env` file) or use the command line switch `--door_seed`. This is used in the script that creates the config files.
 
 Setting environment variables can be very convenient. For example, a small script can be sourced to set these environment variables when working with side chains.
 
