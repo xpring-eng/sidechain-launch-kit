@@ -55,17 +55,15 @@ class Node:
         return self.pid
 
     def request(self: Node, req: Request) -> Dict[str, Any]:
-        if not self.client.is_open():
-            self.client.open()
-        response = self.client.request(req)
-        if response.is_successful():
-            return response.result
-        raise Exception("failed transaction", response.result)
+        with WebsocketClient(self.websocket_uri) as client:
+            response = client.request(req)
+            if response.is_successful():
+                return response.result
+            raise Exception("failed transaction", response.result)
 
     def sign_and_submit(self: Node, txn: Transaction, wallet: Wallet) -> Dict[str, Any]:
-        if not self.client.is_open():
-            self.client.open()
-        return safe_sign_and_submit_transaction(txn, wallet, self.client).result
+        with WebsocketClient(self.websocket_uri) as client:
+            return safe_sign_and_submit_transaction(txn, wallet, client).result
 
     def start_server(
         self: Node,
@@ -147,7 +145,7 @@ class Node:
         ret = {"server_state": "NA", "ledger_seq": "NA", "complete_ledgers": "NA"}
         if not self.running:
             return ret
-        r = self.client.request(ServerInfo()).result
+        r = self.request(ServerInfo())
         if "info" not in r:
             return ret
         r = r["info"]
