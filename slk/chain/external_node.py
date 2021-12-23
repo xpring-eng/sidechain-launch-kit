@@ -85,8 +85,6 @@ class ExternalNode(Node):
         Returns:
             The result from the server for the transaction's submission.
         """
-        if not self.client.is_open():
-            self.client.open()
         autofilled = safe_sign_and_autofill_transaction(txn, wallet, self.client)
         return send_reliable_submission(autofilled, self.client).result
 

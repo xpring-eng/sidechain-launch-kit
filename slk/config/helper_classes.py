@@ -5,7 +5,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import Optional, Type
 
-from xrpl.models import Currency, IssuedCurrencyAmount
+from xrpl.models import Currency
 
 
 @dataclass
@@ -94,15 +94,7 @@ class XChainAsset:
             main_refund_penalty: ???
             side_refund_penalty: ???
         """
-        self.main_asset = IssuedCurrencyAmount.from_issued_currency(
-            main_asset, main_value
-        )
-        self.side_asset = IssuedCurrencyAmount.from_issued_currency(
-            side_asset, side_value
-        )
-        self.main_refund_penalty = IssuedCurrencyAmount.from_issued_currency(
-            main_asset, main_refund_penalty
-        )
-        self.side_refund_penalty = IssuedCurrencyAmount.from_issued_currency(
-            side_asset, side_refund_penalty
-        )
+        self.main_asset = main_asset.to_amount(main_value)
+        self.side_asset = side_asset.to_amount(side_value)
+        self.main_refund_penalty = main_asset.to_amount(main_refund_penalty)
+        self.side_refund_penalty = side_asset.to_amount(side_refund_penalty)

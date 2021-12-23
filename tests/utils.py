@@ -1,4 +1,3 @@
-import json
 import logging
 import pprint
 import time
@@ -6,36 +5,13 @@ from contextlib import contextmanager
 from typing import Optional
 
 from tabulate import tabulate
-from xrpl.models import XRP, AccountTx, Amount, IssuedCurrencyAmount, Subscribe
+from xrpl.clients import JsonRpcClient
+from xrpl.models import XRP, AccountTx, Amount, IssuedCurrencyAmount
+from xrpl.wallet import Wallet, generate_faucet_wallet
 
 from slk.chain.chain import Chain
 from slk.classes.account import Account
 from slk.repl.repl_functionality import get_balances_data
-
-MC_SUBSCRIBE_QUEUE = []
-SC_SUBSCRIBE_QUEUE = []
-
-
-def _mc_subscribe_callback(v: dict):
-    MC_SUBSCRIBE_QUEUE.append(v)
-    logging.info(f"mc subscribe_callback:\n{json.dumps(v, indent=1)}")
-
-
-def _sc_subscribe_callback(v: dict):
-    SC_SUBSCRIBE_QUEUE.append(v)
-    logging.info(f"sc subscribe_callback:\n{json.dumps(v, indent=1)}")
-
-
-def mc_connect_subscription(chain: Chain, door_account: Account):
-    chain.send_subscribe(
-        Subscribe(accounts=[door_account.account_id]), _mc_subscribe_callback
-    )
-
-
-def sc_connect_subscription(chain: Chain, door_account: Account):
-    chain.send_subscribe(
-        Subscribe(accounts=[door_account.account_id]), _sc_subscribe_callback
-    )
 
 
 def wait_for_balance_change(
@@ -47,10 +23,7 @@ def wait_for_balance_change(
     )
     for i in range(30):
         currency = XRP() if isinstance(pre_balance, str) else pre_balance
-        new_bal = IssuedCurrencyAmount.from_issued_currency(
-            currency,
-            chain.get_balance(acc, currency),
-        )
+        new_bal = currency.to_amount(chain.get_balance(acc, currency))
         diff = value_diff(new_bal, pre_balance)
         if new_bal != pre_balance:
             logging.info(
@@ -102,11 +75,7 @@ def value_diff(bigger: Amount, smaller: Amount) -> Amount:
         assert isinstance(smaller, IssuedCurrencyAmount)
         assert bigger.issuer == smaller.issuer
         assert bigger.currency == smaller.currency
-        return IssuedCurrencyAmount(
-            value=str(int(bigger.value) - int(smaller.value)),
-            issuer=bigger.issuer,
-            currency=bigger.currency,
-        )
+        return bigger.to_amount(int(bigger.value) - int(smaller.value))
 
 
 # Tests can set this to True to help debug test failures by showing account
@@ -117,6 +86,14 @@ test_context_verbose_logging = False
 def set_test_context_verbose_logging(new_val: bool) -> None:
     global test_context_verbose_logging
     test_context_verbose_logging = new_val
+
+
+def generate_mainchain_account(url: str, wallet: Wallet) -> None:
+    if "34.83.125.234" in url:  # devnet
+        new_client = JsonRpcClient("https://s.devnet.rippletest.net:51234")
+        generate_faucet_wallet(new_client, wallet)
+    else:
+        raise Exception(f"Unknown mainnet: {url}")
 
 
 @contextmanager

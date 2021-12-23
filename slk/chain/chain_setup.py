@@ -1,6 +1,7 @@
 """Helper methods for setting up chains."""
 
-from xrpl.account import does_account_exist
+from xrpl.account import does_account_exist, get_account_root
+from xrpl.clients.sync_client import SyncClient
 from xrpl.models import (
     AccountSet,
     AccountSetFlag,
@@ -20,6 +21,14 @@ from slk.sidechain_params import SidechainParams
 MAINCHAIN_DOOR_KEEPER = 0
 SIDECHAIN_DOOR_KEEPER = 1
 UPDATE_SIGNER_LIST = 2
+
+_LSF_DISABLE_MASTER = 0x00100000  # 1048576
+
+
+def _is_door_master_disabled(door_acct: str, client: SyncClient) -> bool:
+    account_root = get_account_root(door_acct, client)
+    flags = account_root["Flags"]
+    return bool(int(flags) & _LSF_DISABLE_MASTER)
 
 
 def setup_mainchain(
@@ -44,14 +53,12 @@ def setup_mainchain(
     # mc_chain.request(LogLevel('fatal'))
     # TODO: only do all this setup for external network if it hasn't already been done
 
-    # TODO: set up cross-chain ious
     if params.main_standalone:
         issuer = params.genesis_account
     else:
         issuer = Account.from_seed("issuer", params.issuer)
         mc_chain.add_to_keymanager(issuer)
 
-        mc_chain.node.client.open()
         if not does_account_exist(issuer.account_id, mc_chain.node.client):
             raise Exception(f"Account {issuer} needs to be funded to exist.")
 
@@ -64,31 +71,33 @@ def setup_mainchain(
     )
     mc_chain.maybe_ledger_accept()
 
+    door_acct = params.mc_door_account.account_id
+
     # Create and fund the mc door account
     if params.main_standalone:
         mc_chain.send_signed(
             Payment(
                 account=params.genesis_account.account_id,
-                destination=params.mc_door_account.account_id,
+                destination=door_acct,
                 amount=xrp_to_drops(1_000),
             )
         )
         mc_chain.maybe_ledger_accept()
     else:
-        mc_chain.node.client.open()
-        if not does_account_exist(
-            params.mc_door_account.account_id, mc_chain.node.client
-        ):
-            raise Exception(
-                f"Account {params.mc_door_account.account_id} needs to be funded to "
-                "exist."
-            )
+        if not does_account_exist(door_acct, mc_chain.node.client):
+            raise Exception(f"Account {door_acct} needs to be funded to exist.")
 
-    # TODO: set up cross-chain ious
+    if does_account_exist(door_acct, mc_chain.node.client) and _is_door_master_disabled(
+        door_acct, mc_chain.node.client
+    ):
+        # assumed that setup is already done
+        # TODO: check if the enabled keys are actually from these federators
+        return
+
     # Create a trust line so USD/root account ious can be sent cross chain
     mc_chain.send_signed(
         TrustSet(
-            account=params.mc_door_account.account_id,
+            account=door_acct,
             limit_amount=IssuedCurrencyAmount(
                 value=str(1_000_000),
                 currency="USD",
@@ -104,7 +113,7 @@ def setup_mainchain(
     quorum = (divide + by - 1) // by
     mc_chain.send_signed(
         SignerListSet(
-            account=params.mc_door_account.account_id,
+            account=door_acct,
             signer_quorum=quorum,
             signer_entries=[
                 SignerEntry(account=federator, signer_weight=1)
@@ -115,7 +124,7 @@ def setup_mainchain(
     mc_chain.maybe_ledger_accept()
     mc_chain.send_signed(
         TicketCreate(
-            account=params.mc_door_account.account_id,
+            account=door_acct,
             source_tag=MAINCHAIN_DOOR_KEEPER,
             ticket_count=1,
         )
@@ -123,7 +132,7 @@ def setup_mainchain(
     mc_chain.maybe_ledger_accept()
     mc_chain.send_signed(
         TicketCreate(
-            account=params.mc_door_account.account_id,
+            account=door_acct,
             source_tag=SIDECHAIN_DOOR_KEEPER,
             ticket_count=1,
         )
@@ -131,7 +140,7 @@ def setup_mainchain(
     mc_chain.maybe_ledger_accept()
     mc_chain.send_signed(
         TicketCreate(
-            account=params.mc_door_account.account_id,
+            account=door_acct,
             source_tag=UPDATE_SIGNER_LIST,
             ticket_count=1,
         )
@@ -139,7 +148,7 @@ def setup_mainchain(
     mc_chain.maybe_ledger_accept()
     mc_chain.send_signed(
         AccountSet(
-            account=params.mc_door_account.account_id,
+            account=door_acct,
             set_flag=AccountSetFlag.ASF_DISABLE_MASTER,
         )
     )

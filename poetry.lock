@@ -509,30 +509,23 @@ python-versions = ">=3.6.1"
 
 [[package]]
 name = "xrpl-py"
-version = "1.2.0"
+version = "1.3.0"
 description = "A complete Python library for interacting with the XRP ledger"
 category = "main"
 optional = false
-python-versions = "^3.7"
-develop = false
+python-versions = ">=3.7,<4.0"
 
 [package.dependencies]
-base58 = "^2.1.0"
-ECPy = "^1.2.5"
-httpx = "^0.18.1"
-typing-extensions = "^3.7.4"
-websockets = {version = ">=9.0.1 <11.0", markers = "python_version >= \"3.7\" and python_version < \"3.10\""}
-
-[package.source]
-type = "git"
-url = "https://github.com/XRPLF/xrpl-py.git"
-reference = "sidechain"
-resolved_reference = "37d1d17d747b0664d6edd13db8f58106f6bed561"
+base58 = ">=2.1.0,<3.0.0"
+ECPy = ">=1.2.5,<2.0.0"
+httpx = ">=0.18.1,<0.19.0"
+typing-extensions = ">=3.7.4,<4.0.0"
+websockets = {version = ">=9.0.1,<11.0", markers = "python_version >= \"3.7\" and python_version < \"3.10\""}
 
 [metadata]
 lock-version = "1.1"
 python-versions = ">= 3.8, < 3.10"
-content-hash = "7ec56bacdd7c7b8cd0b45189f5bdfacda827cd0658dabb652ac8294204e49d50"
+content-hash = "e143d878b2cf9e8d3483ecbd1b57ca8e64b7071f817ef56cd4a06c8f17fb92a2"
 
 [metadata.files]
 anyio = [
@@ -836,4 +829,7 @@ websockets = [
     {file = "websockets-9.1-cp39-cp39-win_amd64.whl", hash = "sha256:85db8090ba94e22d964498a47fdd933b8875a1add6ebc514c7ac8703eb97bbf0"},
     {file = "websockets-9.1.tar.gz", hash = "sha256:276d2339ebf0df4f45df453923ebd2270b87900eda5dfd4a6b0cfa15f82111c3"},
 ]
-xrpl-py = []
+xrpl-py = [
+    {file = "xrpl-py-1.3.0.tar.gz", hash = "sha256:c5bcead42070b88dfaaf053f863df2234119d9eb4444db1b3015dfa1e3ac48ab"},
+    {file = "xrpl_py-1.3.0-py3-none-any.whl", hash = "sha256:949804f08026d517335821257d2f3b5cb1fbf1c6d11521e6dac88f1f38b8c74c"},
+]

@@ -98,8 +98,6 @@ class Node:
         Raises:
             Exception: If the transaction fails.
         """
-        if not self.client.is_open():
-            self.client.open()
         response = self.client.request(req)
         if response.is_successful():
             return response.result
@@ -116,8 +114,6 @@ class Node:
         Returns:
             The result from the server for the transaction's submission.
         """
-        if not self.client.is_open():
-            self.client.open()
         return safe_sign_and_submit_transaction(txn, wallet, self.client).result
 
     def start_server(

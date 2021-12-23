@@ -9,11 +9,9 @@ import os
 import pprint
 import time
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Set, Tuple, Union, cast
+from typing import List, Optional, Set, Tuple, Union, cast
 
 from tabulate import tabulate
-
-# from slk.transaction import SetHook, Payment, Trust
 from xrpl.models import (
     XRP,
     AccountTx,
@@ -22,7 +20,6 @@ from xrpl.models import (
     IssuedCurrencyAmount,
     Memo,
     Payment,
-    Subscribe,
     TrustSet,
 )
 
@@ -610,9 +607,7 @@ class SidechainRepl(cmd.Cmd):
             amt_value *= 1_000_000
 
         if asset is not None:
-            amt: Amount = IssuedCurrencyAmount(
-                value=str(amt_value), issuer=asset.issuer, currency=asset.currency
-            )
+            amt: Amount = asset.to_amount(amt_value)
         else:
             amt = str(amt_value)
 
@@ -777,9 +772,7 @@ class SidechainRepl(cmd.Cmd):
             amt_value *= 1_000_000
 
         if asset is not None:
-            amt: Amount = IssuedCurrencyAmount(
-                value=str(amt_value), issuer=asset.issuer, currency=asset.currency
-            )
+            amt: Amount = asset.to_amount(str(amt_value))
         else:
             amt = str(amt_value)
 
@@ -1272,12 +1265,7 @@ class SidechainRepl(cmd.Cmd):
             print(f"Error: Invalid amount {amount_str}")
             return
 
-        asset = cast(
-            IssuedCurrencyAmount,
-            IssuedCurrencyAmount.from_issued_currency(
-                chain.asset_from_alias(alias), str(amount)
-            ),
-        )
+        asset = chain.asset_from_alias(alias).to_amount(amount)
         # TODO: resolve error where repl crashes if account doesn't exist
         chain.send_signed(TrustSet(account=account.account_id, limit_amount=asset))
         chain.maybe_ledger_accept()
@@ -1640,95 +1628,6 @@ class SidechainRepl(cmd.Cmd):
         )
 
     # account_tx
-    ##################
-
-    ##################
-    # subscribe
-
-    # Note: The callback isn't called until the user types a new command.
-    # TODO: Make subscribe asynchronous so the callback is called without requiring the
-    # user to type
-    # a new command.
-    def do_subscribe(self: SidechainRepl, line: str) -> None:
-        """
-        Implementation of the `subscribe` REPL command.
-
-        Args:
-            line: The command-line arguments.
-        """
-        args = line.split()
-        if len(args) != 3:
-            print(
-                'Error: subscribe command takes exactly three arguments. Type "help" '
-                "for help."
-            )
-            return
-
-        chain = self._get_chain_arg(args[0])
-        if not chain:
-            return
-        args.pop(0)
-
-        account_str = args[0]
-        args.pop(0)
-
-        out_file = args[0]
-        args.pop(0)
-
-        assert not args
-
-        if not chain.is_alias(account_str):
-            print(f"Error: The issuer {account_str} is not part of the address book.")
-            return
-
-        account = chain.account_from_alias(account_str)
-
-        def _subscribe_callback(v: Dict[str, Any]) -> None:
-            with open(out_file, "a") as f:
-                f.write(f"{json.dumps(v, indent=1)}\n")
-
-        chain.send_subscribe(
-            Subscribe(accounts=[account.account_id]), _subscribe_callback
-        )
-
-    def complete_subscribe(
-        self: SidechainRepl, text: str, line: str, begidx: int, endidx: int
-    ) -> List[str]:
-        """
-        Handle autocompletion for the `subscribe` REPL command.
-
-        Args:
-            line: The command-line args so far.
-            text: The text to autocomplete.
-            begidx: The beginning index of the prefix text.
-            endidx: The end index of the prefix text.
-
-        Returns:
-            The list of possible auto-complete results.
-        """
-        args = line.split()
-        arg_num = len(args)
-        if not text:
-            arg_num += 1
-        if arg_num == 2:  # chain
-            return self._complete_chain(text)
-        if arg_num == 3:  # account
-            return self._complete_account(text, chain_name=args[1])
-        return []
-
-    def help_subscribe(self: SidechainRepl) -> None:
-        """Print out a help message for the `subscribe` REPL command."""
-        print(
-            "\n".join(
-                [
-                    "subscribe (mainchain | sidechain) account filename",
-                    "Subscribe to the stream and write the results to filename",
-                    "Note: The file is not updated until the user types a new command",
-                ]
-            )
-        )
-
-    # subscribe
     ##################
 
     ##################

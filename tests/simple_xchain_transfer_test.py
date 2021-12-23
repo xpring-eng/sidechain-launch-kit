@@ -3,9 +3,8 @@ import time
 from multiprocessing import Process, Value
 from typing import Dict
 
-from xrpl.models import XRP, IssuedCurrency, IssuedCurrencyAmount, Payment, TrustSet
+from xrpl.models import XRP, IssuedCurrency, Payment, TrustSet
 from xrpl.utils import xrp_to_drops
-from xrpl.wallet import generate_faucet_wallet
 
 from slk.chain.chain import Chain
 from slk.chain.mainchain import Mainchain
@@ -20,8 +19,7 @@ from slk.sidechain_interaction import (
 from slk.sidechain_params import SidechainParams
 from slk.utils.eprint import disable_eprint, eprint
 from tests.utils import (
-    mc_connect_subscription,
-    sc_connect_subscription,
+    generate_mainchain_account,
     set_test_context_verbose_logging,
     tst_context,
     wait_for_balance_change,
@@ -85,31 +83,21 @@ def simple_iou_test(mc_chain: Chain, sc_chain: Chain, params: SidechainParams):
 
     # create a trust line to alice and pay her USD.root/issuer
     mc_chain.send_signed(
-        TrustSet(
-            account=alice.account_id,
-            limit_amount=IssuedCurrencyAmount.from_issued_currency(
-                mc_asset, str(1_000_000)
-            ),
-        )
+        TrustSet(account=alice.account_id, limit_amount=mc_asset.to_amount(1_000_000))
     )
     mc_chain.maybe_ledger_accept()
     mc_chain.send_signed(
         Payment(
             account=mc_chain.account_from_alias(iou_issuer).account_id,
             destination=alice.account_id,
-            amount=IssuedCurrencyAmount.from_issued_currency(mc_asset, str(10_000)),
+            amount=mc_asset.to_amount(10_000),
         )
     )
     mc_chain.maybe_ledger_accept()
 
     # create a trust line for adam
     sc_chain.send_signed(
-        TrustSet(
-            account=adam.account_id,
-            limit_amount=IssuedCurrencyAmount.from_issued_currency(
-                sc_asset, str(1_000_000)
-            ),
-        )
+        TrustSet(account=adam.account_id, limit_amount=sc_asset.to_amount(1_000_000))
     )
 
     for i in range(2):
@@ -117,13 +105,9 @@ def simple_iou_test(mc_chain: Chain, sc_chain: Chain, params: SidechainParams):
         for value in range(10, 20, 2):
             with tst_context(mc_chain, sc_chain):
                 value = str(value)
-                to_send_asset = IssuedCurrencyAmount.from_issued_currency(
-                    mc_asset, value
-                )
-                rcv_asset = IssuedCurrencyAmount.from_issued_currency(sc_asset, value)
-                pre_bal = IssuedCurrencyAmount.from_issued_currency(
-                    sc_asset, sc_chain.get_balance(adam, rcv_asset)
-                )
+                to_send_asset = mc_asset.to_amount(value)
+                rcv_asset = sc_asset.to_amount(value)
+                pre_bal = sc_asset.to_amount(sc_chain.get_balance(adam, rcv_asset))
                 main_to_side_transfer(
                     mc_chain, sc_chain, alice, adam, to_send_asset, params
                 )
@@ -134,13 +118,9 @@ def simple_iou_test(mc_chain: Chain, sc_chain: Chain, params: SidechainParams):
         for value in range(9, 19, 2):
             with tst_context(mc_chain, sc_chain):
                 value = str(value)
-                to_send_asset = IssuedCurrencyAmount.from_issued_currency(
-                    sc_asset, value
-                )
-                rcv_asset = IssuedCurrencyAmount.from_issued_currency(mc_asset, value)
-                pre_bal = IssuedCurrencyAmount.from_issued_currency(
-                    mc_asset, mc_chain.get_balance(alice, rcv_asset)
-                )
+                to_send_asset = sc_asset.to_amount(value)
+                rcv_asset = mc_asset.to_amount(value)
+                pre_bal = mc_asset.to_amount(mc_chain.get_balance(alice, rcv_asset))
                 side_to_main_transfer(
                     mc_chain, sc_chain, adam, alice, to_send_asset, params
                 )
@@ -176,8 +156,6 @@ def run(mc_chain: Chain, sc_chain: Chain, params: SidechainParams):
 
 def standalone_test(params: SidechainParams):
     def callback(mc_chain: Chain, sc_chain: Chain):
-        mc_connect_subscription(mc_chain, params.mc_door_account)
-        sc_connect_subscription(sc_chain, params.sc_door_account)
         run(mc_chain, sc_chain, params)
 
     _standalone_with_callback(params, callback, setup_user_accounts=False)
@@ -202,7 +180,7 @@ def setup_accounts(mc_chain: Chain, sc_chain: Chain, params: SidechainParams):
             )
         )
     else:
-        generate_faucet_wallet(mc_chain.node.client, alice.wallet)
+        generate_mainchain_account(mc_chain.node.websocket_uri, alice.wallet)
     mc_chain.maybe_ledger_accept()
 
     # Typical male names are addresses on the sidechain.
@@ -216,8 +194,6 @@ def setup_accounts(mc_chain: Chain, sc_chain: Chain, params: SidechainParams):
 
 def multinode_test(params: SidechainParams):
     def callback(mc_chain: Chain, sc_chain: Chain):
-        mc_connect_subscription(mc_chain, params.mc_door_account)
-        sc_connect_subscription(sc_chain, params.sc_door_account)
         run(mc_chain, sc_chain, params)
 
     _multinode_with_callback(params, callback, setup_user_accounts=False)
@@ -225,8 +201,6 @@ def multinode_test(params: SidechainParams):
 
 def external_node_test(params: SidechainParams) -> None:
     def callback(mc_chain: Chain, sc_chain: Chain):
-        mc_connect_subscription(mc_chain, params.mc_door_account)
-        sc_connect_subscription(sc_chain, params.sc_door_account)
         run(mc_chain, sc_chain, params)
 
     _external_node_with_callback(params, callback, setup_user_accounts=False)
