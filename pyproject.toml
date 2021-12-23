@@ -3,7 +3,7 @@ name = "sidechain-launch-kit"
 version = "1.0.0-beta.0"
 description = "Python scripts to tests and explore side chains"
 readme = "README.md"
-repository = "https://https://github.com/xpring-eng/sidechain-launch-kit"
+repository = "https://github.com/xpring-eng/sidechain-launch-kit"
 authors = [
   "Mayukha Vadari <mvadari@ripple.com>",
   "Scott Determan <determan@ripple.com>"
@@ -16,7 +16,6 @@ keywords = [
   "sidechain"
 ]
 license = "MIT"
-documentation = "README.md"
 include = [
   "LICENSE",
 ]

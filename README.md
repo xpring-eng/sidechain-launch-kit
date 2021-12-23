@@ -13,7 +13,7 @@ This section describes how to install the python dependencies, create the enviro
 ### Install the sidechain launch kit
 
 ```
-pip install sidechain-launch-kit --pre
+pip install sidechain-launch-kit
 ```
 
 ### Build rippled
