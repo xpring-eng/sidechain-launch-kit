@@ -130,6 +130,9 @@ class Sidechain(Chain):
                 raise Exception("Timeout: servers took too long to start.")
             time.sleep(0.5)
 
+        for node in self.nodes:
+            node.client.open()
+
     def servers_stop(
         self: Sidechain, server_indexes: Optional[Union[Set[int], List[int]]] = None
     ) -> None:

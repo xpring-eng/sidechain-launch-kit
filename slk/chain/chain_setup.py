@@ -37,7 +37,6 @@ def setup_mainchain(
         issuer = Account.from_seed("issuer", params.issuer)
         mc_chain.add_to_keymanager(issuer)
 
-        mc_chain.node.client.open()
         if not does_account_exist(issuer.account_id, mc_chain.node.client):
             raise Exception(f"Account {issuer} needs to be funded to exist.")
 
@@ -61,7 +60,6 @@ def setup_mainchain(
         )
         mc_chain.maybe_ledger_accept()
     else:
-        mc_chain.node.client.open()
         if not does_account_exist(
             params.mc_door_account.account_id, mc_chain.node.client
         ):
