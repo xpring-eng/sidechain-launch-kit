@@ -1032,11 +1032,47 @@ class SidechainRepl(cmd.Cmd):
             return
         args.pop(0)
 
-        for alias in args:
+        # an new account either generates its own new secret seed, or one may be
+        # specified by using a `-s <seed>` switch
+        aliases = []
+        seeds = []
+        index = 0
+        while True:
+            if index == len(args):
+                break
+            if args[index] == '-s':
+                print(
+                    "Error: new_account -s switch must come after the alias argument. Type "
+                    '"help" for help.'
+                )
+            aliases.append(args[index])
+            seeds.append(None)
+            index += 1
+            if index == len(args):
+                break
+            if args[index] != '-s':
+                continue
+            # user supplied seed
+            index += 1
+            if index == len(args):
+                print(
+                    "Error: new_account -s switch takes one argument. Type "
+                    '"help" for help.'
+                )
+            seeds[-1] = args[index]
+            index += 1
+
+        if len(aliases) != len(seeds):
+                print(f"Error: internal error. there should be an equal number of aliases and seeds. {aliases=} {seeds=}")
+
+        for alias, seed in zip(aliases, seeds):
             if chain.is_alias(alias):
                 print(f"Warning: The alias {alias} already exists.")
             else:
-                chain.create_account(alias)
+                try:
+                    chain.create_account(alias, seed)
+                except:
+                    print(f"Error: could not create an account {alias} with seed {seed}")
 
     def complete_new_account(
         self: SidechainRepl, text: str, line: str, begidx: int, endidx: int
@@ -1063,7 +1099,7 @@ class SidechainRepl(cmd.Cmd):
         print(
             "\n".join(
                 [
-                    "new_account (mainchain | sidechain) alias [alias...]",
+                    "new_account (mainchain | sidechain) alias [-s secret_seed] [alias [-s secret_seed]...] ",
                     "Add a new account to the address book",
                 ]
             )

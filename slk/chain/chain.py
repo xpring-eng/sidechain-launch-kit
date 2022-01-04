@@ -355,7 +355,7 @@ class Chain(ABC):
 
     # Account/asset stuff
 
-    def create_account(self: Chain, name: str) -> Account:
+    def create_account(self: Chain, name: str, seed:Optional[seed]=None) -> Account:
         """
         Create an account for the specified alias.
 
@@ -367,7 +367,10 @@ class Chain(ABC):
         """
         assert not self.key_manager.is_alias(name)
 
-        account = Account.create(name)
+        if seed is None:
+            account = Account.create(name)
+        else:
+            account = Account.from_seed(name, seed)
         self.key_manager.add(account)
         return account
 
