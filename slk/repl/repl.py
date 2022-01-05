@@ -1761,6 +1761,44 @@ class SidechainRepl(cmd.Cmd):
     ##################
 
     ##################
+    # sleep
+
+    def do_sleep(self: SidechainRepl, line: str) -> None:
+        """
+        Implementation of the `sleep` REPL command.
+
+        Args:
+            line: The command-line arguments.
+        """
+        args = line.split()
+        if len(args) != 1:
+            print('Error: sleep command takes one argument. Type "help" for help.')
+            return
+        arg = args[0]
+        try:
+            sleep_time = int(arg)
+        except:
+            print(f'Error: "{arg}" is not a number.')
+            return
+        print(f"Sleeping for {sleep_time} seconds...")
+        time.sleep(sleep_time)
+        print("")
+
+    def help_sleep(self: SidechainRepl) -> None:
+        """Print out a help message for the `sleep` REPL command."""
+        print(
+            "\n".join(
+                [
+                    "sleep num",
+                    "Sleep for `num` seconds",
+                ]
+            )
+        )
+
+    # sleep
+    ##################
+
+    ##################
     # quit
     def do_quit(self: SidechainRepl, line: str) -> bool:
         """
