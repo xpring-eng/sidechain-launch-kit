@@ -1564,6 +1564,91 @@ class SidechainRepl(cmd.Cmd):
     ##################
 
     ##################
+    # load_batch
+
+    def do_load_batch(self: SidechainRepl, line: str) -> None:
+        """
+        Implementation of the `load_batch` REPL command.
+
+        Args:
+            line: The command-line arguments.
+        """
+        args = line.split()
+        if len(args) != 1:
+            print(
+                'Error: load_batch command takes exactly one argument. Type "help" '
+                "for help."
+            )
+            return
+        try:
+            path = Path(args[0])
+            if not path.is_file():
+                print(f'Error: no such file: {path}')
+                return
+            with open(path) as f:
+                for l in f:
+                    # remove comments. A comment is a '#' and anything that follows it up to the end of a line
+                    # Note this doesn't account for '#' inside strings or escaped, but that should be fine for this
+                    # simple repl. It doesn't have strings anyway.
+                    l = l.split('#')[0].strip()
+                    if not l:
+                        continue
+                    print(f'Running: {l}')
+                    self.onecmd(l)
+        except:
+            print('Error: load_batch command threw an exception')
+
+
+    def complete_load_batch(
+        self: SidechainRepl, text: str, line: str, begidx: int, endidx: int
+    ) -> List[str]:
+        """
+        Handle autocompletion for the `load_batch` REPL command.
+
+        Args:
+            line: The command-line args so far.
+            text: The text to autocomplete.
+            begidx: The beginning index of the prefix text.
+            endidx: The end index of the prefix text.
+
+        Returns:
+            The list of possible auto-complete results.
+        """
+        args = line.split()
+        if len(args) == 1:
+            arg = ''
+        else:
+            arg=line.split()[-1]
+        if not arg:
+            arg='./'
+        elif not (arg.startswith('/') or arg.startswith('./')):
+            arg = f'./{arg}'
+        p = Path(arg)
+        if p.is_dir():
+            dir = p
+            file = '/'
+        else:
+            dir = p.parent
+            file = p.name
+        prefix = f'{dir.as_posix()}/'
+        return [f.as_posix().lstrip(prefix) for f in dir.glob(f'{file}*')]
+
+
+    def help_load_batch(self: SidechainRepl) -> None:
+        """Print out a help message for the `load_batch` REPL command."""
+        print(
+            "\n".join(
+                [
+                    "load_batch file_name",
+                    "Run the commands in the specified file",
+                ]
+            )
+        )
+
+    # load_batch
+    ##################
+
+    ##################
     # setup_ious
 
     def do_setup_ious(self: SidechainRepl, line: str) -> None:
