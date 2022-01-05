@@ -1789,8 +1789,8 @@ class SidechainRepl(cmd.Cmd):
         print(
             "\n".join(
                 [
-                    "sleep num",
-                    "Sleep for `num` seconds",
+                    "sleep [num]",
+                    "Sleep for `num` seconds.",
                 ]
             )
         )
