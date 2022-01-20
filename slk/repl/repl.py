@@ -1035,22 +1035,23 @@ class SidechainRepl(cmd.Cmd):
         # an new account either generates its own new secret seed, or one may be
         # specified by using a `-s <seed>` switch
         aliases = []
-        seeds = []
+        seeds: List[Optional[str]] = []
         index = 0
         while True:
             if index == len(args):
                 break
-            if args[index] == '-s':
+            if args[index] == "-s":
                 print(
-                    "Error: new_account -s switch must come after the alias argument. Type "
-                    '"help" for help.'
+                    "Error: new_account -s switch must come after the alias argument."
+                    ' Type  "help" for help.'
                 )
+                return
             aliases.append(args[index])
             seeds.append(None)
             index += 1
             if index == len(args):
                 break
-            if args[index] != '-s':
+            if args[index] != "-s":
                 continue
             # user supplied seed
             index += 1
@@ -1059,11 +1060,17 @@ class SidechainRepl(cmd.Cmd):
                     "Error: new_account -s switch takes one argument. Type "
                     '"help" for help.'
                 )
+                return
             seeds[-1] = args[index]
             index += 1
 
         if len(aliases) != len(seeds):
-                print(f"Error: internal error. there should be an equal number of aliases and seeds. {aliases=} {seeds=}")
+            print(
+                "Error: internal error.\n"
+                "There should be an equal number of aliases and seeds.\n"
+                f"{aliases=} {seeds=}"
+            )
+            return
 
         for alias, seed in zip(aliases, seeds):
             if chain.is_alias(alias):
@@ -1072,7 +1079,9 @@ class SidechainRepl(cmd.Cmd):
                 try:
                     chain.create_account(alias, seed)
                 except:
-                    print(f"Error: could not create an account {alias} with seed {seed}")
+                    print(
+                        f"Error: could not create an account {alias} with seed {seed}"
+                    )
 
     def complete_new_account(
         self: SidechainRepl, text: str, line: str, begidx: int, endidx: int
@@ -1099,7 +1108,8 @@ class SidechainRepl(cmd.Cmd):
         print(
             "\n".join(
                 [
-                    "new_account (mainchain | sidechain) alias [-s secret_seed] [alias [-s secret_seed]...] ",
+                    "new_account (mainchain | sidechain) alias "
+                    "[-s secret_seed] [alias [-s secret_seed]...] ",
                     "Add a new account to the address book",
                 ]
             )
@@ -1583,21 +1593,21 @@ class SidechainRepl(cmd.Cmd):
         try:
             path = Path(args[0])
             if not path.is_file():
-                print(f'Error: no such file: {path}')
+                print(f"Error: no such file: {path}")
                 return
             with open(path) as f:
-                for l in f:
-                    # remove comments. A comment is a '#' and anything that follows it up to the end of a line
-                    # Note this doesn't account for '#' inside strings or escaped, but that should be fine for this
+                for line in f:
+                    # remove comments. A comment is a '#' and anything that follows
+                    # it up to the end of a line. Note this doesn't account for '#'
+                    # inside strings or escaped, but that should be fine for this
                     # simple repl. It doesn't have strings anyway.
-                    l = l.split('#')[0].strip()
-                    if not l:
+                    line = line.split("#")[0].strip()
+                    if not line:
                         continue
-                    print(f'Running: {l}')
-                    self.onecmd(l)
-        except:
-            print('Error: load_batch command threw an exception')
-
+                    print(f"Running: `{line}`")
+                    self.onecmd(line)
+        except Exception as e:
+            print(f"Error: load_batch command threw an exception: `{e}`")
 
     def complete_load_batch(
         self: SidechainRepl, text: str, line: str, begidx: int, endidx: int
@@ -1616,23 +1626,22 @@ class SidechainRepl(cmd.Cmd):
         """
         args = line.split()
         if len(args) == 1:
-            arg = ''
+            arg = ""
         else:
-            arg=line.split()[-1]
+            arg = line.split()[-1]
         if not arg:
-            arg='./'
-        elif not (arg.startswith('/') or arg.startswith('./')):
-            arg = f'./{arg}'
+            arg = "./"
+        elif not (arg.startswith("/") or arg.startswith("./")):
+            arg = f"./{arg}"
         p = Path(arg)
         if p.is_dir():
             dir = p
-            file = '/'
+            file = "/"
         else:
             dir = p.parent
             file = p.name
-        prefix = f'{dir.as_posix()}/'
-        return [f.as_posix().lstrip(prefix) for f in dir.glob(f'{file}*')]
-
+        prefix = f"{dir.as_posix()}/"
+        return [f.as_posix().lstrip(prefix) for f in dir.glob(f"{file}*")]
 
     def help_load_batch(self: SidechainRepl) -> None:
         """Print out a help message for the `load_batch` REPL command."""
