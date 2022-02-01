@@ -34,7 +34,7 @@ The python scripts need to know the locations of two files and one directory. Th
 5. The IP address of a node on the mainchain. Either set the environment variable `MAINNET` (in your system or in the `.env` file) or use the command line switch `--mainnet`. This is used in both the script that creates the config files and in the script that runs the sidechain.
 6. The public Websocket port of the mainchain node. Either set the environment variable `MAINNET_PORT` (in your system or in the `.env` file) or use the command line switch `--mainnet_port`. This is used in both the script that creates the config files and in the script that runs the sidechain.
 7. The seed of the issuer of the cross-chain token. Either set the environment variable `IOU_ISSUER` (in your system or in the `.env` file) or use the command line switch `--iou_issuer`. This is used in both the script that creates the config files and in the script that runs the sidechain.
-8. The public Websocket port of the mainchain node. Either set the environment variable `DOOR_ACCOUNT_SEED` (in your system or in the `.env` file) or use the command line switch `--door_seed`. This is used in the script that creates the config files.
+8. The seed of the door account on the mainchain. Either set the environment variable `DOOR_ACCOUNT_SEED` (in your system or in the `.env` file) or use the command line switch `--door_seed`. This is used in the script that creates the config files.
 
 Setting environment variables can be very convenient. For example, a small script can be sourced to set these environment variables when working with side chains.
 
