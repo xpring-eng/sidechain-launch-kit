@@ -3,6 +3,7 @@
 import json
 from typing import Any, Dict, List, Optional, Tuple, Union
 
+from jinja2 import Environment, FileSystemLoader
 from xrpl.models import XRP, Amount
 from xrpl.wallet import Wallet
 
@@ -188,6 +189,8 @@ def get_cfg_str(
     Returns:
         The bulk of `rippled.cfg`.
     """
+    env = Environment(loader=FileSystemLoader(searchpath="./slk/config/templates"))
+    template = env.get_template("mainchain_standalone.jinja")
     db_path = sub_dir + "/db"
     debug_logfile = sub_dir + "/debug.log"
     shard_db_path = sub_dir + "/shards"
@@ -200,56 +203,28 @@ def get_cfg_str(
     if sidechain_stanza:
         earliest_seq_line = "earliest_seq=1"
 
-    return f"""
-{_get_server_stanza()}
-
-{_get_ports_stanzas(ports)}
-
-[node_size]
-{NODE_SIZE}
-
-[ledger_history]
-{history_line}
-
-{_get_node_db_stanza(node_db_path, earliest_seq_line, disable_delete)}
-
-[database_path]
-{db_path}
-
-# This needs to be an absolute directory reference, not a relative one.
-# Modify this value as required.
-[debug_logfile]
-{debug_logfile}
-
-[sntp_servers]
-time.windows.com
-time.apple.com
-time.nist.gov
-pool.ntp.org
-
-{ips_stanza}
-
-[validators_file]
-validators.txt
-
-[rpc_startup]
-{{ "command": "log_level", "severity": "fatal" }}
-{{ "command": "log_level", "partition": "SidechainFederator", "severity": "trace" }}
-
-[ssl_verify]
-1
-
-{validation_seed_stanza}
-
-{disable_shards}[shard_db]
-{disable_shards}type=NuDB
-{disable_shards}path={shard_db_path}
-{disable_shards}max_historical_shards=6
-
-{sidechain_stanza}
-
-{_get_features_stanza(with_hooks)}
-"""
+    data = {
+        "db_path": db_path,
+        "debug_logfile": debug_logfile,
+        "shard_db_path": shard_db_path,
+        "node_db_path": node_db_path,
+        "disable_delete": disable_delete,
+        "history_line": history_line,
+        "earliest_seq_line": earliest_seq_line,
+        # ports stanza
+        "http_admin_port": ports.http_admin_port,
+        "this_ip": THIS_IP,
+        "peer_port": ports.peer_port,
+        "ws_admin_port": ports.ws_admin_port,
+        "ws_public_port": ports.ws_public_port,
+        # other
+        "node_size": NODE_SIZE,
+        "ips_stanza": ips_stanza,
+        "validation_seed_stanza": validation_seed_stanza,
+        "disable_shards": disable_shards,
+        "sidechain_stanza": sidechain_stanza,
+    }
+    return template.render(data)
 
 
 def _get_server_stanza() -> str:
