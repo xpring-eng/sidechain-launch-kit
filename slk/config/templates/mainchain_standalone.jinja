@@ -8,24 +8,24 @@ port_ws_public
 #ssl_cert = /etc/ssl/certs/server.crt
 
 [port_rpc_admin_local]
-port = {{ http_admin_port }}
+port = {{ ports.http_admin_port }}
 ip = {{ this_ip }}
 admin = {{ this_ip }}
 protocol = http
 
 [port_peer]
-port = {{ peer_port }}
+port = {{ ports.peer_port }}
 ip = 0.0.0.0
 protocol = peer
 
 [port_ws_admin_local]
-port = {{ ws_admin_port }}
+port = {{ ports.ws_admin_port }}
 ip = {{ this_ip }}
 admin = {{ this_ip }}
 protocol = ws
 
 [port_ws_public]
-port = {{ ws_public_port }}
+port = {{ ports.ws_public_port }}
 ip = {{ this_ip }}
 protocol = ws
 # protocol = wss

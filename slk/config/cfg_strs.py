@@ -205,11 +205,8 @@ def get_cfg_str(
         "history_line": history_line,
         "earliest_seq_line": earliest_seq_line,
         # ports stanza
-        "http_admin_port": ports.http_admin_port,
+        "ports": ports.to_dict(),
         "this_ip": THIS_IP,
-        "peer_port": ports.peer_port,
-        "ws_admin_port": ports.ws_admin_port,
-        "ws_public_port": ports.ws_public_port,
         # other
         "node_size": NODE_SIZE,
         "ips_stanza": ips_stanza,

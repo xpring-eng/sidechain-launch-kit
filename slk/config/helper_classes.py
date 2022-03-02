@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import Optional, Type
+from typing import Dict, Optional, Type
 
 from xrpl.models import Currency
 
@@ -69,6 +69,20 @@ class Ports:
             # note admin port uses public port base
             Ports.ws_public_port_base + (2 * cfg_index) + 1,
         )
+
+    def to_dict(self: Ports) -> Dict[str, Optional[int]]:
+        """
+        Convert the Ports to a dictionary.
+
+        Returns:
+            The ports represented by the Ports, in dictionary form.
+        """
+        return {
+            "peer_port": self.peer_port,
+            "http_admin_port": self.http_admin_port,
+            "ws_public_port": self.ws_public_port,
+            "ws_admin_port": self.ws_admin_port,
+        }
 
 
 class XChainAsset:
