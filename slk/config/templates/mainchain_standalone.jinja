@@ -38,7 +38,7 @@ protocol = ws
 
 [node_db]
 type=NuDB
-path={{ node_db_path }}
+path={{ sub_dir }}/db/nudb
 open_files=2000
 filter_bits=12
 cache_mb=256
@@ -49,12 +49,12 @@ file_size_mult=2
 {{ disable_delete }}advisory_delete=0
 
 [database_path]
-{{ db_path }}
+{{ sub_dir }}/db
 
 # This needs to be an absolute directory reference, not a relative one.
 # Modify this value as required.
 [debug_logfile]
-{{ debug_logfile }}
+{{ sub_dir }}/debug.log
 
 [sntp_servers]
 time.windows.com
@@ -79,7 +79,7 @@ validators.txt
 
 {{ disable_shards }}[shard_db]
 {{ disable_shards }}type=NuDB
-{{ disable_shards }}path={{ shard_db_path }}
+{{ disable_shards }}path={{ sub_dir }}/shards
 {{ disable_shards }}max_historical_shards=6
 
 {{ sidechain_stanza }}

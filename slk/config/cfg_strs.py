@@ -191,10 +191,6 @@ def get_cfg_str(
     """
     env = Environment(loader=FileSystemLoader(searchpath="./slk/config/templates"))
     template = env.get_template("mainchain_standalone.jinja")
-    db_path = sub_dir + "/db"
-    debug_logfile = sub_dir + "/debug.log"
-    shard_db_path = sub_dir + "/shards"
-    node_db_path = db_path + "/nudb"
 
     disable_delete = "#" if full_history else ""
     history_line = "full" if full_history else "256"
@@ -204,10 +200,7 @@ def get_cfg_str(
         earliest_seq_line = "earliest_seq=1"
 
     data = {
-        "db_path": db_path,
-        "debug_logfile": debug_logfile,
-        "shard_db_path": shard_db_path,
-        "node_db_path": node_db_path,
+        "sub_dir": sub_dir,
         "disable_delete": disable_delete,
         "history_line": history_line,
         "earliest_seq_line": earliest_seq_line,
