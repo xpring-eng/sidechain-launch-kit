@@ -226,7 +226,6 @@ def create_config_files(
         xchain_assets=xchain_assets,
         standalone=params.standalone,
     )
-    index = index + 2
 
     (Path(params.configs_dir) / "logs").mkdir(parents=True, exist_ok=True)
 
