@@ -66,7 +66,6 @@ def generate_sidechain_stanza(
     main_account: Wallet,
     federators: List[Keypair],
     signing_key: str,
-    mainchain_cfg_file: Optional[str] = None,
     xchain_assets: Optional[Dict[str, XChainAsset]] = None,
 ) -> Tuple[str, str]:
     """
@@ -80,8 +79,6 @@ def generate_sidechain_stanza(
         main_account: The Wallet for the door account on the mainchain.
         federators: The federators in the network.
         signing_key: The signing key used for this node.
-        mainchain_cfg_file: File location of the mainchain's cfg file. Only relevant
-            for standalone mode. Only used in a comment.
         xchain_assets: Cross-chain asset information.
 
     Returns:
@@ -93,8 +90,6 @@ def generate_sidechain_stanza(
     federators_secrets_stanza = FEDERATORS_SECRETS_STANZA_INIT
     bootstrap_federators_stanza = BOOTSTRAP_FEDERATORS_STANZA_INIT
     cfg_file_line = ""
-    if mainchain_cfg_file is not None:
-        cfg_file_line = f"# mainchain config file is: {mainchain_cfg_file}"
     for fed in federators:
         federators_stanza += f"{fed.public_key}\n"
         federators_secrets_stanza += f"{fed.secret_key}\n"

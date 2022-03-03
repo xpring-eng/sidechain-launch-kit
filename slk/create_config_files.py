@@ -92,23 +92,32 @@ def _generate_cfg_dir_sidechain(
     ports: Ports,
     with_shards: bool = False,
     main_net: bool = True,
-    cfg_type: str,
-    sidechain_stanza: str,
-    sidechain_bootstrap_stanza: str,
     validation_seed: str,
     validators: List[str],
     fixed_ips: List[Ports],
     data_dir: str,
     full_history: bool = False,
+    mainnet: Network,
+    sidenet: SidechainNetwork,
+    xchain_assets: Optional[Dict[str, XChainAsset]] = None,
+    fed_num: int,
 ) -> str:
-
+    mainnet_i = fed_num % len(mainnet.ports)
+    cfg_type = f"sidechain_{fed_num}"
     sub_dir = f"{data_dir}/{cfg_type}"
     template = JINJA_ENV.get_template("sidechain.jinja")
 
     for path in ["", "/db", "/shards"]:
         Path(sub_dir + path).mkdir(parents=True, exist_ok=True)
 
-    assert ports.peer_port is not None  # TODO: better error handling/port typing
+    sidechain_stanza, sidechain_bootstrap_stanza = generate_sidechain_stanza(
+        mainnet.url,
+        mainnet.ports[mainnet_i].ws_public_port,
+        sidenet.main_account,
+        sidenet.federator_keypairs,
+        sidenet.federator_keypairs[fed_num].secret_key,
+        xchain_assets,
+    )
 
     fixed_ips_json = [p.to_dict() for p in fixed_ips]
 
@@ -176,30 +185,17 @@ def _generate_all_configs(
         validator_kp = sidenet.validator_keypairs[i]
         ports = sidenet.ports[i]
 
-        mainnet_i = i % len(mainnet.ports)
-        mainnet_cfg = None
-        if standalone:
-            mainnet_cfg = mainnet_cfgs[mainnet_i]
-        sidechain_stanza, sidechain_bootstrap_stanza = generate_sidechain_stanza(
-            mainnet.url,
-            mainnet.ports[mainnet_i].ws_public_port,
-            sidenet.main_account,
-            sidenet.federator_keypairs,
-            sidenet.federator_keypairs[i].secret_key,
-            mainnet_cfg,
-            xchain_assets,
-        )
-
         _generate_cfg_dir_sidechain(
             ports=ports,
-            cfg_type=f"sidechain_{i}",
-            sidechain_stanza=sidechain_stanza,
-            sidechain_bootstrap_stanza=sidechain_bootstrap_stanza,
             validation_seed=validator_kp.secret_key,
             validators=[kp.public_key for kp in sidenet.validator_keypairs],
             fixed_ips=sidenet.ports,
             data_dir=out_dir,
             full_history=True,
+            mainnet=mainnet,
+            sidenet=sidenet,
+            xchain_assets=xchain_assets,
+            fed_num=i,
         )
 
 
