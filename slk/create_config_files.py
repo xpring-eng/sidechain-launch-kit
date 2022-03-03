@@ -112,10 +112,8 @@ def _generate_cfg_dir_sidechain(
 
     sidechain_stanza, sidechain_bootstrap_stanza = generate_sidechain_stanza(
         mainnet.url,
-        mainnet.ports[mainnet_i].ws_public_port,
         sidenet.main_account,
         sidenet.federator_keypairs,
-        sidenet.federator_keypairs[fed_num].secret_key,
         xchain_assets,
     )
 
@@ -126,12 +124,17 @@ def _generate_cfg_dir_sidechain(
         "full_history": full_history,
         # ports stanza
         "ports": ports.to_dict(),
+        # sidechains-specific stanzas
+        "signing_key": sidenet.federator_keypairs[fed_num].secret_key,
+        "mainchain_door_account": sidenet.main_account.classic_address,
+        "mainchain_ip": mainnet.url,
+        "mainchain_port_ws": mainnet.ports[mainnet_i].ws_public_port,
+        "sidechain_stanza": sidechain_stanza,
         # other
+        "fixed_ips": fixed_ips_json,
         "node_size": NODE_SIZE,
         "validation_seed": validation_seed,
         "with_shards": with_shards,
-        "sidechain_stanza": sidechain_stanza,
-        "fixed_ips": fixed_ips_json,
     }
 
     # add the rippled.cfg file

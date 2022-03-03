@@ -95,7 +95,13 @@ path={{ sub_dir }}/shards
 max_historical_shards=6
 {% endif -%}
 
-{{ sidechain_stanza -}}
+[sidechain]
+signing_key={{ signing_key }}
+mainchain_account={{ mainchain_door_account }}
+mainchain_ip={{ mainchain_ip }}
+mainchain_port_ws={{ mainchain_port_ws }}
+
+{{ sidechain_stanza }}
 
 [features]
 PayChan

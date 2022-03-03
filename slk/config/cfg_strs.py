@@ -62,10 +62,8 @@ sidechain_refund_penalty={json.dumps(_amt_to_json(xchainasset.side_refund_penalt
 # second element is the bootstrap stanzas
 def generate_sidechain_stanza(
     mainchain_url: str,
-    mainchain_ws_port: int,
     main_account: Wallet,
     federators: List[Keypair],
-    signing_key: str,
     xchain_assets: Optional[Dict[str, XChainAsset]] = None,
 ) -> Tuple[str, str]:
     """
@@ -74,11 +72,8 @@ def generate_sidechain_stanza(
 
     Args:
         mainchain_url: The URL of the mainchain. If the chain is local, it is 127.0.0.1.
-        mainchain_ws_port: The WS port of the mainchain that this sidechain is
-            connecting to.
         main_account: The Wallet for the door account on the mainchain.
         federators: The federators in the network.
-        signing_key: The signing key used for this node.
         xchain_assets: Cross-chain asset information.
 
     Returns:
@@ -89,26 +84,19 @@ def generate_sidechain_stanza(
     federators_stanza = FEDERATORS_STANZA_INIT
     federators_secrets_stanza = FEDERATORS_SECRETS_STANZA_INIT
     bootstrap_federators_stanza = BOOTSTRAP_FEDERATORS_STANZA_INIT
-    cfg_file_line = ""
+
     for fed in federators:
         federators_stanza += f"{fed.public_key}\n"
         federators_secrets_stanza += f"{fed.secret_key}\n"
         bootstrap_federators_stanza += f"{fed.public_key} {fed.account_id}\n"
 
-    sidechain_stanzas = f"""
-[sidechain]
-signing_key={signing_key}
-mainchain_account={main_account.classic_address}
-mainchain_ip={mainchain_url}
-mainchain_port_ws={mainchain_ws_port}
-{cfg_file_line}
-
-{assets_stanzas}
+    sidechain_stanzas = f"""{assets_stanzas}
 
 {federators_stanza}
 
 {federators_secrets_stanza if mainchain_url == THIS_IP else ""}
 """
+
     bootstrap_stanzas = f"""
 [sidechain]
 mainchain_secret={main_account.seed}
