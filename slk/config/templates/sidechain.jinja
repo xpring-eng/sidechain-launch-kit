@@ -115,7 +115,20 @@ sidechain_refund_penalty={{ asset.side_refund_penalty }}
 
 {% endfor -%}
 
-{{ sidechain_stanza }}
+# federator signing public keys
+[sidechain_federators]
+{% for fed in federators -%}
+{{ fed.public_key }}
+{% endfor %}
+
+{% if mainchain_ip == "127.0.0.1" -%}
+# federator signing secret keys
+# (for standalone-mode testing only. Normally won't be in a config file)
+[sidechain_federators_secrets]
+{% for fed in federators -%}
+{{ fed.secret_key }}
+{% endfor %}
+{% endif -%}
 
 [features]
 PayChan
