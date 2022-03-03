@@ -142,11 +142,10 @@ class ConfigParams:
                 self.mainnet_port = int(args.mainnet_port)
 
         self.door_seed = None
-        if not self.standalone:
-            if "DOOR_ACCOUNT_SEED" in _ENV_VARS:
-                self.door_seed = _ENV_VARS["DOOR_ACCOUNT_SEED"]
-            if args.door_seed:
-                self.door_seed = args.door_seed
+        if "DOOR_ACCOUNT_SEED" in _ENV_VARS:
+            self.door_seed = _ENV_VARS["DOOR_ACCOUNT_SEED"]
+        if args.door_seed:
+            self.door_seed = args.door_seed
 
         self.usd = args.usd or False
 
