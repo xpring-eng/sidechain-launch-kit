@@ -44,6 +44,8 @@ class Mainchain(Chain):
         if run_server:
             self.servers_start(server_out=server_out)
 
+        self.node.client.open()
+
     @property
     def standalone(self: Mainchain) -> bool:
         """
@@ -140,8 +142,6 @@ class Mainchain(Chain):
             if counter == 20:  # 10 second timeout
                 raise Exception("Timeout: server took too long to start.")
             time.sleep(0.5)
-
-        self.node.client.open()
 
     def servers_stop(
         self: Mainchain, server_indexes: Optional[Union[Set[int], List[int]]] = None
