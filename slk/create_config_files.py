@@ -242,21 +242,22 @@ def main() -> None:
         sys.exit(1)
 
     xchain_assets = None
-    if params.usd:
-        xchain_assets = {}
-        xchain_assets["xrp_xrp_sidechain_asset"] = XChainAsset(
-            XRP(), XRP(), "1", "1", "200", "200"
-        )
+    xchain_assets = {}
+    xchain_assets["XRP_XRP_sidechain_asset"] = XChainAsset(
+        XRP(), XRP(), "1", "1", "200", "200"
+    )
+    if len(params.xchain_assets) > 0:
         root = "rHb9CJAWyB4rj91VRWn96DkukG4bwdtyTh"
         if params.issuer is not None:
             issuer = params.issuer.classic_address
         else:
             issuer = root
-        main_iou_asset = IssuedCurrency(currency="USD", issuer=issuer)
-        side_iou_asset = IssuedCurrency(currency="USD", issuer=root)
-        xchain_assets["iou_iou_sidechain_asset"] = XChainAsset(
-            main_iou_asset, side_iou_asset, "1", "1", "0.02", "0.02"
-        )
+        for token in params.xchain_assets:
+            main_iou_token = IssuedCurrency(currency=token, issuer=issuer)
+            side_iou_token = IssuedCurrency(currency=token, issuer=root)
+            xchain_assets[f"{token}_{token}_sidechain_asset"] = XChainAsset(
+                main_iou_token, side_iou_token, "1", "1", "0.02", "0.02"
+            )
 
     create_config_files(params, xchain_assets)
 

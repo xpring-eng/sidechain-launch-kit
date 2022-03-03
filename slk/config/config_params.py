@@ -20,13 +20,6 @@ def _parse_args() -> argparse.Namespace:
     )
 
     parser.add_argument(
-        "--usd",
-        "-u",
-        action="store_true",
-        help=("include a USD/root IOU asset for cross chain transfers"),
-    )
-
-    parser.add_argument(
         "--cfgs_dir",
         "-c",
         help=(
@@ -77,6 +70,12 @@ def _parse_args() -> argparse.Namespace:
             "The seed of the IOU issuer to use on the main network. Only required if "
             "not connecting to standalone mode."
         ),
+    )
+
+    parser.add_argument(
+        "--assets",
+        "-a",
+        nargs="+",
     )
 
     return parser.parse_known_args()[0]
@@ -147,7 +146,7 @@ class ConfigParams:
         if args.door_seed:
             self.door_seed = args.door_seed
 
-        self.usd = args.usd or False
+        self.xchain_assets = args.assets or []
 
         self.issuer = None
         if not self.standalone:
