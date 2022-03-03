@@ -2,10 +2,11 @@
 
 from __future__ import annotations
 
+import json
 from dataclasses import dataclass
-from typing import Dict, Optional, Type
+from typing import Any, Dict, Optional, Type, Union
 
-from xrpl.models import Currency
+from xrpl.models import Amount, Currency
 
 
 @dataclass
@@ -85,6 +86,13 @@ class Ports:
         }
 
 
+def _amt_to_json(amt: Amount) -> Union[str, Dict[str, Any]]:
+    if isinstance(amt, str):
+        return amt
+    else:
+        return amt.to_dict()
+
+
 class XChainAsset:
     """Representation of a cross-chain asset."""
 
@@ -112,3 +120,17 @@ class XChainAsset:
         self.side_asset = side_asset.to_amount(side_value)
         self.main_refund_penalty = main_asset.to_amount(main_refund_penalty)
         self.side_refund_penalty = side_asset.to_amount(side_refund_penalty)
+
+    def to_dict(self: XChainAsset) -> Dict[str, Any]:
+        """
+        Convert the XChainAsset to a dictionary.
+
+        Returns:
+            The information represented by the XChainAsset, in dictionary form.
+        """
+        return {
+            "main_asset": json.dumps(_amt_to_json(self.main_asset)),
+            "side_asset": json.dumps(_amt_to_json(self.side_asset)),
+            "main_refund_penalty": json.dumps(_amt_to_json(self.main_refund_penalty)),
+            "side_refund_penalty": json.dumps(_amt_to_json(self.side_refund_penalty)),
+        }

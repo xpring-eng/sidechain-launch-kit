@@ -101,7 +101,19 @@ mainchain_account={{ mainchain_door_account }}
 mainchain_ip={{ mainchain_ip }}
 mainchain_port_ws={{ mainchain_port_ws }}
 
-{{ asset_stanzas }}
+[sidechain_assets]
+{% for asset in assets -%}
+{{ asset.asset_name }}
+{% endfor %}
+
+{% for asset in assets -%}
+[{{ asset.asset_name }}]
+mainchain_asset={{ asset.main_asset }}
+sidechain_asset={{ asset.side_asset }}
+mainchain_refund_penalty={{ asset.main_refund_penalty }}
+sidechain_refund_penalty={{ asset.side_refund_penalty }}
+
+{% endfor -%}
 
 {{ sidechain_stanza }}
 

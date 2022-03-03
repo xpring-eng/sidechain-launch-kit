@@ -17,16 +17,15 @@ the environment variable RIPPLED_MAINCHAIN_EXE
 The configs_dir (where the config files will reside) can be set through the command line
 or the environment variable RIPPLED_SIDECHAIN_CFG_DIR
 """
-import json
 import os
 import shutil
 import sys
 import traceback
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Union, cast
+from typing import Dict, List, Optional, cast
 
 from jinja2 import Environment, FileSystemLoader
-from xrpl.models import XRP, Amount, IssuedCurrency
+from xrpl.models import XRP, IssuedCurrency
 
 from slk.config.cfg_strs import generate_sidechain_stanza
 from slk.config.config_params import ConfigParams
@@ -77,39 +76,6 @@ def _generate_cfg_dir_mainchain(
     return sub_dir + "/rippled.cfg"
 
 
-def _amt_to_json(amt: Amount) -> Union[str, Dict[str, Any]]:
-    if isinstance(amt, str):
-        return amt
-    else:
-        return amt.to_dict()
-
-
-def _generate_asset_stanzas(assets: Optional[Dict[str, XChainAsset]] = None) -> str:
-    if assets is None:
-        # default to xrp only at a 1:1 value
-        assets = {}
-        assets["xrp_xrp_sidechain_asset"] = XChainAsset(
-            XRP(), XRP(), "1", "1", "400", "400"
-        )
-
-    index_stanza = """
-[sidechain_assets]"""
-
-    asset_stanzas = []
-
-    for name, xchainasset in assets.items():
-        index_stanza += "\n" + name
-        new_stanza = f"""
-[{name}]
-mainchain_asset={json.dumps(_amt_to_json(xchainasset.main_asset))}
-sidechain_asset={json.dumps(_amt_to_json(xchainasset.side_asset))}
-mainchain_refund_penalty={json.dumps(_amt_to_json(xchainasset.main_refund_penalty))}
-sidechain_refund_penalty={json.dumps(_amt_to_json(xchainasset.side_refund_penalty))}"""
-        asset_stanzas.append(new_stanza)
-
-    return index_stanza + "\n" + "\n".join(asset_stanzas)
-
-
 def _generate_validators_txt(sub_dir: str, validators: List[str]) -> None:
     template = JINJA_ENV.get_template("validators.jinja")
 
@@ -150,9 +116,12 @@ def _generate_cfg_dir_sidechain(
         sidenet.federator_keypairs,
         xchain_assets,
     )
-    asset_stanzas = _generate_asset_stanzas(xchain_assets)
-
-    fixed_ips_json = [p.to_dict() for p in fixed_ips]
+    if xchain_assets is None:
+        # default to xrp only at a 1:1 value
+        xchain_assets = {}
+        xchain_assets["xrp_xrp_sidechain_asset"] = XChainAsset(
+            XRP(), XRP(), "1", "1", "400", "400"
+        )
 
     template_data = {
         "sub_dir": sub_dir,
@@ -164,10 +133,13 @@ def _generate_cfg_dir_sidechain(
         "mainchain_door_account": sidenet.main_account.classic_address,
         "mainchain_ip": mainnet.url,
         "mainchain_port_ws": mainnet.ports[mainnet_i].ws_public_port,
-        "asset_stanzas": asset_stanzas,
+        "assets": [
+            {"asset_name": name, **asset.to_dict()}
+            for name, asset in xchain_assets.items()
+        ],
         "sidechain_stanza": sidechain_stanza,
         # other
-        "fixed_ips": fixed_ips_json,
+        "fixed_ips": [p.to_dict() for p in fixed_ips],
         "node_size": NODE_SIZE,
         "validation_seed": validation_seed,
         "with_shards": with_shards,
