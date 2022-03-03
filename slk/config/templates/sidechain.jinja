@@ -43,6 +43,7 @@ filter_bits=12
 cache_mb=256
 file_size_mb=8
 file_size_mult=2
+{{ earliest_seq_line }}
 {% if disable_delete != "#" -%}
 online_delete=256
 advisory_delete=0
@@ -62,6 +63,19 @@ time.apple.com
 time.nist.gov
 pool.ntp.org
 
+{% if fixed_ips %}
+# Fixed ips for a testnet.
+[ips_fixed]
+{% for fixed_ports in fixed_ips -%}
+{% if ports.peer_port != fixed_ports.peer_port-%}
+127.0.0.{{loop.index}} {{fixed_ports.peer_port}}
+{% endif -%}
+{% endfor -%}
+{% endif %}
+
+[validators_file]
+validators.txt
+
 [rpc_startup]
 { "command": "log_level", "severity": "fatal" }
 { "command": "log_level", "partition": "SidechainFederator", "severity": "trace" }
@@ -69,12 +83,16 @@ pool.ntp.org
 [ssl_verify]
 1
 
+{{ validation_seed_stanza }}
+
 {% if disable_shards != "# " -%}
 [shard_db]
 type=NuDB
 path={{ sub_dir }}/shards
 max_historical_shards=6
 {% endif -%}
+
+{{ sidechain_stanza -}}
 
 [features]
 PayChan

@@ -127,7 +127,47 @@ mainchain_secret={main_account.seed}
     return (sidechain_stanzas, bootstrap_stanzas)
 
 
-def get_cfg_str(
+def get_cfg_str_mainchain(
+    ports: Ports,
+    full_history: bool,
+    sub_dir: str,
+    disable_shards: str,
+    with_hooks: bool,
+) -> str:
+    """
+    Generates the bulk of the boilerplate in the rippled.cfg file.
+
+    Args:
+        ports: The ports that the node is using.
+        full_history: Whether to store the full history of the ledger.
+        sub_dir: The subdirectory of the node's config files.
+        disable_shards: Whether or not to comment out the shards stuff.
+        with_hooks: Whether or not to have hooks support in the chain.
+
+    Returns:
+        The bulk of `rippled.cfg`.
+    """
+    env = Environment(loader=FileSystemLoader(searchpath="./slk/config/templates"))
+    template = env.get_template("mainchain_standalone.jinja")
+
+    disable_delete = "#" if full_history else ""
+    history_line = "full" if full_history else "256"
+
+    data = {
+        "sub_dir": sub_dir,
+        "disable_delete": disable_delete,
+        "history_line": history_line,
+        # ports stanza
+        "ports": ports.to_dict(),
+        "this_ip": THIS_IP,
+        # other
+        "node_size": NODE_SIZE,
+        "disable_shards": disable_shards,
+    }
+    return template.render(data)
+
+
+def get_cfg_str_sidechain(
     ports: Ports,
     full_history: bool,
     sub_dir: str,
@@ -155,7 +195,7 @@ def get_cfg_str(
     """
     fixed_ips_json = [p.to_dict() for p in fixed_ips] if fixed_ips else None
     env = Environment(loader=FileSystemLoader(searchpath="./slk/config/templates"))
-    template = env.get_template("mainchain_standalone.jinja")
+    template = env.get_template("sidechain.jinja")
 
     disable_delete = "#" if full_history else ""
     history_line = "full" if full_history else "256"
