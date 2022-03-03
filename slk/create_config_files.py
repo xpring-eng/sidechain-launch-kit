@@ -26,10 +26,11 @@ from typing import Dict, List, Optional, cast
 
 from jinja2 import Environment, FileSystemLoader
 from xrpl.models import XRP, IssuedCurrency
+from xrpl.wallet import Wallet
 
 from slk.config.cfg_strs import generate_sidechain_stanza
 from slk.config.config_params import ConfigParams
-from slk.config.helper_classes import Ports, XChainAsset
+from slk.config.helper_classes import Keypair, Ports, XChainAsset
 from slk.config.network import (
     ExternalNetwork,
     Network,
@@ -86,6 +87,21 @@ def _generate_validators_txt(sub_dir: str, validators: List[str]) -> None:
         f.write(template.render(template_data))
 
 
+def _generate_sidechain_bootstrap(
+    sub_dir: str, fed_keys: List[Keypair], mainchain_account: Wallet
+) -> None:
+    template = JINJA_ENV.get_template("sidechain_bootstrap.jinja")
+
+    template_data = {
+        "federators": [fed.to_dict() for fed in fed_keys],
+        "mainchain_secret": mainchain_account.seed,
+    }
+
+    # add the bootstrap file
+    with open(sub_dir + "/sidechain_bootstrap.cfg", "w") as f:
+        f.write(template.render(template_data))
+
+
 # Generate the rippled.cfg and validators.txt files for a rippled node.
 def _generate_cfg_dir_sidechain(
     *,
@@ -110,7 +126,7 @@ def _generate_cfg_dir_sidechain(
     for path in ["", "/db", "/shards"]:
         Path(sub_dir + path).mkdir(parents=True, exist_ok=True)
 
-    sidechain_stanza, sidechain_bootstrap_stanza = generate_sidechain_stanza(
+    sidechain_stanza, _ = generate_sidechain_stanza(
         mainnet.url,
         sidenet.main_account,
         sidenet.federator_keypairs,
@@ -150,10 +166,9 @@ def _generate_cfg_dir_sidechain(
         f.write(template.render(template_data))
 
     _generate_validators_txt(sub_dir, validators)
-
-    # add the bootstrap file
-    with open(sub_dir + "/sidechain_bootstrap.cfg", "w") as f:
-        f.write(sidechain_bootstrap_stanza)
+    _generate_sidechain_bootstrap(
+        sub_dir, sidenet.federator_keypairs, sidenet.main_account
+    )
 
     return sub_dir + "/rippled.cfg"
 

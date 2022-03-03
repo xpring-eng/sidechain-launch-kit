@@ -17,6 +17,19 @@ class Keypair:
     secret_key: str
     account_id: Optional[str]
 
+    def to_dict(self: Keypair) -> Dict[str, Optional[str]]:
+        """
+        Convert the KeyPair to a dictionary.
+
+        Returns:
+            The key info represented by the KeyPair, in dictionary form.
+        """
+        return {
+            "public_key": self.public_key,
+            "secret_key": self.secret_key,
+            "account_id": self.account_id,
+        }
+
 
 # TODO: refactor to make this less weird between local and external
 class Ports:
