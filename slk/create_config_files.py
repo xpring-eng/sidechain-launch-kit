@@ -22,7 +22,7 @@ import shutil
 import sys
 import traceback
 from pathlib import Path
-from typing import Dict, List, Optional
+from typing import Any, Dict, List
 
 from jinja2 import Environment, FileSystemLoader
 from xrpl.models import XRP, IssuedCurrency
@@ -37,6 +37,16 @@ JINJA_ENV = Environment(loader=FileSystemLoader(searchpath="./slk/config/templat
 NODE_SIZE = "medium"
 
 
+def _generate_template(
+    template_name: str, template_data: Dict[str, Any], filename: str
+) -> None:
+    template = JINJA_ENV.get_template(template_name)
+
+    # add the rippled.cfg file
+    with open(filename, "w") as f:
+        f.write(template.render(template_data))
+
+
 # generate a mainchain standalone rippled.cfg file
 def _generate_cfg_dir_mainchain(
     *,
@@ -48,7 +58,6 @@ def _generate_cfg_dir_mainchain(
     full_history: bool = False,
 ) -> None:
     sub_dir = f"{data_dir}/{cfg_type}"
-    template = JINJA_ENV.get_template("mainchain_standalone.jinja")
 
     for path in ["", "/db", "/shards"]:
         Path(sub_dir + path).mkdir(parents=True, exist_ok=True)
@@ -64,18 +73,17 @@ def _generate_cfg_dir_mainchain(
     }
 
     # add the rippled.cfg file
-    with open(sub_dir + "/rippled.cfg", "w") as f:
-        f.write(template.render(template_data))
+    _generate_template(
+        "mainchain_standalone.jinja",
+        template_data,
+        os.path.join(data_dir, cfg_type, "rippled.cfg"),
+    )
 
 
 def _generate_validators_txt(sub_dir: str, validators: List[str]) -> None:
-    template = JINJA_ENV.get_template("validators.jinja")
-
-    # Add the validators.txt file
-    template_data = {"validators": validators}
-
-    with open(sub_dir + "/validators.txt", "w") as f:
-        f.write(template.render(template_data))
+    _generate_template(
+        "validators.jinja", {"validators": validators}, sub_dir + "/validators.txt"
+    )
 
 
 # Generate all the rippled.cfg and validators.txt files for the sidechain nodes.
@@ -87,17 +95,8 @@ def _generate_cfg_dirs_sidechain(
     mainnet_url: str,
     mainnet_ws_port: int,
     sidenet: SidechainNetwork,
-    xchain_assets: Optional[Dict[str, XChainAsset]] = None,
+    xchain_assets: Dict[str, XChainAsset],
 ) -> None:
-    template = JINJA_ENV.get_template("sidechain.jinja")
-
-    if xchain_assets is None:
-        # default to xrp only at a 1:1 value
-        xchain_assets = {}
-        xchain_assets["xrp_xrp_sidechain_asset"] = XChainAsset(
-            XRP(), XRP(), "1", "1", "400", "400"
-        )
-
     # data that isn't node-specific
     initial_template_data = {
         "full_history": full_history,
@@ -117,7 +116,7 @@ def _generate_cfg_dirs_sidechain(
 
     for fed_num in range(len(sidenet.ports)):
         cfg_type = f"sidechain_{fed_num}"
-        sub_dir = f"{data_dir}/{cfg_type}"
+        sub_dir = os.path.join(data_dir, cfg_type)
 
         for path in ["", "/db", "/shards"]:
             Path(sub_dir + path).mkdir(parents=True, exist_ok=True)
@@ -140,14 +139,15 @@ def _generate_cfg_dirs_sidechain(
         }
 
         # add the rippled.cfg file
-        with open(sub_dir + "/rippled.cfg", "w") as f:
-            f.write(template.render(template_data))
+        _generate_template(
+            "sidechain.jinja", template_data, os.path.join(sub_dir, "rippled.cfg")
+        )
 
         _generate_validators_txt(sub_dir, validators)
 
 
 def create_config_files(
-    params: ConfigParams, xchain_assets: Optional[Dict[str, XChainAsset]] = None
+    params: ConfigParams, xchain_assets: Dict[str, XChainAsset]
 ) -> None:
     """
     Create the config files for a network.
