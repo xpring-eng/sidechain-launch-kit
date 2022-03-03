@@ -35,7 +35,9 @@ class Network:
 class StandaloneNetwork(Network):
     """Represents a network that is standalone and running locally."""
 
-    def __init__(self: StandaloneNetwork, num_nodes: int, start_cfg_index: int) -> None:
+    def __init__(
+        self: StandaloneNetwork, start_cfg_index: int, num_nodes: int = 1
+    ) -> None:
         """
         Initializes a StandaloneNetwork.
 

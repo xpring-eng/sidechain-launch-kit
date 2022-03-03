@@ -22,7 +22,7 @@ import shutil
 import sys
 import traceback
 from pathlib import Path
-from typing import Dict, List, Optional, cast
+from typing import Dict, List, Optional
 
 from jinja2 import Environment, FileSystemLoader
 from xrpl.models import XRP, IssuedCurrency
@@ -51,7 +51,7 @@ def _generate_cfg_dir_mainchain(
     validation_seed: str,
     data_dir: str,
     full_history: bool = False,
-) -> str:
+) -> None:
     sub_dir = f"{data_dir}/{cfg_type}"
     template = JINJA_ENV.get_template("mainchain_standalone.jinja")
 
@@ -71,8 +71,6 @@ def _generate_cfg_dir_mainchain(
     # add the rippled.cfg file
     with open(sub_dir + "/rippled.cfg", "w") as f:
         f.write(template.render(template_data))
-
-    return sub_dir + "/rippled.cfg"
 
 
 def _generate_validators_txt(sub_dir: str, validators: List[str]) -> None:
@@ -154,49 +152,6 @@ def _generate_cfg_dirs_sidechain(
         _generate_validators_txt(sub_dir, validators)
 
 
-# Generate all the config files for a mainchain-sidechain setup.
-def _generate_all_configs(
-    out_dir: str,
-    mainnet: Network,
-    sidenet: SidechainNetwork,
-    standalone: bool = True,
-    xchain_assets: Optional[Dict[str, XChainAsset]] = None,
-) -> None:
-    # clear directory
-    if os.path.exists(out_dir):
-        for filename in os.listdir(out_dir):
-            file_path = os.path.join(out_dir, filename)
-            try:
-                if os.path.isfile(file_path) or os.path.islink(file_path):
-                    os.unlink(file_path)
-                elif os.path.isdir(file_path):
-                    shutil.rmtree(file_path)
-            except Exception as e:
-                print("Failed to delete %s. Reason: %s" % (file_path, e))
-
-    mainnet_cfgs = []
-    if standalone:
-        mainnet = cast(StandaloneNetwork, mainnet)
-        for i in range(len(mainnet.ports)):
-            validator_kp = mainnet.validator_keypairs[i]
-            ports = mainnet.ports[i]
-            mainchain_cfg_file = _generate_cfg_dir_mainchain(
-                ports=ports,
-                cfg_type=f"mainchain_{i}",
-                validation_seed=validator_kp.secret_key,
-                data_dir=out_dir,
-            )
-            mainnet_cfgs.append(mainchain_cfg_file)
-
-    _generate_cfg_dirs_sidechain(
-        data_dir=out_dir,
-        full_history=True,
-        mainnet=mainnet,
-        sidenet=sidenet,
-        xchain_assets=xchain_assets,
-    )
-
-
 def create_config_files(
     params: ConfigParams, xchain_assets: Optional[Dict[str, XChainAsset]] = None
 ) -> None:
@@ -208,25 +163,56 @@ def create_config_files(
         xchain_assets: The cross-chain assets that are allowed to cross the network
             bridge.
     """
+    # Set up directory
+    out_dir = f"{params.configs_dir}/sidechain_testnet"
+    if os.path.exists(out_dir):
+        for filename in os.listdir(out_dir):
+            file_path = os.path.join(out_dir, filename)
+            try:
+                if os.path.isfile(file_path) or os.path.islink(file_path):
+                    os.unlink(file_path)
+                elif os.path.isdir(file_path):
+                    shutil.rmtree(file_path)
+            except Exception as e:
+                print("Failed to delete %s. Reason: %s" % (file_path, e))
+
     index = 0
+
     if params.standalone:
-        mainnet: Network = StandaloneNetwork(num_nodes=1, start_cfg_index=index)
+        mainnet = StandaloneNetwork(start_cfg_index=index)
+
+        # generate mainchain config files
+        for i in range(len(mainnet.ports)):
+            validator_kp = mainnet.validator_keypairs[i]
+            ports = mainnet.ports[i]
+            _generate_cfg_dir_mainchain(
+                ports=ports,
+                cfg_type=f"mainchain_{i}",
+                validation_seed=validator_kp.secret_key,
+                data_dir=out_dir,
+            )
+        index += 1
     else:
         assert params.mainnet_port is not None  # TODO: better error handling
-        mainnet = ExternalNetwork(url=params.mainnet_url, ws_port=params.mainnet_port)
+        mainnet = ExternalNetwork(
+            url=params.mainnet_url, ws_port=params.mainnet_port
+        )  # type: ignore
+
     sidenet = SidechainNetwork(
         num_federators=params.num_federators,
-        start_cfg_index=index + 1,
+        start_cfg_index=index,
         main_door_seed=params.door_seed,
     )
-    _generate_all_configs(
-        out_dir=f"{params.configs_dir}/sidechain_testnet",
+
+    _generate_cfg_dirs_sidechain(
+        data_dir=out_dir,
+        full_history=True,
         mainnet=mainnet,
         sidenet=sidenet,
         xchain_assets=xchain_assets,
-        standalone=params.standalone,
     )
 
+    # create logs directory
     (Path(params.configs_dir) / "logs").mkdir(parents=True, exist_ok=True)
 
 
