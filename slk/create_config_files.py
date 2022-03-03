@@ -126,7 +126,7 @@ def _generate_cfg_dir_sidechain(
     for path in ["", "/db", "/shards"]:
         Path(sub_dir + path).mkdir(parents=True, exist_ok=True)
 
-    sidechain_stanza, _ = generate_sidechain_stanza(
+    sidechain_stanza = generate_sidechain_stanza(
         mainnet.url,
         sidenet.main_account,
         sidenet.federator_keypairs,

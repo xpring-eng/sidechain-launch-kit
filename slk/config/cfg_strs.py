@@ -1,6 +1,6 @@
 """Helper methods for generating the strings that make up the config files."""
 
-from typing import Dict, List, Optional, Tuple
+from typing import Dict, List, Optional
 
 from xrpl.wallet import Wallet
 
@@ -15,10 +15,6 @@ FEDERATORS_SECRETS_STANZA_INIT = """
 # a config file)
 [sidechain_federators_secrets]
 """
-BOOTSTRAP_FEDERATORS_STANZA_INIT = """
-# first value is federator signing public key, second is the signing pk account
-[sidechain_federators]
-"""
 
 THIS_IP = "127.0.0.1"
 
@@ -30,10 +26,9 @@ def generate_sidechain_stanza(
     main_account: Wallet,
     federators: List[Keypair],
     xchain_assets: Optional[Dict[str, XChainAsset]] = None,
-) -> Tuple[str, str]:
+) -> str:
     """
-    Generates the [sidechain] stanza in rippled.cfg and also the [sidechain] stanza in
-    the sidechain_bootstrap.cfg file.
+    Generates the [sidechain] stanza in rippled.cfg.
 
     Args:
         mainchain_url: The URL of the mainchain. If the chain is local, it is 127.0.0.1.
@@ -42,26 +37,17 @@ def generate_sidechain_stanza(
         xchain_assets: Cross-chain asset information.
 
     Returns:
-        The `[sidechain]` stanzas for `rippled.cfg` and `sidechain_bootstrap.cfg`.
+        The `[sidechain]` stanzas for `rippled.cfg`.
     """
     federators_stanza = FEDERATORS_STANZA_INIT
     federators_secrets_stanza = FEDERATORS_SECRETS_STANZA_INIT
-    bootstrap_federators_stanza = BOOTSTRAP_FEDERATORS_STANZA_INIT
 
     for fed in federators:
         federators_stanza += f"{fed.public_key}\n"
         federators_secrets_stanza += f"{fed.secret_key}\n"
-        bootstrap_federators_stanza += f"{fed.public_key} {fed.account_id}\n"
 
     sidechain_stanzas = f"""{federators_stanza}
 
 {federators_secrets_stanza if mainchain_url == THIS_IP else ""}
 """
-
-    bootstrap_stanzas = f"""
-[sidechain]
-mainchain_secret={main_account.seed}
-
-{bootstrap_federators_stanza}
-"""
-    return (sidechain_stanzas, bootstrap_stanzas)
+    return sidechain_stanzas
