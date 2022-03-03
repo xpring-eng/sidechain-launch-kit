@@ -42,9 +42,6 @@ JINJA_ENV = Environment(loader=FileSystemLoader(searchpath="./slk/config/templat
 
 NODE_SIZE = "medium"
 
-MAINCHAIN_IP = "127.0.0.1"
-THIS_IP = "127.0.0.1"
-
 
 def _generate_cfg_dir_mainchain(
     *,
@@ -69,7 +66,6 @@ def _generate_cfg_dir_mainchain(
         "full_history": full_history,
         # ports stanza
         "ports": ports.to_dict(),
-        "this_ip": THIS_IP,
         # other
         "node_size": NODE_SIZE,
         "with_shards": with_shards,
@@ -113,7 +109,6 @@ def _generate_cfg_dir_sidechain(
         "full_history": full_history,
         # ports stanza
         "ports": ports.to_dict(),
-        "this_ip": THIS_IP,
         # other
         "node_size": NODE_SIZE,
         "validation_seed": validation_seed,
