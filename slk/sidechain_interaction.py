@@ -158,7 +158,7 @@ def _multinode_with_callback(
 ) -> None:
 
     mainchain_cfg = ConfigFile(
-        file_name=f"{params.configs_dir}/sidechain_testnet/mainchain/rippled.cfg"
+        file_name=f"{params.configs_dir}/sidechain_testnet/mainchain_0/rippled.cfg"
     )
     _rm_debug_log(mainchain_cfg, params.verbose)
     if params.debug_mainchain:

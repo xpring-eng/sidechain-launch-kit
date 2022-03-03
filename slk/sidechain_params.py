@@ -246,7 +246,7 @@ class SidechainParams:
         else:
             if self.main_standalone:
                 self.mainchain_config = ConfigFile(
-                    file_name=f"{self.configs_dir}/sidechain_testnet/mainchain"
+                    file_name=f"{self.configs_dir}/sidechain_testnet/mainchain_0"
                     "/rippled.cfg"
                 )
             self.sidechain_config = ConfigFile(
