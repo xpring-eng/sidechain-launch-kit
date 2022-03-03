@@ -26,7 +26,7 @@ from typing import Dict, List, Optional, cast
 
 from xrpl.models import XRP, IssuedCurrency
 
-from slk.config.cfg_strs import generate_sidechain_stanza, get_cfg_str, get_ips_stanza
+from slk.config.cfg_strs import generate_sidechain_stanza, get_cfg_str
 from slk.config.config_params import ConfigParams
 from slk.config.helper_classes import Ports, XChainAsset
 from slk.config.network import (
@@ -85,17 +85,16 @@ def _generate_cfg_dir(
         Path(sub_dir + path).mkdir(parents=True, exist_ok=True)
 
     assert ports.peer_port is not None  # TODO: better error handling/port typing
-    ips_stanza = get_ips_stanza(fixed_ips, ports.peer_port, main_net)
 
     cfg_str = get_cfg_str(
         ports,
         full_history,
         sub_dir,
-        ips_stanza,
         validation_seed_stanza,
         disable_shards,
         sidechain_stanza,
         with_hooks,
+        fixed_ips,
     )
 
     # add the rippled.cfg file

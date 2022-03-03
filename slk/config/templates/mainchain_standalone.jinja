@@ -1,11 +1,10 @@
-
 [server]
 port_rpc_admin_local
 port_peer
 port_ws_admin_local
 port_ws_public
-#ssl_key = /etc/ssl/private/server.key
-#ssl_cert = /etc/ssl/certs/server.crt
+{# ssl_key = /etc/ssl/private/server.key -#}
+{# ssl_cert = /etc/ssl/certs/server.crt #}
 
 [port_rpc_admin_local]
 port = {{ ports.http_admin_port }}
@@ -28,7 +27,7 @@ protocol = ws
 port = {{ ports.ws_public_port }}
 ip = {{ this_ip }}
 protocol = ws
-# protocol = wss
+{# protocol = wss #}
 
 [node_size]
 {{ node_size }}
@@ -45,8 +44,10 @@ cache_mb=256
 file_size_mb=8
 file_size_mult=2
 {{ earliest_seq_line }}
-{{ disable_delete }}online_delete=256
-{{ disable_delete }}advisory_delete=0
+{% if disable_delete != "#" -%}
+online_delete=256
+advisory_delete=0
+{% endif %}
 
 [database_path]
 {{ sub_dir }}/db
@@ -62,8 +63,15 @@ time.apple.com
 time.nist.gov
 pool.ntp.org
 
-{{ ips_stanza }}
-
+{% if fixed_ips %}
+# Fixed ips for a testnet.
+[ips_fixed]
+{% for fixed_ports in fixed_ips -%}
+{% if ports.peer_port != fixed_ports.peer_port-%}
+127.0.0.{{loop.index}} {{fixed_ports.peer_port}}
+{% endif -%}
+{% endfor -%}
+{% endif %}
 
 [validators_file]
 validators.txt
@@ -77,12 +85,14 @@ validators.txt
 
 {{ validation_seed_stanza }}
 
-{{ disable_shards }}[shard_db]
-{{ disable_shards }}type=NuDB
-{{ disable_shards }}path={{ sub_dir }}/shards
-{{ disable_shards }}max_historical_shards=6
+{% if disable_shards != "# " -%}
+[shard_db]
+type=NuDB
+path={{ sub_dir }}/shards
+max_historical_shards=6
+{% endif -%}
 
-{{ sidechain_stanza }}
+{{ sidechain_stanza -}}
 
 [features]
 PayChan
