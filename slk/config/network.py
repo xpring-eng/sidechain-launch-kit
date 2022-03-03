@@ -100,7 +100,7 @@ class SidechainNetwork(StandaloneNetwork):
                 needed if the mainchain is an external chain (e.g.
                 mainnet/devnet/testnet).
         """
-        super().__init__(num_federators, start_cfg_index)
+        super().__init__(start_cfg_index, num_federators)
         self.num_federators = num_federators
         self.federator_keypairs = self._generate_federator_keypairs()
         # TODO: main_account needs to be user-defined for external networks

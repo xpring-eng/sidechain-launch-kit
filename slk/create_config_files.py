@@ -29,12 +29,7 @@ from xrpl.models import XRP, IssuedCurrency
 
 from slk.config.config_params import ConfigParams
 from slk.config.helper_classes import Ports, XChainAsset
-from slk.config.network import (
-    ExternalNetwork,
-    Network,
-    SidechainNetwork,
-    StandaloneNetwork,
-)
+from slk.config.network import SidechainNetwork, StandaloneNetwork
 from slk.utils.eprint import eprint
 
 JINJA_ENV = Environment(loader=FileSystemLoader(searchpath="./slk/config/templates"))
@@ -89,7 +84,8 @@ def _generate_cfg_dirs_sidechain(
     with_shards: bool = False,
     data_dir: str,
     full_history: bool = False,
-    mainnet: Network,
+    mainnet_url: str,
+    mainnet_ws_port: int,
     sidenet: SidechainNetwork,
     xchain_assets: Optional[Dict[str, XChainAsset]] = None,
 ) -> None:
@@ -106,7 +102,7 @@ def _generate_cfg_dirs_sidechain(
     initial_template_data = {
         "full_history": full_history,
         # sidechains-specific stanzas
-        "mainchain_ip": mainnet.url,
+        "mainchain_ip": mainnet_url,
         "mainchain_door_account": sidenet.main_account.classic_address,
         "assets": [
             {"asset_name": name, **asset.to_dict()}
@@ -131,8 +127,6 @@ def _generate_cfg_dirs_sidechain(
         validation_seed = validator_kp.secret_key
         validators = [kp.public_key for kp in sidenet.validator_keypairs]
 
-        mainnet_i = fed_num % len(mainnet.ports)
-
         template_data = {
             **initial_template_data,
             "sub_dir": sub_dir,
@@ -140,7 +134,7 @@ def _generate_cfg_dirs_sidechain(
             "ports": ports.to_dict(),
             # sidechains-specific stanzas
             "signing_key": sidenet.federator_keypairs[fed_num].secret_key,
-            "mainchain_port_ws": mainnet.ports[mainnet_i].ws_public_port,
+            "mainchain_port_ws": mainnet_ws_port,
             # other
             "validation_seed": validation_seed,
         }
@@ -191,12 +185,15 @@ def create_config_files(
                 validation_seed=validator_kp.secret_key,
                 data_dir=out_dir,
             )
+
+        mainnet_url = mainnet.url
+        mainnet_ws_port = mainnet.ports[0].ws_public_port
+
         index += 1
     else:
         assert params.mainnet_port is not None  # TODO: better error handling
-        mainnet = ExternalNetwork(
-            url=params.mainnet_url, ws_port=params.mainnet_port
-        )  # type: ignore
+        mainnet_url = params.mainnet_url
+        mainnet_ws_port = params.mainnet_port
 
     sidenet = SidechainNetwork(
         num_federators=params.num_federators,
@@ -207,7 +204,8 @@ def create_config_files(
     _generate_cfg_dirs_sidechain(
         data_dir=out_dir,
         full_history=True,
-        mainnet=mainnet,
+        mainnet_url=mainnet_url,
+        mainnet_ws_port=mainnet_ws_port,
         sidenet=sidenet,
         xchain_assets=xchain_assets,
     )
