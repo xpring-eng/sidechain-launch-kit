@@ -1,9 +1,7 @@
 """Helper methods for generating the strings that make up the config files."""
 
-import json
-from typing import Any, Dict, List, Optional, Tuple, Union
+from typing import Dict, List, Optional, Tuple
 
-from xrpl.models import XRP, Amount
 from xrpl.wallet import Wallet
 
 from slk.config.helper_classes import Keypair, XChainAsset
@@ -23,39 +21,6 @@ BOOTSTRAP_FEDERATORS_STANZA_INIT = """
 """
 
 THIS_IP = "127.0.0.1"
-
-
-def _amt_to_json(amt: Amount) -> Union[str, Dict[str, Any]]:
-    if isinstance(amt, str):
-        return amt
-    else:
-        return amt.to_dict()
-
-
-def _generate_asset_stanzas(assets: Optional[Dict[str, XChainAsset]] = None) -> str:
-    if assets is None:
-        # default to xrp only at a 1:1 value
-        assets = {}
-        assets["xrp_xrp_sidechain_asset"] = XChainAsset(
-            XRP(), XRP(), "1", "1", "400", "400"
-        )
-
-    index_stanza = """
-[sidechain_assets]"""
-
-    asset_stanzas = []
-
-    for name, xchainasset in assets.items():
-        index_stanza += "\n" + name
-        new_stanza = f"""
-[{name}]
-mainchain_asset={json.dumps(_amt_to_json(xchainasset.main_asset))}
-sidechain_asset={json.dumps(_amt_to_json(xchainasset.side_asset))}
-mainchain_refund_penalty={json.dumps(_amt_to_json(xchainasset.main_refund_penalty))}
-sidechain_refund_penalty={json.dumps(_amt_to_json(xchainasset.side_refund_penalty))}"""
-        asset_stanzas.append(new_stanza)
-
-    return index_stanza + "\n" + "\n".join(asset_stanzas)
 
 
 # First element of the returned tuple is the sidechain stanzas
@@ -79,8 +44,6 @@ def generate_sidechain_stanza(
     Returns:
         The `[sidechain]` stanzas for `rippled.cfg` and `sidechain_bootstrap.cfg`.
     """
-    assets_stanzas = _generate_asset_stanzas(xchain_assets)
-
     federators_stanza = FEDERATORS_STANZA_INIT
     federators_secrets_stanza = FEDERATORS_SECRETS_STANZA_INIT
     bootstrap_federators_stanza = BOOTSTRAP_FEDERATORS_STANZA_INIT
@@ -90,9 +53,7 @@ def generate_sidechain_stanza(
         federators_secrets_stanza += f"{fed.secret_key}\n"
         bootstrap_federators_stanza += f"{fed.public_key} {fed.account_id}\n"
 
-    sidechain_stanzas = f"""{assets_stanzas}
-
-{federators_stanza}
+    sidechain_stanzas = f"""{federators_stanza}
 
 {federators_secrets_stanza if mainchain_url == THIS_IP else ""}
 """
