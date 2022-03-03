@@ -88,11 +88,6 @@ def _parse_args_helper(parser: argparse.ArgumentParser) -> None:
     )
 
     parser.add_argument(
-        "--hooks_dir",
-        help=("path to hooks dir"),
-    )
-
-    parser.add_argument(
         "--mainnet",
         "-m",
         help=(
@@ -221,13 +216,6 @@ class SidechainParams:
                 "Missing configs directory location. Either set the env variable "
                 "RIPPLED_SIDECHAIN_CFG_DIR or use the --cfgs_dir command line switch"
             )
-
-        # identify directory where hooks files are
-        self.hooks_dir = None
-        if "RIPPLED_SIDECHAIN_HOOKS_DIR" in _ENV_VARS:
-            self.hooks_dir = _ENV_VARS["RIPPLED_SIDECHAIN_HOOKS_DIR"]
-        if args.hooks_dir:
-            self.hooks_dir = args.hooks_dir
 
         # set up config files
         self.mainchain_config = None
