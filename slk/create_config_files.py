@@ -58,77 +58,89 @@ ED264807102805220DA0F312E71FC2C69E1552C9C5790F6C25E3729DEB573D5860
 """
 
 
-# Generate the rippled.cfg and validators.txt files for a rippled node.
-def _generate_cfg_dir(
+def _generate_cfg_dir_mainchain(
     *,
     ports: Ports,
     with_shards: bool = False,
     main_net: bool = True,
     cfg_type: str,
-    sidechain_stanza: str = "",
-    sidechain_bootstrap_stanza: str = "",
     validation_seed: str,
-    validators: Optional[List[str]] = None,
-    fixed_ips: Optional[List[Ports]] = None,
     data_dir: str,
     full_history: bool = False,
-    with_hooks: bool = False,
 ) -> str:
     disable_shards = "" if with_shards else "# "
-    validation_seed_stanza = f"\n[validation_seed]\n{validation_seed}\n"
-    shard_str = "shards" if with_shards else "no_shards"
-    net_str = "main" if main_net else "test"
-    if not fixed_ips:
-        sub_dir = data_dir + f"/{net_str}.{shard_str}.{cfg_type}"
-        if sidechain_stanza:
-            sub_dir += ".sidechain"
-    else:
-        sub_dir = data_dir + f"/{cfg_type}"
+    sub_dir = f"{data_dir}/mainchain"
 
     for path in ["", "/db", "/shards"]:
         Path(sub_dir + path).mkdir(parents=True, exist_ok=True)
 
     assert ports.peer_port is not None  # TODO: better error handling/port typing
 
-    if sidechain_stanza == "":
-        cfg_str = get_cfg_str_mainchain(
-            ports,
-            full_history,
-            sub_dir,
-            disable_shards,
-            with_hooks,
-        )
-    else:
-        cfg_str = get_cfg_str_sidechain(
-            ports,
-            full_history,
-            sub_dir,
-            validation_seed_stanza,
-            disable_shards,
-            sidechain_stanza,
-            with_hooks,
-            fixed_ips,
-        )
+    cfg_str = get_cfg_str_mainchain(
+        ports,
+        full_history,
+        sub_dir,
+        disable_shards,
+    )
 
     # add the rippled.cfg file
     with open(sub_dir + "/rippled.cfg", "w") as f:
         f.write(cfg_str)
 
-    validators_str = ""
+    return sub_dir + "/rippled.cfg"
+
+
+# Generate the rippled.cfg and validators.txt files for a rippled node.
+def _generate_cfg_dir_sidechain(
+    *,
+    ports: Ports,
+    with_shards: bool = False,
+    main_net: bool = True,
+    cfg_type: str,
+    sidechain_stanza: str,
+    sidechain_bootstrap_stanza: str,
+    validation_seed: str,
+    validators: List[str],
+    fixed_ips: List[Ports],
+    data_dir: str,
+    full_history: bool = False,
+) -> str:
+    disable_shards = "" if with_shards else "# "
+
+    validation_seed_stanza = f"\n[validation_seed]\n{validation_seed}\n"
+
+    sub_dir = f"{data_dir}/{cfg_type}"
+
+    for path in ["", "/db", "/shards"]:
+        Path(sub_dir + path).mkdir(parents=True, exist_ok=True)
+
+    assert ports.peer_port is not None  # TODO: better error handling/port typing
+
+    cfg_str = get_cfg_str_sidechain(
+        ports,
+        full_history,
+        sub_dir,
+        validation_seed_stanza,
+        disable_shards,
+        sidechain_stanza,
+        fixed_ips,
+    )
+
+    # add the rippled.cfg file
+    with open(sub_dir + "/rippled.cfg", "w") as f:
+        f.write(cfg_str)
+
     # Add the validators.txt file
-    if validators:
-        validators_str = "[validators]\n"
-        for k in validators:
-            validators_str += f"{k}\n"
-    else:
-        validators_str = MAINNET_VALIDATORS if main_net else ALTNET_VALIDATORS
+    validators_str = "[validators]\n"
+    for k in validators:
+        validators_str += f"{k}\n"
+
     with open(sub_dir + "/validators.txt", "w") as f:
         f.write(validators_str)
 
-    if sidechain_bootstrap_stanza:
-        # add the bootstrap file
-        with open(sub_dir + "/sidechain_bootstrap.cfg", "w") as f:
-            f.write(sidechain_bootstrap_stanza)
+    # add the bootstrap file
+    with open(sub_dir + "/sidechain_bootstrap.cfg", "w") as f:
+        f.write(sidechain_bootstrap_stanza)
 
     return sub_dir + "/rippled.cfg"
 
@@ -159,7 +171,7 @@ def _generate_all_configs(
         for i in range(len(mainnet.ports)):
             validator_kp = mainnet.validator_keypairs[i]
             ports = mainnet.ports[i]
-            mainchain_cfg_file = _generate_cfg_dir(
+            mainchain_cfg_file = _generate_cfg_dir_mainchain(
                 ports=ports,
                 cfg_type=f"mainchain_{i}",
                 validation_seed=validator_kp.secret_key,
@@ -185,7 +197,7 @@ def _generate_all_configs(
             xchain_assets,
         )
 
-        _generate_cfg_dir(
+        _generate_cfg_dir_sidechain(
             ports=ports,
             cfg_type=f"sidechain_{i}",
             sidechain_stanza=sidechain_stanza,

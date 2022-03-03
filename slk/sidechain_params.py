@@ -246,8 +246,8 @@ class SidechainParams:
         else:
             if self.main_standalone:
                 self.mainchain_config = ConfigFile(
-                    file_name=f"{self.configs_dir}/sidechain_testnet/main.no_shards."
-                    "mainchain_0/rippled.cfg"
+                    file_name=f"{self.configs_dir}/sidechain_testnet/mainchain"
+                    "/rippled.cfg"
                 )
             self.sidechain_config = ConfigFile(
                 file_name=f"{self.configs_dir}/sidechain_testnet/sidechain_0/"

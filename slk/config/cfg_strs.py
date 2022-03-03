@@ -132,7 +132,6 @@ def get_cfg_str_mainchain(
     full_history: bool,
     sub_dir: str,
     disable_shards: str,
-    with_hooks: bool,
 ) -> str:
     """
     Generates the bulk of the boilerplate in the rippled.cfg file.
@@ -142,7 +141,6 @@ def get_cfg_str_mainchain(
         full_history: Whether to store the full history of the ledger.
         sub_dir: The subdirectory of the node's config files.
         disable_shards: Whether or not to comment out the shards stuff.
-        with_hooks: Whether or not to have hooks support in the chain.
 
     Returns:
         The bulk of `rippled.cfg`.
@@ -174,7 +172,6 @@ def get_cfg_str_sidechain(
     validation_seed_stanza: str,
     disable_shards: str,
     sidechain_stanza: str,
-    with_hooks: bool,
     fixed_ips: Optional[List[Ports]],
 ) -> str:
     """
@@ -187,7 +184,6 @@ def get_cfg_str_sidechain(
         validation_seed_stanza: The stanza of validation seed information.
         disable_shards: Whether or not to comment out the shards stuff.
         sidechain_stanza: The [sidechain] stanza.
-        with_hooks: Whether or not to have hooks support in the chain.
         fixed_ips: The IPs for the sidechain.
 
     Returns:

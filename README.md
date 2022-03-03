@@ -70,7 +70,7 @@ Type the command `server_info` to make sure the servers are running. An example 
 ```
 SSX> server_info
            pid                                  config  running server_state  ledger_seq complete_ledgers
-main 0  136206  main.no_shards.mainchain_0/rippled.cfg     True    proposing          75             2-75
+main 0  136206                   mainchain/rippled.cfg     True    proposing          75             2-75
 side 0  136230                 sidechain_0/rippled.cfg     True    proposing          92             1-92
      1  136231                 sidechain_1/rippled.cfg     True    proposing          92             1-92
      2  136232                 sidechain_2/rippled.cfg     True    proposing          92             1-92
