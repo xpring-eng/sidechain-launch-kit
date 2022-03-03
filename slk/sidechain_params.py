@@ -235,10 +235,6 @@ class SidechainParams:
             self.sidechain_config = ConfigFile(
                 file_name=f"{self.configs_dir}/main.no_shards.dog.sidechain/rippled.cfg"
             )
-            self.sidechain_bootstrap_config = ConfigFile(
-                file_name=f"{self.configs_dir}/main.no_shards.dog.sidechain/"
-                "sidechain_bootstrap.cfg"
-            )
         else:
             if self.main_standalone:
                 self.mainchain_config = ConfigFile(
@@ -248,10 +244,6 @@ class SidechainParams:
             self.sidechain_config = ConfigFile(
                 file_name=f"{self.configs_dir}/sidechain_testnet/sidechain_0/"
                 "rippled.cfg"
-            )
-            self.sidechain_bootstrap_config = ConfigFile(
-                file_name=f"{self.configs_dir}/sidechain_testnet/sidechain_0/"
-                "sidechain_bootstrap.cfg"
             )
 
         # set up door account
