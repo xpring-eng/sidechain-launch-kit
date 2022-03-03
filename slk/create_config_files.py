@@ -59,8 +59,6 @@ def _generate_cfg_dir_mainchain(
     for path in ["", "/db", "/shards"]:
         Path(sub_dir + path).mkdir(parents=True, exist_ok=True)
 
-    assert ports.peer_port is not None  # TODO: better error handling/port typing
-
     template_data = {
         "sub_dir": sub_dir,
         "full_history": full_history,
@@ -76,6 +74,16 @@ def _generate_cfg_dir_mainchain(
         f.write(template.render(template_data))
 
     return sub_dir + "/rippled.cfg"
+
+
+def _generate_validators_txt(sub_dir: str, validators: List[str]) -> None:
+    template = JINJA_ENV.get_template("validators.jinja")
+
+    # Add the validators.txt file
+    template_data = {"validators": validators}
+
+    with open(sub_dir + "/validators.txt", "w") as f:
+        f.write(template.render(template_data))
 
 
 # Generate the rippled.cfg and validators.txt files for a rippled node.
@@ -121,13 +129,7 @@ def _generate_cfg_dir_sidechain(
     with open(sub_dir + "/rippled.cfg", "w") as f:
         f.write(template.render(template_data))
 
-    # Add the validators.txt file
-    validators_str = "[validators]\n"
-    for k in validators:
-        validators_str += f"{k}\n"
-
-    with open(sub_dir + "/validators.txt", "w") as f:
-        f.write(validators_str)
+    _generate_validators_txt(sub_dir, validators)
 
     # add the bootstrap file
     with open(sub_dir + "/sidechain_bootstrap.cfg", "w") as f:
