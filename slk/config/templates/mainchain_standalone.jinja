@@ -69,7 +69,7 @@ pool.ntp.org
 [ssl_verify]
 1
 
-{% if disable_shards != "# " -%}
+{% if with_shards -%}
 [shard_db]
 type=NuDB
 path={{ sub_dir }}/shards

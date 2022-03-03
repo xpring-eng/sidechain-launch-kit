@@ -131,7 +131,7 @@ def get_cfg_str_mainchain(
     ports: Ports,
     full_history: bool,
     sub_dir: str,
-    disable_shards: str,
+    with_shards: bool,
 ) -> str:
     """
     Generates the bulk of the boilerplate in the rippled.cfg file.
@@ -140,7 +140,7 @@ def get_cfg_str_mainchain(
         ports: The ports that the node is using.
         full_history: Whether to store the full history of the ledger.
         sub_dir: The subdirectory of the node's config files.
-        disable_shards: Whether or not to comment out the shards stuff.
+        with_shards: Whether or not to include the shards stuff.
 
     Returns:
         The bulk of `rippled.cfg`.
@@ -160,7 +160,7 @@ def get_cfg_str_mainchain(
         "this_ip": THIS_IP,
         # other
         "node_size": NODE_SIZE,
-        "disable_shards": disable_shards,
+        "with_shards": with_shards,
     }
     return template.render(data)
 
@@ -170,7 +170,7 @@ def get_cfg_str_sidechain(
     full_history: bool,
     sub_dir: str,
     validation_seed: str,
-    disable_shards: str,
+    with_shards: bool,
     sidechain_stanza: str,
     fixed_ips: Optional[List[Ports]],
 ) -> str:
@@ -182,7 +182,7 @@ def get_cfg_str_sidechain(
         full_history: Whether to store the full history of the ledger.
         sub_dir: The subdirectory of the node's config files.
         validation_seed: The validation seed.
-        disable_shards: Whether or not to comment out the shards stuff.
+        with_shards: Whether or not to include the shards stuff.
         sidechain_stanza: The [sidechain] stanza.
         fixed_ips: The IPs for the sidechain.
 
@@ -211,7 +211,7 @@ def get_cfg_str_sidechain(
         # other
         "node_size": NODE_SIZE,
         "validation_seed": validation_seed,
-        "disable_shards": disable_shards,
+        "with_shards": with_shards,
         "sidechain_stanza": sidechain_stanza,
         "fixed_ips": fixed_ips_json,
     }

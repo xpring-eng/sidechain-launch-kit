@@ -68,7 +68,6 @@ def _generate_cfg_dir_mainchain(
     data_dir: str,
     full_history: bool = False,
 ) -> str:
-    disable_shards = "" if with_shards else "# "
     sub_dir = f"{data_dir}/mainchain"
 
     for path in ["", "/db", "/shards"]:
@@ -80,7 +79,7 @@ def _generate_cfg_dir_mainchain(
         ports,
         full_history,
         sub_dir,
-        disable_shards,
+        with_shards,
     )
 
     # add the rippled.cfg file
@@ -105,7 +104,6 @@ def _generate_cfg_dir_sidechain(
     data_dir: str,
     full_history: bool = False,
 ) -> str:
-    disable_shards = "" if with_shards else "# "
 
     sub_dir = f"{data_dir}/{cfg_type}"
 
@@ -119,7 +117,7 @@ def _generate_cfg_dir_sidechain(
         full_history,
         sub_dir,
         validation_seed,
-        disable_shards,
+        with_shards,
         sidechain_stanza,
         fixed_ips,
     )

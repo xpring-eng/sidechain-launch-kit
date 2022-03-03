@@ -86,7 +86,7 @@ validators.txt
 [validation_seed]
 {{ validation_seed }}
 
-{% if disable_shards != "# " -%}
+{% if with_shards -%}
 [shard_db]
 type=NuDB
 path={{ sub_dir }}/shards
