@@ -107,8 +107,6 @@ def _generate_cfg_dir_sidechain(
 ) -> str:
     disable_shards = "" if with_shards else "# "
 
-    validation_seed_stanza = f"\n[validation_seed]\n{validation_seed}\n"
-
     sub_dir = f"{data_dir}/{cfg_type}"
 
     for path in ["", "/db", "/shards"]:
@@ -120,7 +118,7 @@ def _generate_cfg_dir_sidechain(
         ports,
         full_history,
         sub_dir,
-        validation_seed_stanza,
+        validation_seed,
         disable_shards,
         sidechain_stanza,
         fixed_ips,
