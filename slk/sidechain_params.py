@@ -251,7 +251,7 @@ class SidechainParams:
         if "DOOR_ACCOUNT_SEED" in _ENV_VARS:
             door_seed = _ENV_VARS["DOOR_ACCOUNT_SEED"]
         if args.door_seed:
-            door_seed = args.DOOR_ACCOUNT_SEED
+            door_seed = args.door_seed
         if door_seed is None:
             raise Exception("Must specify a door account seed, for sidechain setup.")
         self.mc_door_account = Account(
@@ -280,6 +280,7 @@ class SidechainParams:
 
         # set up federators
         self.federators = [
+            # convert public key to rAddress format
             derive_classic_address(decode_account_public_key(line.strip()).hex())
             for line in self.sidechain_config.sidechain_federators.get_lines()
         ]
