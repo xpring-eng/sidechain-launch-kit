@@ -148,13 +148,9 @@ def get_cfg_str_mainchain(
     env = Environment(loader=FileSystemLoader(searchpath="./slk/config/templates"))
     template = env.get_template("mainchain_standalone.jinja")
 
-    disable_delete = "#" if full_history else ""
-    history_line = "full" if full_history else "256"
-
     data = {
         "sub_dir": sub_dir,
-        "disable_delete": disable_delete,
-        "history_line": history_line,
+        "full_history": full_history,
         # ports stanza
         "ports": ports.to_dict(),
         "this_ip": THIS_IP,
@@ -172,7 +168,7 @@ def get_cfg_str_sidechain(
     validation_seed: str,
     with_shards: bool,
     sidechain_stanza: str,
-    fixed_ips: Optional[List[Ports]],
+    fixed_ips: List[Ports],
 ) -> str:
     """
     Generates the bulk of the boilerplate in the rippled.cfg file.
@@ -189,22 +185,14 @@ def get_cfg_str_sidechain(
     Returns:
         The bulk of `rippled.cfg`.
     """
-    fixed_ips_json = [p.to_dict() for p in fixed_ips] if fixed_ips else None
     env = Environment(loader=FileSystemLoader(searchpath="./slk/config/templates"))
     template = env.get_template("sidechain.jinja")
 
-    disable_delete = "#" if full_history else ""
-    history_line = "full" if full_history else "256"
-
-    earliest_seq_line = ""
-    if sidechain_stanza:
-        earliest_seq_line = "earliest_seq=1"
+    fixed_ips_json = [p.to_dict() for p in fixed_ips]
 
     data = {
         "sub_dir": sub_dir,
-        "disable_delete": disable_delete,
-        "history_line": history_line,
-        "earliest_seq_line": earliest_seq_line,
+        "full_history": full_history,
         # ports stanza
         "ports": ports.to_dict(),
         "this_ip": THIS_IP,

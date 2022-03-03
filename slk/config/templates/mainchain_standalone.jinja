@@ -33,7 +33,11 @@ protocol = ws
 {{ node_size }}
 
 [ledger_history]
-{{ history_line }}
+{% if full_history -%}
+full
+{% else -%}
+256
+{% endif %}
 
 [node_db]
 type=NuDB
@@ -43,7 +47,7 @@ filter_bits=12
 cache_mb=256
 file_size_mb=8
 file_size_mult=2
-{% if disable_delete != "#" -%}
+{% if not full_history -%}
 online_delete=256
 advisory_delete=0
 {% endif %}

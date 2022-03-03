@@ -33,7 +33,11 @@ protocol = ws
 {{ node_size }}
 
 [ledger_history]
-{{ history_line }}
+{% if full_history -%}
+full
+{% else -%}
+256
+{% endif %}
 
 [node_db]
 type=NuDB
@@ -43,8 +47,8 @@ filter_bits=12
 cache_mb=256
 file_size_mb=8
 file_size_mult=2
-{{ earliest_seq_line }}
-{% if disable_delete != "#" -%}
+earliest_seq=1
+{% if not full_history -%}
 online_delete=256
 advisory_delete=0
 {% endif %}
@@ -63,15 +67,13 @@ time.apple.com
 time.nist.gov
 pool.ntp.org
 
-{% if fixed_ips %}
 # Fixed ips for a testnet.
 [ips_fixed]
 {% for fixed_ports in fixed_ips -%}
 {% if ports.peer_port != fixed_ports.peer_port-%}
 127.0.0.{{loop.index}} {{fixed_ports.peer_port}}
 {% endif -%}
-{% endfor -%}
-{% endif %}
+{% endfor %}
 
 [validators_file]
 validators.txt
