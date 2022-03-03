@@ -96,11 +96,16 @@ max_historical_shards=6
 {% endif -%}
 
 [sidechain]
+{#- seed for multisigning #}
 signing_key={{ signing_key }}
+{#- door account on the mainchain #}
 mainchain_account={{ mainchain_door_account }}
+{#- IP address of a node on the mainchain #}
 mainchain_ip={{ mainchain_ip }}
+{#- WS port for the node #}
 mainchain_port_ws={{ mainchain_port_ws }}
 
+{#- cross-chain currencies (could be XRP or issued currencies) #}
 [sidechain_assets]
 {% for asset in assets -%}
 {{ asset.asset_name }}
@@ -115,7 +120,7 @@ sidechain_refund_penalty={{ asset.side_refund_penalty }}
 
 {% endfor -%}
 
-# federator signing public keys
+{#- federator signing public keys #}
 [sidechain_federators]
 {% for fed in federators -%}
 {{ fed.public_key }}
