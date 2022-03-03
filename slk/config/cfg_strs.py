@@ -3,16 +3,10 @@
 import json
 from typing import Any, Dict, List, Optional, Tuple, Union
 
-from jinja2 import Environment, FileSystemLoader
 from xrpl.models import XRP, Amount
 from xrpl.wallet import Wallet
 
-from slk.config.helper_classes import Keypair, Ports, XChainAsset
-
-NODE_SIZE = "medium"
-
-MAINCHAIN_IP = "127.0.0.1"
-THIS_IP = "127.0.0.1"
+from slk.config.helper_classes import Keypair, XChainAsset
 
 FEDERATORS_STANZA_INIT = """
 # federator signing public keys
@@ -27,6 +21,8 @@ BOOTSTRAP_FEDERATORS_STANZA_INIT = """
 # first value is federator signing public key, second is the signing pk account
 [sidechain_federators]
 """
+
+THIS_IP = "127.0.0.1"
 
 
 def _amt_to_json(amt: Amount) -> Union[str, Dict[str, Any]]:
@@ -125,82 +121,3 @@ mainchain_secret={main_account.seed}
 {bootstrap_federators_stanza}
 """
     return (sidechain_stanzas, bootstrap_stanzas)
-
-
-def get_cfg_str_mainchain(
-    ports: Ports,
-    full_history: bool,
-    sub_dir: str,
-    with_shards: bool,
-) -> str:
-    """
-    Generates the bulk of the boilerplate in the rippled.cfg file.
-
-    Args:
-        ports: The ports that the node is using.
-        full_history: Whether to store the full history of the ledger.
-        sub_dir: The subdirectory of the node's config files.
-        with_shards: Whether or not to include the shards stuff.
-
-    Returns:
-        The bulk of `rippled.cfg`.
-    """
-    env = Environment(loader=FileSystemLoader(searchpath="./slk/config/templates"))
-    template = env.get_template("mainchain_standalone.jinja")
-
-    data = {
-        "sub_dir": sub_dir,
-        "full_history": full_history,
-        # ports stanza
-        "ports": ports.to_dict(),
-        "this_ip": THIS_IP,
-        # other
-        "node_size": NODE_SIZE,
-        "with_shards": with_shards,
-    }
-    return template.render(data)
-
-
-def get_cfg_str_sidechain(
-    ports: Ports,
-    full_history: bool,
-    sub_dir: str,
-    validation_seed: str,
-    with_shards: bool,
-    sidechain_stanza: str,
-    fixed_ips: List[Ports],
-) -> str:
-    """
-    Generates the bulk of the boilerplate in the rippled.cfg file.
-
-    Args:
-        ports: The ports that the node is using.
-        full_history: Whether to store the full history of the ledger.
-        sub_dir: The subdirectory of the node's config files.
-        validation_seed: The validation seed.
-        with_shards: Whether or not to include the shards stuff.
-        sidechain_stanza: The [sidechain] stanza.
-        fixed_ips: The IPs for the sidechain.
-
-    Returns:
-        The bulk of `rippled.cfg`.
-    """
-    env = Environment(loader=FileSystemLoader(searchpath="./slk/config/templates"))
-    template = env.get_template("sidechain.jinja")
-
-    fixed_ips_json = [p.to_dict() for p in fixed_ips]
-
-    data = {
-        "sub_dir": sub_dir,
-        "full_history": full_history,
-        # ports stanza
-        "ports": ports.to_dict(),
-        "this_ip": THIS_IP,
-        # other
-        "node_size": NODE_SIZE,
-        "validation_seed": validation_seed,
-        "with_shards": with_shards,
-        "sidechain_stanza": sidechain_stanza,
-        "fixed_ips": fixed_ips_json,
-    }
-    return template.render(data)

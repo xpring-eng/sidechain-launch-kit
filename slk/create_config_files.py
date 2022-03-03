@@ -24,13 +24,10 @@ import traceback
 from pathlib import Path
 from typing import Dict, List, Optional, cast
 
+from jinja2 import Environment, FileSystemLoader
 from xrpl.models import XRP, IssuedCurrency
 
-from slk.config.cfg_strs import (
-    generate_sidechain_stanza,
-    get_cfg_str_mainchain,
-    get_cfg_str_sidechain,
-)
+from slk.config.cfg_strs import generate_sidechain_stanza
 from slk.config.config_params import ConfigParams
 from slk.config.helper_classes import Ports, XChainAsset
 from slk.config.network import (
@@ -41,21 +38,12 @@ from slk.config.network import (
 )
 from slk.utils.eprint import eprint
 
-MAINNET_VALIDATORS = """
-[validator_list_sites]
-https://vl.ripple.com
+JINJA_ENV = Environment(loader=FileSystemLoader(searchpath="./slk/config/templates"))
 
-[validator_list_keys]
-ED2677ABFFD1B33AC6FBC3062B71F1E8397C1505E1C42C64D11AD1B28FF73F4734
-"""
+NODE_SIZE = "medium"
 
-ALTNET_VALIDATORS = """
-[validator_list_sites]
-https://vl.altnet.rippletest.net
-
-[validator_list_keys]
-ED264807102805220DA0F312E71FC2C69E1552C9C5790F6C25E3729DEB573D5860
-"""
+MAINCHAIN_IP = "127.0.0.1"
+THIS_IP = "127.0.0.1"
 
 
 def _generate_cfg_dir_mainchain(
@@ -69,22 +57,27 @@ def _generate_cfg_dir_mainchain(
     full_history: bool = False,
 ) -> str:
     sub_dir = f"{data_dir}/mainchain"
+    template = JINJA_ENV.get_template("mainchain_standalone.jinja")
 
     for path in ["", "/db", "/shards"]:
         Path(sub_dir + path).mkdir(parents=True, exist_ok=True)
 
     assert ports.peer_port is not None  # TODO: better error handling/port typing
 
-    cfg_str = get_cfg_str_mainchain(
-        ports,
-        full_history,
-        sub_dir,
-        with_shards,
-    )
+    template_data = {
+        "sub_dir": sub_dir,
+        "full_history": full_history,
+        # ports stanza
+        "ports": ports.to_dict(),
+        "this_ip": THIS_IP,
+        # other
+        "node_size": NODE_SIZE,
+        "with_shards": with_shards,
+    }
 
     # add the rippled.cfg file
     with open(sub_dir + "/rippled.cfg", "w") as f:
-        f.write(cfg_str)
+        f.write(template.render(template_data))
 
     return sub_dir + "/rippled.cfg"
 
@@ -106,25 +99,32 @@ def _generate_cfg_dir_sidechain(
 ) -> str:
 
     sub_dir = f"{data_dir}/{cfg_type}"
+    template = JINJA_ENV.get_template("sidechain.jinja")
 
     for path in ["", "/db", "/shards"]:
         Path(sub_dir + path).mkdir(parents=True, exist_ok=True)
 
     assert ports.peer_port is not None  # TODO: better error handling/port typing
 
-    cfg_str = get_cfg_str_sidechain(
-        ports,
-        full_history,
-        sub_dir,
-        validation_seed,
-        with_shards,
-        sidechain_stanza,
-        fixed_ips,
-    )
+    fixed_ips_json = [p.to_dict() for p in fixed_ips]
+
+    template_data = {
+        "sub_dir": sub_dir,
+        "full_history": full_history,
+        # ports stanza
+        "ports": ports.to_dict(),
+        "this_ip": THIS_IP,
+        # other
+        "node_size": NODE_SIZE,
+        "validation_seed": validation_seed,
+        "with_shards": with_shards,
+        "sidechain_stanza": sidechain_stanza,
+        "fixed_ips": fixed_ips_json,
+    }
 
     # add the rippled.cfg file
     with open(sub_dir + "/rippled.cfg", "w") as f:
-        f.write(cfg_str)
+        f.write(template.render(template_data))
 
     # Add the validators.txt file
     validators_str = "[validators]\n"
