@@ -76,6 +76,12 @@ def _parse_args() -> argparse.Namespace:
         "--assets",
         "-a",
         nargs="+",
+        help=(
+            "The tokens to allow as cross-chain assets. This sets them up with the "
+            "genesis account as an issuer if mainchain is standalone, and otherwise "
+            "uses the IOU issuer. The issuer on the sidechain is the genesis account/"
+            "door account."
+        ),
     )
 
     return parser.parse_known_args()[0]
