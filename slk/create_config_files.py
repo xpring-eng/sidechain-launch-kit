@@ -170,6 +170,9 @@ def create_config_files(
             except Exception as e:
                 print("Failed to delete %s. Reason: %s" % (file_path, e))
 
+    # create logs directory
+    (Path(params.configs_dir) / "logs").mkdir(parents=True, exist_ok=True)
+
     index = 0
 
     if params.standalone:
@@ -195,6 +198,7 @@ def create_config_files(
         mainnet_url = params.mainnet_url
         mainnet_ws_port = params.mainnet_port
 
+    # generate sidechain config files
     sidenet = SidechainNetwork(
         num_federators=params.num_federators,
         start_cfg_index=index,
@@ -209,9 +213,6 @@ def create_config_files(
         sidenet=sidenet,
         xchain_assets=xchain_assets,
     )
-
-    # create logs directory
-    (Path(params.configs_dir) / "logs").mkdir(parents=True, exist_ok=True)
 
 
 def main() -> None:
