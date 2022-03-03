@@ -43,6 +43,7 @@ JINJA_ENV = Environment(loader=FileSystemLoader(searchpath="./slk/config/templat
 NODE_SIZE = "medium"
 
 
+# generate a mainchain standalone rippled.cfg file
 def _generate_cfg_dir_mainchain(
     *,
     ports: Ports,
@@ -100,7 +101,7 @@ def _generate_sidechain_bootstrap(
         f.write(template.render(template_data))
 
 
-# Generate the rippled.cfg and validators.txt files for a rippled node.
+# Generate all the rippled.cfg and validators.txt files for the sidechain nodes.
 def _generate_cfg_dirs_sidechain(
     *,
     with_shards: bool = False,
@@ -119,6 +120,7 @@ def _generate_cfg_dirs_sidechain(
             XRP(), XRP(), "1", "1", "400", "400"
         )
 
+    # data that isn't node-specific
     initial_template_data = {
         "full_history": full_history,
         # sidechains-specific stanzas
