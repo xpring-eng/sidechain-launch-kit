@@ -22,5 +22,23 @@ jobs:
           ref: sidechain
           path: ./rippled
 
-      - name: View files
-        run: ls -al
+      - name: Install dependencies
+        run: |
+          sudo apt -y install apt-transport-https ca-certificates wget gnupg
+
+      - name: Install rippled
+        run: |
+          which cmake
+          cd rippled
+          mkdir my_build
+          cd my_build
+          cmake ..
+          cmake --build .
+          ls
+        env:
+          BOOST_ROOT: /opt/hostedtoolcache/boost/1.72.0/x64
+
+      - name: Check build
+        run: |
+          ls -al
+          ./rippled/my_build/rippled -u
