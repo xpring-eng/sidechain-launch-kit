@@ -26,6 +26,12 @@ jobs:
         run: |
           sudo apt -y install apt-transport-https ca-certificates wget gnupg
 
+      - name: Install boost
+        uses: MarkusJx/install-boost@v2.1.0
+        id: install-boost
+        with:
+          boost_version: 1.75.0
+
       - name: Install rippled
         run: |
           which cmake
@@ -36,7 +42,7 @@ jobs:
           cmake --build -S . -B build -DBoost_INCLUDE_DIR=$BOOST_ROOT_1_72_0/include
           ls
         env:
-          BOOST_ROOT: /opt/hostedtoolcache/boost/1.72.0/x64
+            BOOST_ROOT: ${{ steps.install-boost.outputs.BOOST_ROOT }}
 
       - name: Check build
         run: |
