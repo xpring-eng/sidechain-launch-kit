@@ -2,10 +2,11 @@
 
 from __future__ import annotations
 
+import json
 from dataclasses import dataclass
-from typing import Optional, Type
+from typing import Any, Dict, Optional, Type, Union
 
-from xrpl.models import Currency
+from xrpl.models import Amount, Currency
 
 
 @dataclass
@@ -15,6 +16,19 @@ class Keypair:
     public_key: str
     secret_key: str
     account_id: Optional[str]
+
+    def to_dict(self: Keypair) -> Dict[str, Optional[str]]:
+        """
+        Convert the KeyPair to a dictionary.
+
+        Returns:
+            The key info represented by the KeyPair, in dictionary form.
+        """
+        return {
+            "public_key": self.public_key,
+            "secret_key": self.secret_key,
+            "account_id": self.account_id,
+        }
 
 
 # TODO: refactor to make this less weird between local and external
@@ -70,6 +84,27 @@ class Ports:
             Ports.ws_public_port_base + (2 * cfg_index) + 1,
         )
 
+    def to_dict(self: Ports) -> Dict[str, Optional[int]]:
+        """
+        Convert the Ports to a dictionary.
+
+        Returns:
+            The ports represented by the Ports, in dictionary form.
+        """
+        return {
+            "peer_port": self.peer_port,
+            "http_admin_port": self.http_admin_port,
+            "ws_public_port": self.ws_public_port,
+            "ws_admin_port": self.ws_admin_port,
+        }
+
+
+def _amt_to_json(amt: Amount) -> Union[str, Dict[str, Any]]:
+    if isinstance(amt, str):
+        return amt
+    else:
+        return amt.to_dict()
+
 
 class XChainAsset:
     """Representation of a cross-chain asset."""
@@ -98,3 +133,17 @@ class XChainAsset:
         self.side_asset = side_asset.to_amount(side_value)
         self.main_refund_penalty = main_asset.to_amount(main_refund_penalty)
         self.side_refund_penalty = side_asset.to_amount(side_refund_penalty)
+
+    def to_dict(self: XChainAsset) -> Dict[str, Any]:
+        """
+        Convert the XChainAsset to a dictionary.
+
+        Returns:
+            The information represented by the XChainAsset, in dictionary form.
+        """
+        return {
+            "main_asset": json.dumps(_amt_to_json(self.main_asset)),
+            "side_asset": json.dumps(_amt_to_json(self.side_asset)),
+            "main_refund_penalty": json.dumps(_amt_to_json(self.main_refund_penalty)),
+            "side_refund_penalty": json.dumps(_amt_to_json(self.side_refund_penalty)),
+        }

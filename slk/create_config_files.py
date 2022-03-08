@@ -24,11 +24,12 @@ import traceback
 from pathlib import Path
 from typing import Dict, List, Optional, cast
 
+from jinja2 import Environment, FileSystemLoader
 from xrpl.models import XRP, IssuedCurrency
+from xrpl.wallet import Wallet
 
-from slk.config.cfg_strs import generate_sidechain_stanza, get_cfg_str, get_ips_stanza
 from slk.config.config_params import ConfigParams
-from slk.config.helper_classes import Ports, XChainAsset
+from slk.config.helper_classes import Keypair, Ports, XChainAsset
 from slk.config.network import (
     ExternalNetwork,
     Network,
@@ -37,88 +38,140 @@ from slk.config.network import (
 )
 from slk.utils.eprint import eprint
 
-MAINNET_VALIDATORS = """
-[validator_list_sites]
-https://vl.ripple.com
+JINJA_ENV = Environment(loader=FileSystemLoader(searchpath="./slk/config/templates"))
 
-[validator_list_keys]
-ED2677ABFFD1B33AC6FBC3062B71F1E8397C1505E1C42C64D11AD1B28FF73F4734
-"""
-
-ALTNET_VALIDATORS = """
-[validator_list_sites]
-https://vl.altnet.rippletest.net
-
-[validator_list_keys]
-ED264807102805220DA0F312E71FC2C69E1552C9C5790F6C25E3729DEB573D5860
-"""
+NODE_SIZE = "medium"
 
 
-# Generate the rippled.cfg and validators.txt files for a rippled node.
-def _generate_cfg_dir(
+# generate a mainchain standalone rippled.cfg file
+def _generate_cfg_dir_mainchain(
     *,
     ports: Ports,
     with_shards: bool = False,
-    main_net: bool = True,
     cfg_type: str,
-    sidechain_stanza: str = "",
-    sidechain_bootstrap_stanza: str = "",
     validation_seed: str,
-    validators: Optional[List[str]] = None,
-    fixed_ips: Optional[List[Ports]] = None,
     data_dir: str,
     full_history: bool = False,
-    with_hooks: bool = False,
 ) -> str:
-    disable_shards = "" if with_shards else "# "
-    validation_seed_stanza = f"\n[validation_seed]\n{validation_seed}\n"
-    shard_str = "shards" if with_shards else "no_shards"
-    net_str = "main" if main_net else "test"
-    if not fixed_ips:
-        sub_dir = data_dir + f"/{net_str}.{shard_str}.{cfg_type}"
-        if sidechain_stanza:
-            sub_dir += ".sidechain"
-    else:
-        sub_dir = data_dir + f"/{cfg_type}"
+    sub_dir = f"{data_dir}/{cfg_type}"
+    template = JINJA_ENV.get_template("mainchain_standalone.jinja")
 
     for path in ["", "/db", "/shards"]:
         Path(sub_dir + path).mkdir(parents=True, exist_ok=True)
 
-    assert ports.peer_port is not None  # TODO: better error handling/port typing
-    ips_stanza = get_ips_stanza(fixed_ips, ports.peer_port, main_net)
-
-    cfg_str = get_cfg_str(
-        ports,
-        full_history,
-        sub_dir,
-        ips_stanza,
-        validation_seed_stanza,
-        disable_shards,
-        sidechain_stanza,
-        with_hooks,
-    )
+    template_data = {
+        "sub_dir": sub_dir,
+        "full_history": full_history,
+        # ports stanza
+        "ports": ports.to_dict(),
+        # other
+        "node_size": NODE_SIZE,
+        "with_shards": with_shards,
+    }
 
     # add the rippled.cfg file
     with open(sub_dir + "/rippled.cfg", "w") as f:
-        f.write(cfg_str)
-
-    validators_str = ""
-    # Add the validators.txt file
-    if validators:
-        validators_str = "[validators]\n"
-        for k in validators:
-            validators_str += f"{k}\n"
-    else:
-        validators_str = MAINNET_VALIDATORS if main_net else ALTNET_VALIDATORS
-    with open(sub_dir + "/validators.txt", "w") as f:
-        f.write(validators_str)
-
-    if sidechain_bootstrap_stanza:
-        # add the bootstrap file
-        with open(sub_dir + "/sidechain_bootstrap.cfg", "w") as f:
-            f.write(sidechain_bootstrap_stanza)
+        f.write(template.render(template_data))
 
     return sub_dir + "/rippled.cfg"
+
+
+def _generate_validators_txt(sub_dir: str, validators: List[str]) -> None:
+    template = JINJA_ENV.get_template("validators.jinja")
+
+    # Add the validators.txt file
+    template_data = {"validators": validators}
+
+    with open(sub_dir + "/validators.txt", "w") as f:
+        f.write(template.render(template_data))
+
+
+def _generate_sidechain_bootstrap(
+    sub_dir: str, fed_keys: List[Keypair], mainchain_account: Wallet
+) -> None:
+    template = JINJA_ENV.get_template("sidechain_bootstrap.jinja")
+
+    template_data = {
+        "federators": [fed.to_dict() for fed in fed_keys],
+        "mainchain_secret": mainchain_account.seed,
+    }
+
+    # add the bootstrap file
+    with open(sub_dir + "/sidechain_bootstrap.cfg", "w") as f:
+        f.write(template.render(template_data))
+
+
+# Generate all the rippled.cfg and validators.txt files for the sidechain nodes.
+def _generate_cfg_dirs_sidechain(
+    *,
+    with_shards: bool = False,
+    data_dir: str,
+    full_history: bool = False,
+    mainnet: Network,
+    sidenet: SidechainNetwork,
+    xchain_assets: Optional[Dict[str, XChainAsset]] = None,
+) -> None:
+    template = JINJA_ENV.get_template("sidechain.jinja")
+
+    if xchain_assets is None:
+        # default to xrp only at a 1:1 value
+        xchain_assets = {}
+        xchain_assets["xrp_xrp_sidechain_asset"] = XChainAsset(
+            XRP(), XRP(), "1", "1", "400", "400"
+        )
+
+    # data that isn't node-specific
+    initial_template_data = {
+        "full_history": full_history,
+        # sidechains-specific stanzas
+        "mainchain_ip": mainnet.url,
+        "mainchain_door_account": sidenet.main_account.classic_address,
+        "assets": [
+            {"asset_name": name, **asset.to_dict()}
+            for name, asset in xchain_assets.items()
+        ],
+        "federators": sidenet.federator_keypairs,
+        # other
+        "fixed_ips": [p.to_dict() for p in sidenet.ports],
+        "node_size": NODE_SIZE,
+        "with_shards": with_shards,
+    }
+
+    for fed_num in range(len(sidenet.ports)):
+        cfg_type = f"sidechain_{fed_num}"
+        sub_dir = f"{data_dir}/{cfg_type}"
+
+        for path in ["", "/db", "/shards"]:
+            Path(sub_dir + path).mkdir(parents=True, exist_ok=True)
+
+        validator_kp = sidenet.validator_keypairs[fed_num]
+        ports = sidenet.ports[fed_num]
+        validation_seed = validator_kp.secret_key
+        validators = [kp.public_key for kp in sidenet.validator_keypairs]
+
+        mainnet_i = fed_num % len(mainnet.ports)
+
+        template_data = {
+            **initial_template_data,
+            "sub_dir": sub_dir,
+            # ports stanza
+            "ports": ports.to_dict(),
+            # sidechains-specific stanzas
+            "signing_key": sidenet.federator_keypairs[fed_num].secret_key,
+            "mainchain_port_ws": mainnet.ports[mainnet_i].ws_public_port,
+            # other
+            "validation_seed": validation_seed,
+        }
+
+        # add the rippled.cfg file
+        with open(sub_dir + "/rippled.cfg", "w") as f:
+            f.write(template.render(template_data))
+
+        _generate_validators_txt(sub_dir, validators)
+
+        _generate_sidechain_bootstrap(
+            sub_dir, sidenet.federator_keypairs, sidenet.main_account
+        )
 
 
 # Generate all the config files for a mainchain-sidechain setup.
@@ -147,7 +200,7 @@ def _generate_all_configs(
         for i in range(len(mainnet.ports)):
             validator_kp = mainnet.validator_keypairs[i]
             ports = mainnet.ports[i]
-            mainchain_cfg_file = _generate_cfg_dir(
+            mainchain_cfg_file = _generate_cfg_dir_mainchain(
                 ports=ports,
                 cfg_type=f"mainchain_{i}",
                 validation_seed=validator_kp.secret_key,
@@ -155,35 +208,13 @@ def _generate_all_configs(
             )
             mainnet_cfgs.append(mainchain_cfg_file)
 
-    for i in range(len(sidenet.ports)):
-        validator_kp = sidenet.validator_keypairs[i]
-        ports = sidenet.ports[i]
-
-        mainnet_i = i % len(mainnet.ports)
-        mainnet_cfg = None
-        if standalone:
-            mainnet_cfg = mainnet_cfgs[mainnet_i]
-        sidechain_stanza, sidechain_bootstrap_stanza = generate_sidechain_stanza(
-            mainnet.url,
-            mainnet.ports[mainnet_i].ws_public_port,
-            sidenet.main_account,
-            sidenet.federator_keypairs,
-            sidenet.federator_keypairs[i].secret_key,
-            mainnet_cfg,
-            xchain_assets,
-        )
-
-        _generate_cfg_dir(
-            ports=ports,
-            cfg_type=f"sidechain_{i}",
-            sidechain_stanza=sidechain_stanza,
-            sidechain_bootstrap_stanza=sidechain_bootstrap_stanza,
-            validation_seed=validator_kp.secret_key,
-            validators=[kp.public_key for kp in sidenet.validator_keypairs],
-            fixed_ips=sidenet.ports,
-            data_dir=out_dir,
-            full_history=True,
-        )
+    _generate_cfg_dirs_sidechain(
+        data_dir=out_dir,
+        full_history=True,
+        mainnet=mainnet,
+        sidenet=sidenet,
+        xchain_assets=xchain_assets,
+    )
 
 
 def create_config_files(

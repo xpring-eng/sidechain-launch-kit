@@ -1,0 +1,8 @@
+[sidechain]
+mainchain_secret={{ mainchain_secret }}
+
+# first value is federator signing public key, second is the signing pk account
+[sidechain_federators]
+{% for fed in federators -%}
+{{ fed.public_key }} {{ fed.account_id }}
+{% endfor %}

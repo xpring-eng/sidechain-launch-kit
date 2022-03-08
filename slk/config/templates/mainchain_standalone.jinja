@@ -1,0 +1,122 @@
+[server]
+port_rpc_admin_local
+port_peer
+port_ws_admin_local
+port_ws_public
+{#- ssl_key = /etc/ssl/private/server.key #}
+{#- ssl_cert = /etc/ssl/certs/server.crt #}
+
+[port_rpc_admin_local]
+port = {{ ports.http_admin_port }}
+ip = 127.0.0.1
+admin = 127.0.0.1
+protocol = http
+
+[port_peer]
+port = {{ ports.peer_port }}
+ip = 0.0.0.0
+protocol = peer
+
+[port_ws_admin_local]
+port = {{ ports.ws_admin_port }}
+ip = 127.0.0.1
+admin = 127.0.0.1
+protocol = ws
+
+[port_ws_public]
+port = {{ ports.ws_public_port }}
+ip = 127.0.0.1
+protocol = ws
+{#- protocol = wss #}
+
+[node_size]
+{{ node_size }}
+
+[ledger_history]
+{% if full_history -%}
+full
+{% else -%}
+256
+{%- endif %}
+
+[node_db]
+type=NuDB
+path={{ sub_dir }}/db/nudb
+open_files=2000
+filter_bits=12
+cache_mb=256
+file_size_mb=8
+file_size_mult=2
+{%- if not full_history %}
+online_delete=256
+advisory_delete=0
+{%- endif %}
+
+[database_path]
+{{ sub_dir }}/db
+
+# This needs to be an absolute directory reference, not a relative one.
+# Modify this value as required.
+[debug_logfile]
+{{ sub_dir }}/debug.log
+
+[sntp_servers]
+time.windows.com
+time.apple.com
+time.nist.gov
+pool.ntp.org
+
+[rpc_startup]
+{ "command": "log_level", "severity": "fatal" }
+{ "command": "log_level", "partition": "SidechainFederator", "severity": "trace" }
+
+[ssl_verify]
+1
+
+{% if with_shards -%}
+[shard_db]
+type=NuDB
+path={{ sub_dir }}/shards
+max_historical_shards=6
+{% endif -%}
+
+[features]
+PayChan
+Flow
+FlowCross
+TickSize
+fix1368
+Escrow
+fix1373
+EnforceInvariants
+SortedDirectories
+fix1201
+fix1512
+fix1513
+fix1523
+fix1528
+DepositAuth
+Checks
+fix1571
+fix1543
+fix1623
+DepositPreauth
+fix1515
+fix1578
+MultiSignReserve
+fixTakerDryOfferRemoval
+fixMasterKeyAsRegularKey
+fixCheckThreading
+fixPayChanRecipientOwnerDir
+DeletableAccounts
+fixQualityUpperBound
+RequireFullyCanonicalSig
+fix1781
+HardenedValidations
+fixAmendmentMajorityCalc
+NegativeUNL
+TicketBatch
+FlowSortStrands
+fixSTAmountCanonicalize
+fixRmSmallIncreasedQOffers
+CheckCashMakesTrustLine
