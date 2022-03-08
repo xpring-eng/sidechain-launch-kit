@@ -38,7 +38,7 @@ jobs:
           cd rippled
           mkdir my_build
           cd my_build
-          cmake -S .. -B build -DBoost_INCLUDE_DIR=$BOOST_ROOT_1_72_0/include
+          cmake ..
           ls -al
           cmake --build .
           ls
