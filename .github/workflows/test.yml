@@ -32,8 +32,8 @@ jobs:
           cd rippled
           mkdir my_build
           cd my_build
-          cmake ..
-          cmake --build .
+          cmake -S .. -B build -DBoost_INCLUDE_DIR=$BOOST_ROOT_1_72_0/include
+          cmake --build -S . -B build -DBoost_INCLUDE_DIR=$BOOST_ROOT_1_72_0/include
           ls
         env:
           BOOST_ROOT: /opt/hostedtoolcache/boost/1.72.0/x64
