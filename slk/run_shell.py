@@ -4,7 +4,6 @@
 import sys
 import traceback
 
-from slk.repl import set_hooks_dir
 from slk.sidechain_interaction import (
     external_node_interactive_repl,
     multinode_interactive_repl,
@@ -21,8 +20,6 @@ def main() -> None:
     except Exception:
         eprint(traceback.format_exc())
         sys.exit(1)
-
-    set_hooks_dir(params.hooks_dir)
 
     if params.verbose:
         print("eprint enabled")

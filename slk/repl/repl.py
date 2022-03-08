@@ -42,26 +42,6 @@ def _clear_screen() -> None:
         _ = os.system("clear")
 
 
-# Directory to find hooks. The hook should be in a directory call "hook_name"
-# in a file called "hook_name.wasm"
-HOOKS_DIR = Path()
-
-
-def set_hooks_dir(hooks_dir_to_set: Optional[str]) -> None:
-    """
-    Set the hooks directory.
-
-    Args:
-        hooks_dir_to_set: The location of the hooks directory.
-    """
-    global HOOKS_DIR
-    if hooks_dir_to_set:
-        HOOKS_DIR = Path(hooks_dir_to_set)
-
-
-_valid_hook_names = ["doubler", "notascam"]
-
-
 def _file_to_hex(filename: Path) -> str:
     with open(filename, "rb") as f:
         content = f.read()
