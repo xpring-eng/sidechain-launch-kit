@@ -45,6 +45,16 @@ jobs:
         env:
             BOOST_ROOT: ${{ steps.install-boost.outputs.BOOST_ROOT }}
 
+      - name: Debug failure 1
+        if: always()
+        run: |
+          cat /home/runner/work/sidechain-launch-kit/sidechain-launch-kit/rippled/my_build/build/CMakeFiles/CMakeOutput.log
+
+      - name: Debug failure 2
+        if: always()
+        run: |
+          cat /home/runner/work/sidechain-launch-kit/sidechain-launch-kit/rippled/my_build/build/CMakeFiles/CMakeError.log
+
       - name: Check build
         run: |
           ls -al
