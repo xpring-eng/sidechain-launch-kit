@@ -13,7 +13,7 @@ jobs:
 
     steps:
       - name: Checkout rippled
-        uses: actions/checkout@sidechain
+        uses: actions/checkout@v2
         with:
           repository: ripple/rippled
           ref: sidechain
