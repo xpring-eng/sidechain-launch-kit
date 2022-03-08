@@ -1,4 +1,4 @@
-name: Run tests
+name: Test
 
 on:
   push:
@@ -12,6 +12,9 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
+      - name: Checkout code
+        uses: actions/checkout@v2
+
       - name: Checkout rippled
         uses: actions/checkout@v2
         with:
