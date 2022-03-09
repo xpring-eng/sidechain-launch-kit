@@ -37,15 +37,20 @@ jobs:
         run: |
           cd rippled
           RIPPLED_COMMIT=$(git rev-parse --short HEAD)
-          echo ${{join(steps.checkout-rippled.outputs.*, '\n')}}
+          echo ${{join(steps.checkout-rippled.outputs.*, ',')}}
 
       - name: Cache rippled
+        id: check-cache
         uses: actions/cache@v2
         with:
           path: ./rippled/my_build
           key: rippled-build-${{ env.RIPPLED_COMMIT }}
-          restore-keys: |
-            echo $RIPPLED_COMMIT > garbage.txt
+
+      - name: Install rippled
+        if: steps.check-cache.outputs.cache-hit != 'true'
+        run: |
+          echo $RIPPLED_COMMIT
+          echo $RIPPLED_COMMIT > rippled/my_build/garbage.txt
         # run: |
         #   cd rippled
     #       mkdir my_build
@@ -59,5 +64,6 @@ jobs:
 
       - name: Check build
         run: |
+          cd rippled/my_build
           ls -al
           cat garbage.txt
