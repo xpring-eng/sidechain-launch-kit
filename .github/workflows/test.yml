@@ -21,6 +21,8 @@ jobs:
           repository: ripple/rippled
           ref: sidechain
           path: ./rippled
+        run: echo '::set-output name=COMMIT::${git rev-parse --short HEAD}'
+        id: checkout-rippled
 
       - name: Install dependencies
         run: |
@@ -32,28 +34,23 @@ jobs:
         with:
           boost_version: 1.75.0
 
-      - name: Install rippled
-        run: |
-          which cmake
-          cd rippled
-          mkdir my_build
-          cd my_build
-          cmake ..
-          ls -al
-          cmake --build .
-          ls
+      - name: get
         env:
-            BOOST_ROOT: ${{ steps.install-boost.outputs.BOOST_ROOT }}
+          RIPPLED_COMMIT: ${{ steps.checkout-rippled.outputs.COMMIT }}
+        run: echo $RIPPLED_COMMIT
 
-      - name: Debug failure 1
-        if: always()
-        run: |
-          cat /home/runner/work/sidechain-launch-kit/sidechain-launch-kit/rippled/my_build/build/CMakeFiles/CMakeOutput.log
-
-      - name: Debug failure 2
-        if: always()
-        run: |
-          cat /home/runner/work/sidechain-launch-kit/sidechain-launch-kit/rippled/my_build/build/CMakeFiles/CMakeError.log
+    #   - name: Install rippled
+    #     run: |
+    #       which cmake
+    #       cd rippled
+    #       mkdir my_build
+    #       cd my_build
+    #       cmake ..
+    #       ls -al
+    #       cmake --build .
+    #       ls
+    #     env:
+    #         BOOST_ROOT: ${{ steps.install-boost.outputs.BOOST_ROOT }}
 
       - name: Check build
         run: |
