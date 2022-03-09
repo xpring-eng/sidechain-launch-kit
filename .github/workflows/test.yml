@@ -22,14 +22,6 @@ jobs:
           ref: sidechain
           path: ./rippled
 
-      - name: Get rippled hash
-        run: |
-          cd ./rippled
-          git rev-parse --short HEAD
-          echo '::set-output name=COMMIT::$(git rev-parse --short HEAD)'
-        id: checkout-rippled
-        shell: bash
-
       - name: Install dependencies
         run: |
           sudo apt -y install apt-transport-https ca-certificates wget gnupg
@@ -45,10 +37,11 @@ jobs:
           RIPPLED_COMMIT: ${{ steps.checkout-rippled.outputs.COMMIT }}
         run: echo $RIPPLED_COMMIT
 
-    #   - name: Install rippled
-    #     run: |
-    #       which cmake
-    #       cd rippled
+      - name: Install rippled
+        run: |
+          cd rippled
+          RIPPLED_COMMIT=$(git rev-parse --short HEAD)
+          echo $RIPPLED_COMMIT
     #       mkdir my_build
     #       cd my_build
     #       cmake ..
