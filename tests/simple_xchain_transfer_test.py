@@ -51,6 +51,7 @@ def simple_xrp_test(mc_chain: Chain, sc_chain: Chain, params: SidechainParams):
         # odd amounts for side to main
         for value in range(9, 19, 2):
             with tst_context(mc_chain, sc_chain):
+                print(sc_chain.get_balance(adam, XRP()))
                 to_send_asset = xrp_to_drops(value)
                 pre_bal = mc_chain.get_balance(alice, XRP())
                 side_to_main_transfer(
