@@ -7,6 +7,8 @@ import os
 from typing import Optional
 
 from dotenv import dotenv_values
+from xrpl.core.addresscodec import decode_account_public_key
+from xrpl.core.keypairs import derive_classic_address
 
 from slk.classes.account import Account
 from slk.classes.config_file import ConfigFile
@@ -103,6 +105,12 @@ def _parse_args_helper(parser: argparse.ArgumentParser) -> None:
             "The WebSocket port for the mainnet network. Defaults to 6005. Ignored if "
             "in standalone."
         ),
+    )
+
+    parser.add_argument(
+        "--door_seed",
+        "-d",
+        help=("The seed of the door account to use on the main network."),
     )
 
 
@@ -227,10 +235,6 @@ class SidechainParams:
             self.sidechain_config = ConfigFile(
                 file_name=f"{self.configs_dir}/main.no_shards.dog.sidechain/rippled.cfg"
             )
-            self.sidechain_bootstrap_config = ConfigFile(
-                file_name=f"{self.configs_dir}/main.no_shards.dog.sidechain/"
-                "sidechain_bootstrap.cfg"
-            )
         else:
             if self.main_standalone:
                 self.mainchain_config = ConfigFile(
@@ -241,21 +245,26 @@ class SidechainParams:
                 file_name=f"{self.configs_dir}/sidechain_testnet/sidechain_0/"
                 "rippled.cfg"
             )
-            self.sidechain_bootstrap_config = ConfigFile(
-                file_name=f"{self.configs_dir}/sidechain_testnet/sidechain_0/"
-                "sidechain_bootstrap.cfg"
-            )
 
-        # set up root/door accounts
+        # set up door account
+        door_seed = None
+        if "DOOR_ACCOUNT_SEED" in _ENV_VARS:
+            door_seed = _ENV_VARS["DOOR_ACCOUNT_SEED"]
+        if args.door_seed:
+            door_seed = args.door_seed
+        if door_seed is None:
+            raise Exception("Must specify a door account seed, for sidechain setup.")
+        self.mc_door_account = Account(
+            account_id=self.sidechain_config.sidechain.mainchain_account,
+            seed=door_seed,
+            nickname="door",
+        )
+
+        # set up root accounts
         self.genesis_account = Account(
             account_id="rHb9CJAWyB4rj91VRWn96DkukG4bwdtyTh",
             seed="snoPBrXtMeMyMHUVTgbuqAfg1SUTb",
             nickname="genesis",
-        )
-        self.mc_door_account = Account(
-            account_id=self.sidechain_config.sidechain.mainchain_account,
-            seed=self.sidechain_bootstrap_config.sidechain.mainchain_secret,
-            nickname="door",
         )
         self.user_account = Account(
             account_id="rJynXY96Vuq6B58pST9K5Ak5KgJ2JcRsQy",
@@ -271,6 +280,7 @@ class SidechainParams:
 
         # set up federators
         self.federators = [
-            line.split()[1].strip()
-            for line in self.sidechain_bootstrap_config.sidechain_federators.get_lines()
+            # convert public key to rAddress format
+            derive_classic_address(decode_account_public_key(line.strip()).hex())
+            for line in self.sidechain_config.sidechain_federators.get_lines()
         ]

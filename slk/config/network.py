@@ -104,6 +104,8 @@ class SidechainNetwork(StandaloneNetwork):
         # TODO: main_account needs to be user-defined for external networks
         if main_door_seed is None:
             self.main_account = Wallet.create(CryptoAlgorithm.SECP256K1)
+            print(f"Door account seed: {self.main_account.seed}")
+            print("Store this in the environment variable `DOOR_ACCOUNT_SEED`")
         else:
             self.main_account = Wallet(main_door_seed, 0)
 
