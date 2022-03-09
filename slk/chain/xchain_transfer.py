@@ -27,6 +27,7 @@ def _xchain_transfer(
             memos=[memo],
         )
     )
+    print(f"xtx, {src.nickname} to {dst.nickname},{amt}, {from_chain_door.account_id}")
     from_chain.maybe_ledger_accept()
     if to_chain.standalone:
         # from_chain (side chain) sends a txn, but won't close the to_chain (main chain)
