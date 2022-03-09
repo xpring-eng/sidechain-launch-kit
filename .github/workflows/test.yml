@@ -85,3 +85,7 @@ jobs:
           IOU_ISSUER: sEdTzT8zuY9BcwRwg892dVCz8HdhUG1
           # seed for the door account. Only used not in standalone.
           DOOR_ACCOUNT_SEED: spFuT3mE9zvnH1JF8Msz89MBn3GMj
+
+      - name: Debug 1
+        if: always()
+        run: cat ./sidechain-tests/test_simple_xchain0/test_config_files_1/sidechain_testnet/sidechain_0/debug.log
