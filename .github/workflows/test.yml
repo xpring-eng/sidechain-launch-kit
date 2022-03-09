@@ -21,6 +21,7 @@ jobs:
           repository: ripple/rippled
           ref: sidechain
           path: ./rippled
+        id: checkout-rippled
 
       - name: Install dependencies
         run: |
@@ -32,16 +33,21 @@ jobs:
         with:
           boost_version: 1.75.0
 
-      - name: get
-        env:
-          RIPPLED_COMMIT: ${{ steps.checkout-rippled.outputs.COMMIT }}
-        run: echo $RIPPLED_COMMIT
-
-      - name: Install rippled
+      - name: Get rippled hash
         run: |
           cd rippled
           RIPPLED_COMMIT=$(git rev-parse --short HEAD)
-          echo $RIPPLED_COMMIT
+          echo ${{join(steps.checkout-rippled.outputs.*, '\n')}}
+
+      - name: Cache rippled
+        uses: actions/cache@v2
+        with:
+          path: ./rippled/my_build
+          key: rippled-build-${{ env.RIPPLED_COMMIT }}
+          restore-keys: |
+            echo $RIPPLED_COMMIT > garbage.txt
+        # run: |
+        #   cd rippled
     #       mkdir my_build
     #       cd my_build
     #       cmake ..
@@ -51,7 +57,7 @@ jobs:
     #     env:
     #         BOOST_ROOT: ${{ steps.install-boost.outputs.BOOST_ROOT }}
 
-    #   - name: Check build
-    #     run: |
-    #       ls -al
-    #       ./rippled/my_build/rippled -u
+      - name: Check build
+        run: |
+          ls -al
+          cat garbage.txt
