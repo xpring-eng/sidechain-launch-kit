@@ -57,7 +57,7 @@ jobs:
           cmake --build .
           ls
         env:
-            BOOST_ROOT: ${{ steps.install-boost.outputs.BOOST_ROOT }}
+          BOOST_ROOT: ${{ steps.install-boost.outputs.BOOST_ROOT }}
 
       - name: Install poetry dependencies
         run: |
@@ -67,3 +67,20 @@ jobs:
 
       - name: Run tests
         run: poetry run pytest tests/
+        env:
+          BOOST_ROOT: ${{ steps.install-boost.outputs.BOOST_ROOT }}
+          RIPPLED_MAINCHAIN_EXE: ./rippled/my_build/rippled
+          # version of rippled to run on the sidechain
+          RIPPLED_SIDECHAIN_EXE: ./rippled/my_build/rippled
+          # directory to store all the sidechain config stuff in
+          RIPPLED_SIDECHAIN_CFG_DIR: ./sidechain_config
+          # number of federators in the sidechain
+          NUM_FEDERATORS: 6
+          # mainnet node to connect to (use "standalone" or leave blank for standalone mode)
+          MAINNET: standalone #34.83.125.234
+          # mainnet port to connect to (should be the WS port). Only used if not in standalone mode.
+          MAINNET_PORT: 51233
+          # seed for the cross-chain token. Only used not in standalone.
+          IOU_ISSUER: sEdTzT8zuY9BcwRwg892dVCz8HdhUG1
+          # seed for the door account. Only used not in standalone.
+          DOOR_ACCOUNT_SEED: spFuT3mE9zvnH1JF8Msz89MBn3GMj
