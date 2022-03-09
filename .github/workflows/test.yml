@@ -36,7 +36,7 @@ jobs:
       - name: Get rippled hash
         run: |
           cd rippled
-          RIPPLED_COMMIT=$(git rev-parse --short HEAD)
+          echo "RIPPLED_COMMIT=$(git rev-parse --short HEAD)" >> $GITHUB_ENV
           echo ${{join(steps.checkout-rippled.outputs.*, ',')}}
 
       - name: Cache rippled
