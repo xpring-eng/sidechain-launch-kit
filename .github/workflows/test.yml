@@ -21,7 +21,12 @@ jobs:
           repository: ripple/rippled
           ref: sidechain
           path: ./rippled
-        run: echo '::set-output name=COMMIT::${git rev-parse --short HEAD}'
+
+      - name: Get rippled hash
+        run: |
+          cd ./rippled
+          git rev-parse --short HEAD
+          echo '::set-output name=COMMIT::${git rev-parse --short HEAD}'
         id: checkout-rippled
 
       - name: Install dependencies
