@@ -88,12 +88,12 @@ jobs:
 
       - name: Debug 1
         if: always()
-        run: cat ./sidechain-tests/test_simple_xchain0/test_config_files_1/sidechain_testnet/sidechain_0/debug.log
+        run: tail -1000 ./sidechain-tests/test_simple_xchain0/test_config_files_1/sidechain_testnet/sidechain_0/debug.log
 
       - name: Debug 2
         if: always()
-        run: cat ./sidechain-tests/test_simple_xchain0/test_config_files_1/sidechain_testnet/sidechain_1/debug.log
+        run: tail -1000 ./sidechain-tests/test_simple_xchain0/test_config_files_1/sidechain_testnet/sidechain_1/debug.log
 
       - name: Debug 3
         if: always()
-        run: cat ./sidechain-tests/test_simple_xchain0/test_config_files_1/sidechain_testnet/sidechain_2/debug.log
+        run: tail -1000 ./sidechain-tests/test_simple_xchain0/test_config_files_1/sidechain_testnet/sidechain_2/debug.log

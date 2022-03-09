@@ -19,7 +19,10 @@ def _xchain_transfer(
     to_chain_door: Account,
 ) -> None:
     memo = Memo(memo_data=dst.account_id_str_as_hex())
-    print(f"xtx, {src.nickname} to {dst.nickname},{amt}, {from_chain_door.account_id}")
+    print(
+        f"xtx, {src.nickname} to {dst.nickname},{amt}, {from_chain_door.account_id}",
+        flush=True,
+    )
     response = from_chain.send_signed(
         Payment(
             account=src.account_id,
@@ -29,8 +32,10 @@ def _xchain_transfer(
         )
     )
     import pprint
+    import sys
 
     pprint.pprint(response)
+    sys.stdout.flush()
     from_chain.maybe_ledger_accept()
     if to_chain.standalone:
         # from_chain (side chain) sends a txn, but won't close the to_chain (main chain)
