@@ -67,7 +67,7 @@ jobs:
           poetry install
 
       - name: Run tests
-        run: poetry run pytest tests/ --basetemp=./sidechain-tests
+        run: poetry run pytest tests/ --basetemp=./sidechain-tests --full-trace
         env:
           BOOST_ROOT: ${{ steps.install-boost.outputs.BOOST_ROOT }}
           RIPPLED_MAINCHAIN_EXE: ./rippled/my_build/rippled
