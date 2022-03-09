@@ -64,7 +64,7 @@ jobs:
         run: |
           python -m pip install --upgrade pip
           pip install poetry
-          poetry install
+          poetry install --no-dev
 
       - name: Run tests
         run: poetry run pytest tests/ --basetemp=./sidechain-tests --full-trace
@@ -76,7 +76,7 @@ jobs:
           # directory to store all the sidechain config stuff in
           RIPPLED_SIDECHAIN_CFG_DIR: ./sidechain_config
           # number of federators in the sidechain
-          NUM_FEDERATORS: 6
+          NUM_FEDERATORS: 3
           # mainnet node to connect to (use "standalone" or leave blank for standalone mode)
           MAINNET: standalone #34.83.125.234
           # mainnet port to connect to (should be the WS port). Only used if not in standalone mode.
@@ -89,3 +89,11 @@ jobs:
       - name: Debug 1
         if: always()
         run: cat ./sidechain-tests/test_simple_xchain0/test_config_files_1/sidechain_testnet/sidechain_0/debug.log
+
+      - name: Debug 2
+        if: always()
+        run: cat ./sidechain-tests/test_simple_xchain0/test_config_files_1/sidechain_testnet/sidechain_1/debug.log
+
+      - name: Debug 3
+        if: always()
+        run: cat ./sidechain-tests/test_simple_xchain0/test_config_files_1/sidechain_testnet/sidechain_2/debug.log
