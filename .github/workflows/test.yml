@@ -38,6 +38,7 @@ jobs:
           cd rippled
           echo "RIPPLED_COMMIT=$(git rev-parse --short HEAD)" >> $GITHUB_ENV
           echo ${{join(steps.checkout-rippled.outputs.*, ',')}}
+          sudo netstat -tulpn | grep LISTEN
 
       - name: Cache rippled
         id: check-cache
