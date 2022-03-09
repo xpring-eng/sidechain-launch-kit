@@ -23,7 +23,7 @@ jobs:
           path: ./rippled
         id: checkout-rippled
 
-      - name: Install dependencies
+      - name: Install rippled dependencies
         run: |
           sudo apt -y install apt-transport-https ca-certificates wget gnupg
 
@@ -33,7 +33,7 @@ jobs:
         with:
           boost_version: 1.75.0
 
-      - name: Get rippled hash
+      - name: Get rippled commit hash
         run: |
           cd rippled
           echo "RIPPLED_COMMIT=$(git rev-parse --short HEAD)" >> $GITHUB_ENV
@@ -59,7 +59,11 @@ jobs:
         env:
             BOOST_ROOT: ${{ steps.install-boost.outputs.BOOST_ROOT }}
 
-      - name: Check build
+      - name: Install poetry dependencies
         run: |
-          cd rippled/my_build
-          ls -al
+          python -m pip install --upgrade pip
+          pip install poetry
+          poetry install
+
+      - name: Run tests
+        run: poetry run pytest tests/
