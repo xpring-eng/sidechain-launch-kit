@@ -43,10 +43,10 @@ Setting environment variables can be very convenient. For example, a small scrip
 
 Assuming rippled is built, the three environment variables are set, and the python environment is activated, run the following script:
 ```
-sidechain-config --usd
+sidechain-config --assets usd
 ```
 
-There should now be many configuration files in the directory specified by the `RIPPLED_SIDECHAIN_CFG_DIR` environment variable. The `--usd` creates a sample cross chain asset for USD -> USD transfers.
+There should now be many configuration files in the directory specified by the `RIPPLED_SIDECHAIN_CFG_DIR` environment variable. The `--assets usd` creates a sample cross chain asset for USD -> USD transfers.
 
 ## Running the interactive shell
 
