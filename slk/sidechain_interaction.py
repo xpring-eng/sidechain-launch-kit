@@ -316,10 +316,9 @@ def close_mainchain_ledgers(
             time.sleep(sleep_time)
 
 
-def standalone_interactive_repl(params: SidechainParams) -> None:
+def run_interactive_repl(params: SidechainParams) -> None:
     """
-    Run a mainchain and sidechain in standalone mode and start up the REPL to interact
-    with them.
+    Run a mainchain and sidechain and start up the REPL to interact with them.
 
     Args:
         params: The command-line args for running the sidechain.
@@ -339,59 +338,12 @@ def standalone_interactive_repl(params: SidechainParams) -> None:
                 stop_token.value = 0
                 p.join()
 
-    _standalone_with_callback(params, callback, setup_user_accounts=False)
-
-
-def multinode_interactive_repl(params: SidechainParams) -> None:
-    """
-    Run a mainchain in standalone mode and a multi-node sidechain and start up the REPL
-    to interact with them.
-
-    Args:
-        params: The command-line args for running the sidechain.
-    """
-
-    def callback(mc_chain: Chain, sc_chain: Chain) -> None:
-        # process will run while stop token is non-zero
-        stop_token = Value("i", 1)
-        p = None
-        if mc_chain.standalone:
-            p = Process(target=close_mainchain_ledgers, args=(stop_token, params))
-            p.start()
-        try:
-            start_repl(mc_chain, sc_chain)
-        finally:
-            if p:
-                stop_token.value = 0
-                p.join()
-
-    _multinode_with_callback(params, callback, setup_user_accounts=False)
-
-
-def external_node_interactive_repl(params: SidechainParams) -> None:
-    """
-    Run a connection to an external standalone node, and a multi-node sidechain, and
-    start up the REPL to interact with them.
-
-    Args:
-        params: The command-line args for running the sidechain.
-    """
-
-    def callback(mc_chain: Chain, sc_chain: Chain) -> None:
-        # process will run while stop token is non-zero
-        stop_token = Value("i", 1)
-        p = None
-        if mc_chain.standalone:
-            p = Process(target=close_mainchain_ledgers, args=(stop_token, params))
-            p.start()
-        try:
-            start_repl(mc_chain, sc_chain)
-        finally:
-            if p:
-                stop_token.value = 0
-                p.join()
-
-    _external_node_with_callback(params, callback, setup_user_accounts=False)
+    if not params.main_standalone:
+        _external_node_with_callback(params, callback, setup_user_accounts=False)
+    elif params.standalone:
+        _standalone_with_callback(params, callback, setup_user_accounts=False)
+    else:
+        _multinode_with_callback(params, callback, setup_user_accounts=False)
 
 
 def main() -> None:
@@ -407,12 +359,7 @@ def main() -> None:
         disable_eprint()
 
     if params.interactive:
-        if not params.main_standalone:
-            external_node_interactive_repl(params)
-        elif params.standalone:
-            standalone_interactive_repl(params)
-        else:
-            multinode_interactive_repl(params)
+        run_interactive_repl(params)
     elif not params.main_standalone:
         external_node_test(params)
     elif params.standalone:

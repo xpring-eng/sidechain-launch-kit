@@ -4,11 +4,7 @@
 import sys
 import traceback
 
-from slk.sidechain_interaction import (
-    external_node_interactive_repl,
-    multinode_interactive_repl,
-    standalone_interactive_repl,
-)
+from slk.sidechain_interaction import run_interactive_repl
 from slk.sidechain_params import SidechainParams
 from slk.utils.eprint import disable_eprint, eprint
 
@@ -26,12 +22,7 @@ def main() -> None:
     else:
         disable_eprint()
 
-    if not params.main_standalone:
-        external_node_interactive_repl(params)
-    elif params.standalone:
-        standalone_interactive_repl(params)
-    else:
-        multinode_interactive_repl(params)
+    run_interactive_repl(params)
 
 
 if __name__ == "__main__":
