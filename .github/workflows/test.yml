@@ -37,7 +37,7 @@ jobs:
             --slave /usr/bin/gcov gcov /usr/bin/gcov-10 \
             --slave /usr/bin/gcov-tool gcov-tool /usr/bin/gcov-dump-10 \
             --slave /usr/bin/gcov-dump gcov-dump /usr/bin/gcov-tool-10
-
+          update-alternatives --install /usr/bin/python python /usr/bin/python3.8 1
       - name: Checkout code
         uses: actions/checkout@v3
 
@@ -68,11 +68,11 @@ jobs:
         with:
           path: ./rippled/my_build
           key: rippled-${{ env.RIPPLED_COMMIT }}
-
       - name: Install rippled
         if: steps.check-cache.outputs.cache-hit != 'true'
         run: |
           cd rippled
+          sleep 100000000
           mkdir my_build
           cd my_build
           cmake ..
@@ -84,6 +84,7 @@ jobs:
 
       - name: Install poetry dependencies
         run: |
+          
           python -m pip install --upgrade pip
           pip install poetry
           poetry install --no-dev
