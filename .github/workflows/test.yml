@@ -10,7 +10,8 @@ jobs:
   test:
     name: Test
     runs-on: sidechain-launch-kit-runner
-    image: ubuntu:20.04
+    container:
+      image: ubuntu:20.04
 
     steps:
       - name: Checkout code
