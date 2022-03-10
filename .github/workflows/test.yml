@@ -23,10 +23,10 @@ jobs:
           apt -y install apt-transport-https ca-certificates wget gnupg \
               git-all software-properties-common openssl libssl-dev \
               pkg-config liblzma-dev libbz2-dev zlib1g-dev libjemalloc-dev \
-              libicu-dev python3-pip 
+              libicu-dev python3-pip
           wget -O - https://apt.kitware.com/keys/kitware-archive-latest.asc 2>/dev/null | gpg --dearmor - | tee /etc/apt/trusted.gpg.d/kitware.gpg >/dev/null
-          apt-add-repository 'deb https://apt.kitware.com/ubuntu/ focal main'  
-          apt -y update 
+          apt-add-repository 'deb https://apt.kitware.com/ubuntu/ focal main'
+          apt -y update
           apt -y install cmake gcc-10 g++-10
           update-alternatives --install \
             /usr/bin/gcc gcc /usr/bin/gcc-10 15 \
@@ -39,14 +39,15 @@ jobs:
             --slave /usr/bin/gcov-dump gcov-dump /usr/bin/gcov-tool-10
           update-alternatives --install /usr/bin/python python /usr/bin/python3.8 1
 
+      - name: Checkout code
+        uses: actions/checkout@v3
+
       - name: Install poetry dependencies
         run: |
           python -m pip install --upgrade pip
           pip install poetry
           poetry install --no-dev
           pip install -U pytest
-      - name: Checkout code
-        uses: actions/checkout@v3
 
       - name: Checkout rippled
         uses: actions/checkout@v3
@@ -66,8 +67,6 @@ jobs:
         run: |
           cd rippled
           echo "RIPPLED_COMMIT=$(git rev-parse --short HEAD)" >> $GITHUB_ENV
-          echo ${{join(steps.checkout-rippled.outputs.*, ',')}}
-#          netstat -tulpn | grep LISTEN
 
       - name: Cache rippled
         id: check-cache
@@ -75,6 +74,7 @@ jobs:
         with:
           path: ./rippled/my_build
           key: rippled-${{ env.RIPPLED_COMMIT }}
+
       - name: Install rippled
         if: steps.check-cache.outputs.cache-hit != 'true'
         run: |
