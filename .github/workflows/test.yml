@@ -15,6 +15,9 @@ jobs:
       image: rippleci/rippled-ci-builder:2944b78d22db
     env:
       DEBIAN_FRONTEND: noninteractive
+      CC: clang-10
+      CXX: clang++-10
+      CMAKE_ADD: " -DBoost_NO_BOOST_CMAKE=ON"
 
     steps:
 #      - name: Install rippled dependencies
