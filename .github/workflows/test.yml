@@ -21,7 +21,8 @@ jobs:
         run: |
           apt -y update
           apt -y install apt-transport-https ca-certificates wget gnupg \
-              git-all software-properties-common openssl libssl-dev
+              git-all software-properties-common openssl libssl-dev \
+              zlib1g-dev
           wget -O - https://apt.kitware.com/keys/kitware-archive-latest.asc 2>/dev/null | gpg --dearmor - | tee /etc/apt/trusted.gpg.d/kitware.gpg >/dev/null
           apt-add-repository 'deb https://apt.kitware.com/ubuntu/ focal main'  
           apt -y update 
@@ -71,6 +72,7 @@ jobs:
         if: steps.check-cache.outputs.cache-hit != 'true'
         run: |
           cd rippled
+          sleep 100000000
           mkdir my_build
           cd my_build
           cmake ..
