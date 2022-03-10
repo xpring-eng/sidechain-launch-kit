@@ -2,14 +2,15 @@ name: Test
 
 on:
   push:
-    branches: [ main ]
+    branches: [ main, action-runner ]
   pull_request:
   workflow_dispatch:
 
 jobs:
   test:
     name: Test
-    runs-on: ubuntu-latest
+    runs-on: sidechain-launch-kit-runner
+    image: ubuntu:20.04
 
     steps:
       - name: Checkout code
