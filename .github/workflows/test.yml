@@ -12,6 +12,8 @@ jobs:
     runs-on: sidechain-launch-kit-runner
     container:
       image: ubuntu:20.04
+    env:
+      DEBIAN_FRONTEND: noninteractive
 
     steps:
       - name: Checkout code
