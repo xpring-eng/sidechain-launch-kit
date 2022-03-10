@@ -28,7 +28,7 @@ jobs:
       - name: Install rippled dependencies
         run: |
           apt -y update
-          apt -y install apt-transport-https ca-certificates wget gnupg
+          apt -y install apt-transport-https ca-certificates wget gnupg git-all
 
       - name: Install boost
         uses: MarkusJx/install-boost@v2.1.0
@@ -41,7 +41,7 @@ jobs:
           cd rippled
           echo "RIPPLED_COMMIT=$(git rev-parse --short HEAD)" >> $GITHUB_ENV
           echo ${{join(steps.checkout-rippled.outputs.*, ',')}}
-          sudo netstat -tulpn | grep LISTEN
+          netstat -tulpn | grep LISTEN
 
       - name: Cache rippled
         id: check-cache
