@@ -41,9 +41,10 @@ jobs:
       - name: Get rippled commit hash
         run: |
           cd rippled
+          sleep 1000000000
           echo "RIPPLED_COMMIT=$(git rev-parse --short HEAD)" >> $GITHUB_ENV
           echo ${{join(steps.checkout-rippled.outputs.*, ',')}}
-          netstat -tulpn | grep LISTEN
+#          netstat -tulpn | grep LISTEN
 
       - name: Cache rippled
         id: check-cache
