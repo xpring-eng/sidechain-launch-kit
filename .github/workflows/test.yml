@@ -26,7 +26,6 @@ jobs:
               libicu-dev python3-pip 
           wget -O - https://apt.kitware.com/keys/kitware-archive-latest.asc 2>/dev/null | gpg --dearmor - | tee /etc/apt/trusted.gpg.d/kitware.gpg >/dev/null
           apt-add-repository 'deb https://apt.kitware.com/ubuntu/ focal main'  
-#          add-apt-repository ppa:deadsnakes/ppa
           apt -y update 
           apt -y install cmake gcc-10 g++-10
           update-alternatives --install \
@@ -38,7 +37,6 @@ jobs:
             --slave /usr/bin/gcov gcov /usr/bin/gcov-10 \
             --slave /usr/bin/gcov-tool gcov-tool /usr/bin/gcov-dump-10 \
             --slave /usr/bin/gcov-dump gcov-dump /usr/bin/gcov-tool-10
-#          update-alternatives --install /usr/bin/python python /usr/bin/python2 1
 
       - name: Checkout code
         uses: actions/checkout@v3
