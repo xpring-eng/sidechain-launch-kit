@@ -78,7 +78,6 @@ jobs:
         if: steps.check-cache.outputs.cache-hit != 'true'
         run: |
           cd rippled
-          sleep 100000000
           mkdir my_build
           cd my_build
           cmake ..
@@ -87,8 +86,6 @@ jobs:
           ls
         env:
           BOOST_ROOT: ${{ steps.install-boost.outputs.BOOST_ROOT }}
-
-
 
       - name: Run tests
         run: poetry run pytest tests/ --basetemp=./sidechain-tests --full-trace
