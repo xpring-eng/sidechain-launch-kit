@@ -14,7 +14,7 @@ jobs:
       image: ubuntu:20.04
     env:
       DEBIAN_FRONTEND: noninteractive
-      PATH: /usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
+      PATH: /usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/usr/bin/git
 
     steps:
       - name: Checkout code
@@ -41,6 +41,9 @@ jobs:
 
       - name: Get rippled commit hash
         run: |
+          echo "which git"
+          which git
+          echo $PATH
           cd rippled
           sleep 1000000000
           echo "RIPPLED_COMMIT=$(git rev-parse --short HEAD)" >> $GITHUB_ENV
