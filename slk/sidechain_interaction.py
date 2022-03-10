@@ -248,9 +248,9 @@ def _external_node_with_callback(
             callback(mc_chain, sc_chain)
 
 
-def standalone_test(params: SidechainParams) -> None:
+def run_chains(params: SidechainParams) -> None:
     """
-    Run a mainchain and sidechain in standalone mode and run basic tests on it.
+    Run a mainchain and sidechain and run basic tests on it.
 
     Args:
         params: The command-line args for running the sidechain.
@@ -261,35 +261,12 @@ def standalone_test(params: SidechainParams) -> None:
 
     _standalone_with_callback(params, callback)
 
-
-def multinode_test(params: SidechainParams) -> None:
-    """
-    Run a mainchain in standalone mode and a multi-node sidechain and run basic tests
-    on it.
-
-    Args:
-        params: The command-line args for running the sidechain.
-    """
-
-    def callback(mc_chain: Chain, sc_chain: Chain) -> None:
-        _simple_test(mc_chain, sc_chain, params)
-
-    _multinode_with_callback(params, callback)
-
-
-def external_node_test(params: SidechainParams) -> None:
-    """
-    Run a connection to an external chainand a multi-node sidechain and run basic tests
-    on it.
-
-    Args:
-        params: The command-line args for running the sidechain.
-    """
-
-    def callback(mc_chain: Chain, sc_chain: Chain) -> None:
-        _simple_test(mc_chain, sc_chain, params)
-
-    _external_node_with_callback(params, callback)
+    if not params.main_standalone:
+        _external_node_with_callback(params, callback)
+    elif params.standalone:
+        _standalone_with_callback(params, callback)
+    else:
+        _multinode_with_callback(params, callback)
 
 
 def close_mainchain_ledgers(
@@ -360,12 +337,8 @@ def main() -> None:
 
     if params.interactive:
         run_interactive_repl(params)
-    elif not params.main_standalone:
-        external_node_test(params)
-    elif params.standalone:
-        standalone_test(params)
     else:
-        multinode_test(params)
+        run_chains(params)
 
 
 if __name__ == "__main__":
