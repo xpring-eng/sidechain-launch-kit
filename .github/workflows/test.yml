@@ -27,7 +27,7 @@ jobs:
 
       - name: Install rippled dependencies
         run: |
-          sudo apt -y install apt-transport-https ca-certificates wget gnupg
+          apt -y install apt-transport-https ca-certificates wget gnupg
 
       - name: Install boost
         uses: MarkusJx/install-boost@v2.1.0
