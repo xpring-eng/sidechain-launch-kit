@@ -14,13 +14,14 @@ jobs:
       image: ubuntu:20.04
     env:
       DEBIAN_FRONTEND: noninteractive
-      PATH: /usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/usr/bin/git
 
     steps:
       - name: Install rippled dependencies
         run: |
+          wget -O - https://apt.kitware.com/keys/kitware-archive-latest.asc 2>/dev/null | gpg --dearmor - | sudo tee /etc/apt/trusted.gpg.d/kitware.gpg >/dev/null
+          sudo apt-add-repository 'deb https://apt.kitware.com/ubuntu/ focal main'  
           apt -y update
-          apt -y install apt-transport-https ca-certificates wget gnupg git-all
+          apt -y install apt-transport-https ca-certificates wget gnupg git-all cmake
 
       - name: Checkout code
         uses: actions/checkout@v3
