@@ -27,6 +27,7 @@ jobs:
 
       - name: Install rippled dependencies
         run: |
+          apt -y update
           apt -y install apt-transport-https ca-certificates wget gnupg
 
       - name: Install boost
