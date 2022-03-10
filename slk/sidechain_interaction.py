@@ -91,6 +91,33 @@ def _rm_debug_log(config: ConfigFile, verbose: bool) -> None:
         pass
 
 
+def _convert_log_files_to_json(
+    to_convert: List[ConfigFile], suffix: str, verbose: bool
+) -> None:
+    """
+    Convert the log file to json.
+
+    Args:
+        to_convert: A list of config files to convert the debug files of.
+        suffix: The suffix of the log file.
+        verbose: Whether to print out extra information.
+    """
+    for c in to_convert:
+        try:
+            debug_log = c.debug_logfile.get_line()
+            assert isinstance(debug_log, str)  # for typing
+            if not os.path.exists(debug_log):
+                continue
+            converted_log = f"{debug_log}.{suffix}"
+            if os.path.exists(converted_log):
+                os.remove(converted_log)
+            if verbose:
+                print(f"Converting log {debug_log} to {converted_log}", flush=True)
+            convert_log(debug_log, converted_log, pure_json=True)
+        except:
+            eprint("Exception converting log")
+
+
 def _standalone_with_callback(
     params: SidechainParams,
     callback: Callable[[Chain, Chain], None],
@@ -122,33 +149,6 @@ def _standalone_with_callback(
 
             setup_sidechain(sc_chain, params, setup_user_accounts)
             callback(mc_chain, sc_chain)
-
-
-def _convert_log_files_to_json(
-    to_convert: List[ConfigFile], suffix: str, verbose: bool
-) -> None:
-    """
-    Convert the log file to json.
-
-    Args:
-        to_convert: A list of config files to convert the debug files of.
-        suffix: The suffix of the log file.
-        verbose: Whether to print out extra information.
-    """
-    for c in to_convert:
-        try:
-            debug_log = c.debug_logfile.get_line()
-            assert isinstance(debug_log, str)  # for typing
-            if not os.path.exists(debug_log):
-                continue
-            converted_log = f"{debug_log}.{suffix}"
-            if os.path.exists(converted_log):
-                os.remove(converted_log)
-            if verbose:
-                print(f"Converting log {debug_log} to {converted_log}", flush=True)
-            convert_log(debug_log, converted_log, pure_json=True)
-        except:
-            eprint("Exception converting log")
 
 
 def _multinode_with_callback(
