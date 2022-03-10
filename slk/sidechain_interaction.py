@@ -259,8 +259,6 @@ def run_chains(params: SidechainParams) -> None:
     def callback(mc_chain: Chain, sc_chain: Chain) -> None:
         _simple_test(mc_chain, sc_chain, params)
 
-    _standalone_with_callback(params, callback)
-
     if not params.main_standalone:
         _external_node_with_callback(params, callback)
     elif params.standalone:
