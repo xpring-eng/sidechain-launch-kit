@@ -17,7 +17,7 @@ import sys
 import time
 from multiprocessing import Process, Value
 from pathlib import Path
-from typing import Any, Callable, List
+from typing import Any, Callable, ContextManager, List
 
 from slk.chain.chain import Chain
 from slk.chain.chain_setup import setup_mainchain, setup_sidechain
@@ -118,35 +118,63 @@ def _convert_log_files_to_json(
             eprint("Exception converting log")
 
 
-def _standalone_with_callback(
+def _standalone_multinode_with_callback(
     params: SidechainParams,
     callback: Callable[[Chain, Chain], None],
     setup_user_accounts: bool = True,
 ) -> None:
+    # if not params.main_standalone:
+    #     _external_node_with_callback(params, callback)
+    # elif params.standalone:
+    #     _standalone_with_callback(params, callback)
+    # else:
+    #     _multinode_with_callback(params, callback)
+
     # TODO: make more elegant once params is more fleshed out
     assert params.mainchain_config is not None
+    _rm_debug_log(params.mainchain_config, params.verbose)
     if params.debug_mainchain:
         input("Start mainchain server and press enter to continue: ")
-    else:
-        _rm_debug_log(params.mainchain_config, params.verbose)
     with single_node_chain(
         config=params.mainchain_config,
         exe=params.mainchain_exe,
         run_server=not params.debug_mainchain,
     ) as mc_chain:
-
+        if params.with_pauses:
+            input("Pausing after mainchain start (press enter to continue)")
         setup_mainchain(mc_chain, params, setup_user_accounts)
 
-        if params.debug_sidechain:
-            input("Start sidechain server and press enter to continue: ")
-        else:
-            _rm_debug_log(params.sidechain_config, params.verbose)
-        with single_node_chain(
-            config=params.sidechain_config,
-            exe=params.sidechain_exe,
-            run_server=not params.debug_sidechain,
-        ) as sc_chain:
+        if params.standalone:
+            if params.debug_sidechain:
+                input("Start sidechain server and press enter to continue: ")
+            else:
+                _rm_debug_log(params.sidechain_config, params.verbose)
 
+            sidechain: ContextManager[Chain] = single_node_chain(
+                config=params.sidechain_config,
+                exe=params.sidechain_exe,
+                run_server=not params.debug_sidechain,
+            )
+        else:
+            sidechain_configs = _configs_for_testnet(
+                f"{params.configs_dir}/sidechain_testnet/sidechain_"
+            )
+            for c in sidechain_configs:
+                _rm_debug_log(c, params.verbose)
+
+            run_server_list = [True] * len(sidechain_configs)
+            if params.debug_sidechain:
+                run_server_list[0] = False
+                input(
+                    f"Start testnet server {sidechain_configs[0].get_file_name()} and "
+                    "press enter to continue: "
+                )
+            sidechain = sidechain_network(
+                exe=params.sidechain_exe,
+                configs=sidechain_configs,
+                run_server=run_server_list,
+            )
+        with sidechain as sc_chain:
             setup_sidechain(sc_chain, params, setup_user_accounts)
             callback(mc_chain, sc_chain)
 
@@ -261,10 +289,8 @@ def run_chains(params: SidechainParams) -> None:
 
     if not params.main_standalone:
         _external_node_with_callback(params, callback)
-    elif params.standalone:
-        _standalone_with_callback(params, callback)
     else:
-        _multinode_with_callback(params, callback)
+        _standalone_multinode_with_callback(params, callback)
 
 
 def close_mainchain_ledgers(
@@ -315,10 +341,8 @@ def run_interactive_repl(params: SidechainParams) -> None:
 
     if not params.main_standalone:
         _external_node_with_callback(params, callback, setup_user_accounts=False)
-    elif params.standalone:
-        _standalone_with_callback(params, callback, setup_user_accounts=False)
     else:
-        _multinode_with_callback(params, callback, setup_user_accounts=False)
+        _standalone_multinode_with_callback(params, callback, setup_user_accounts=False)
 
 
 def main() -> None:
