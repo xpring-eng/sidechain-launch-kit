@@ -12,8 +12,7 @@ from slk.chain.xchain_transfer import main_to_side_transfer, side_to_main_transf
 from slk.sidechain_interaction import (
     _convert_log_files_to_json,
     _external_node_with_callback,
-    _multinode_with_callback,
-    _standalone_with_callback,
+    _standalone_multinode_with_callback,
     close_mainchain_ledgers,
 )
 from slk.sidechain_params import SidechainParams
@@ -154,13 +153,6 @@ def run(mc_chain: Chain, sc_chain: Chain, params: SidechainParams):
         )
 
 
-def standalone_test(params: SidechainParams):
-    def callback(mc_chain: Chain, sc_chain: Chain):
-        run(mc_chain, sc_chain, params)
-
-    _standalone_with_callback(params, callback, setup_user_accounts=False)
-
-
 def setup_accounts(mc_chain: Chain, sc_chain: Chain, params: SidechainParams):
     # Setup a funded user account on the main chain, and add an unfunded account.
     # Setup address book and add a funded account on the mainchain.
@@ -192,18 +184,14 @@ def setup_accounts(mc_chain: Chain, sc_chain: Chain, params: SidechainParams):
     sc_chain.create_account("ed")
 
 
-def multinode_test(params: SidechainParams):
+def run_sidechain_test(params: SidechainParams):
     def callback(mc_chain: Chain, sc_chain: Chain):
         run(mc_chain, sc_chain, params)
 
-    _multinode_with_callback(params, callback, setup_user_accounts=False)
-
-
-def external_node_test(params: SidechainParams) -> None:
-    def callback(mc_chain: Chain, sc_chain: Chain):
-        run(mc_chain, sc_chain, params)
-
-    _external_node_with_callback(params, callback, setup_user_accounts=False)
+    if not params.main_standalone:
+        _external_node_with_callback(params, callback, setup_user_accounts=False)
+    else:
+        _standalone_multinode_with_callback(params, callback, setup_user_accounts=False)
 
 
 def test_simple_xchain(configs_dirs_dict: Dict[int, str]):
@@ -221,12 +209,7 @@ def test_simple_xchain(configs_dirs_dict: Dict[int, str]):
     # Set to true to help debug tests
     set_test_context_verbose_logging(True)
 
-    if not params.main_standalone:
-        external_node_test(params)
-    elif params.standalone:
-        standalone_test(params)
-    else:
-        multinode_test(params)
+    run_sidechain_test(params)
 
 
 # TODO: set this up so it runs tests on standalone mainchain and not-standalone
