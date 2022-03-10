@@ -179,59 +179,6 @@ def _standalone_multinode_with_callback(
             callback(mc_chain, sc_chain)
 
 
-def _multinode_with_callback(
-    params: SidechainParams,
-    callback: Callable[[Chain, Chain], None],
-    setup_user_accounts: bool = True,
-) -> None:
-
-    mainchain_cfg = ConfigFile(
-        file_name=f"{params.configs_dir}/sidechain_testnet/mainchain_0/rippled.cfg"
-    )
-    _rm_debug_log(mainchain_cfg, params.verbose)
-    if params.debug_mainchain:
-        input("Start mainchain server and press enter to continue: ")
-    with single_node_chain(
-        config=mainchain_cfg,
-        exe=params.mainchain_exe,
-        run_server=not params.debug_mainchain,
-    ) as mc_chain:
-        if params.with_pauses:
-            input("Pausing after mainchain start (press enter to continue)")
-
-        setup_mainchain(mc_chain, params, setup_user_accounts)
-        if params.with_pauses:
-            input("Pausing after mainchain setup (press enter to continue)")
-
-        testnet_configs = _configs_for_testnet(
-            f"{params.configs_dir}/sidechain_testnet/sidechain_"
-        )
-        for c in testnet_configs:
-            _rm_debug_log(c, params.verbose)
-
-        run_server_list = [True] * len(testnet_configs)
-        if params.debug_sidechain:
-            run_server_list[0] = False
-            input(
-                f"Start testnet server {testnet_configs[0].get_file_name()} and press "
-                "enter to continue: "
-            )
-
-        with sidechain_network(
-            exe=params.sidechain_exe,
-            configs=testnet_configs,
-            run_server=run_server_list,
-        ) as sc_chain:
-
-            if params.with_pauses:
-                input("Pausing after testnet start (press enter to continue)")
-
-            setup_sidechain(sc_chain, params, setup_user_accounts)
-            if params.with_pauses:
-                input("Pausing after sidechain setup (press enter to continue)")
-            callback(mc_chain, sc_chain)
-
-
 def _external_node_with_callback(
     params: SidechainParams,
     callback: Callable[[Chain, Chain], None],
