@@ -11,8 +11,8 @@ jobs:
     name: Test
     runs-on: sidechain-launch-kit-runner
     container:
-#      image: ubuntu:20.04
-      image: rippleci/rippled-ci-builde:2944b78d22db
+      image: ubuntu:20.04
+#      image: rippleci/rippled-ci-builde:2944b78d22db
     env:
       DEBIAN_FRONTEND: noninteractive
 
