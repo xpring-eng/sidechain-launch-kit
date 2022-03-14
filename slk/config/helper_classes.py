@@ -45,10 +45,10 @@ class Ports:
 
     def __init__(
         self: Ports,
-        peer_port: Optional[int],
-        http_admin_port: Optional[int],
+        peer_port: int,
+        http_admin_port: int,
         ws_public_port: int,
-        ws_admin_port: Optional[int],
+        ws_admin_port: int,
     ) -> None:
         """
         Initialize a Ports.
@@ -84,7 +84,7 @@ class Ports:
             Ports.ws_public_port_base + (2 * cfg_index) + 1,
         )
 
-    def to_dict(self: Ports) -> Dict[str, Optional[int]]:
+    def to_dict(self: Ports) -> Dict[str, int]:
         """
         Convert the Ports to a dictionary.
 

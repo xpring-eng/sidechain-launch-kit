@@ -22,24 +22,29 @@ import shutil
 import sys
 import traceback
 from pathlib import Path
-from typing import Dict, List, Optional, cast
+from typing import Any, Dict, List
 
 from jinja2 import Environment, FileSystemLoader
 from xrpl.models import XRP, IssuedCurrency
 
 from slk.config.config_params import ConfigParams
 from slk.config.helper_classes import Ports, XChainAsset
-from slk.config.network import (
-    ExternalNetwork,
-    Network,
-    SidechainNetwork,
-    StandaloneNetwork,
-)
+from slk.config.network import SidechainNetwork, StandaloneNetwork
 from slk.utils.eprint import eprint
 
 JINJA_ENV = Environment(loader=FileSystemLoader(searchpath="./slk/config/templates"))
 
 NODE_SIZE = "medium"
+
+
+def _generate_template(
+    template_name: str, template_data: Dict[str, Any], filename: str
+) -> None:
+    template = JINJA_ENV.get_template(template_name)
+
+    # add the rippled.cfg file
+    with open(filename, "w") as f:
+        f.write(template.render(template_data))
 
 
 # generate a mainchain standalone rippled.cfg file
@@ -51,9 +56,8 @@ def _generate_cfg_dir_mainchain(
     validation_seed: str,
     data_dir: str,
     full_history: bool = False,
-) -> str:
+) -> None:
     sub_dir = f"{data_dir}/{cfg_type}"
-    template = JINJA_ENV.get_template("mainchain_standalone.jinja")
 
     for path in ["", "/db", "/shards"]:
         Path(sub_dir + path).mkdir(parents=True, exist_ok=True)
@@ -69,20 +73,17 @@ def _generate_cfg_dir_mainchain(
     }
 
     # add the rippled.cfg file
-    with open(sub_dir + "/rippled.cfg", "w") as f:
-        f.write(template.render(template_data))
-
-    return sub_dir + "/rippled.cfg"
+    _generate_template(
+        "mainchain_standalone.jinja",
+        template_data,
+        os.path.join(data_dir, cfg_type, "rippled.cfg"),
+    )
 
 
 def _generate_validators_txt(sub_dir: str, validators: List[str]) -> None:
-    template = JINJA_ENV.get_template("validators.jinja")
-
-    # Add the validators.txt file
-    template_data = {"validators": validators}
-
-    with open(sub_dir + "/validators.txt", "w") as f:
-        f.write(template.render(template_data))
+    _generate_template(
+        "validators.jinja", {"validators": validators}, sub_dir + "/validators.txt"
+    )
 
 
 # Generate all the rippled.cfg and validators.txt files for the sidechain nodes.
@@ -91,24 +92,16 @@ def _generate_cfg_dirs_sidechain(
     with_shards: bool = False,
     data_dir: str,
     full_history: bool = False,
-    mainnet: Network,
+    mainnet_url: str,
+    mainnet_ws_port: int,
     sidenet: SidechainNetwork,
-    xchain_assets: Optional[Dict[str, XChainAsset]] = None,
+    xchain_assets: Dict[str, XChainAsset],
 ) -> None:
-    template = JINJA_ENV.get_template("sidechain.jinja")
-
-    if xchain_assets is None:
-        # default to xrp only at a 1:1 value
-        xchain_assets = {}
-        xchain_assets["xrp_xrp_sidechain_asset"] = XChainAsset(
-            XRP(), XRP(), "1", "1", "400", "400"
-        )
-
     # data that isn't node-specific
     initial_template_data = {
         "full_history": full_history,
         # sidechains-specific stanzas
-        "mainchain_ip": mainnet.url,
+        "mainchain_ip": mainnet_url,
         "mainchain_door_account": sidenet.main_account.classic_address,
         "assets": [
             {"asset_name": name, **asset.to_dict()}
@@ -123,7 +116,7 @@ def _generate_cfg_dirs_sidechain(
 
     for fed_num in range(len(sidenet.ports)):
         cfg_type = f"sidechain_{fed_num}"
-        sub_dir = f"{data_dir}/{cfg_type}"
+        sub_dir = os.path.join(data_dir, cfg_type)
 
         for path in ["", "/db", "/shards"]:
             Path(sub_dir + path).mkdir(parents=True, exist_ok=True)
@@ -133,8 +126,6 @@ def _generate_cfg_dirs_sidechain(
         validation_seed = validator_kp.secret_key
         validators = [kp.public_key for kp in sidenet.validator_keypairs]
 
-        mainnet_i = fed_num % len(mainnet.ports)
-
         template_data = {
             **initial_template_data,
             "sub_dir": sub_dir,
@@ -142,27 +133,32 @@ def _generate_cfg_dirs_sidechain(
             "ports": ports.to_dict(),
             # sidechains-specific stanzas
             "signing_key": sidenet.federator_keypairs[fed_num].secret_key,
-            "mainchain_port_ws": mainnet.ports[mainnet_i].ws_public_port,
+            "mainchain_port_ws": mainnet_ws_port,
             # other
             "validation_seed": validation_seed,
         }
 
         # add the rippled.cfg file
-        with open(sub_dir + "/rippled.cfg", "w") as f:
-            f.write(template.render(template_data))
+        _generate_template(
+            "sidechain.jinja", template_data, os.path.join(sub_dir, "rippled.cfg")
+        )
 
         _generate_validators_txt(sub_dir, validators)
 
 
-# Generate all the config files for a mainchain-sidechain setup.
-def _generate_all_configs(
-    out_dir: str,
-    mainnet: Network,
-    sidenet: SidechainNetwork,
-    standalone: bool = True,
-    xchain_assets: Optional[Dict[str, XChainAsset]] = None,
+def create_config_files(
+    params: ConfigParams, xchain_assets: Dict[str, XChainAsset]
 ) -> None:
-    # clear directory
+    """
+    Create the config files for a network.
+
+    Args:
+        params: The command-line params provided to this method.
+        xchain_assets: The cross-chain assets that are allowed to cross the network
+            bridge.
+    """
+    # Set up directory
+    out_dir = f"{params.configs_dir}/sidechain_testnet"
     if os.path.exists(out_dir):
         for filename in os.listdir(out_dir):
             file_path = os.path.join(out_dir, filename)
@@ -174,61 +170,49 @@ def _generate_all_configs(
             except Exception as e:
                 print("Failed to delete %s. Reason: %s" % (file_path, e))
 
-    mainnet_cfgs = []
-    if standalone:
-        mainnet = cast(StandaloneNetwork, mainnet)
+    # create logs directory
+    (Path(params.configs_dir) / "logs").mkdir(parents=True, exist_ok=True)
+
+    index = 0
+
+    if params.standalone:
+        mainnet = StandaloneNetwork(start_cfg_index=index)
+
+        # generate mainchain config files
         for i in range(len(mainnet.ports)):
             validator_kp = mainnet.validator_keypairs[i]
             ports = mainnet.ports[i]
-            mainchain_cfg_file = _generate_cfg_dir_mainchain(
+            _generate_cfg_dir_mainchain(
                 ports=ports,
                 cfg_type=f"mainchain_{i}",
                 validation_seed=validator_kp.secret_key,
                 data_dir=out_dir,
             )
-            mainnet_cfgs.append(mainchain_cfg_file)
+
+        mainnet_url = mainnet.url
+        mainnet_ws_port = mainnet.ports[0].ws_public_port
+
+        index += 1
+    else:
+        assert params.mainnet_port is not None  # TODO: better error handling
+        mainnet_url = params.mainnet_url
+        mainnet_ws_port = params.mainnet_port
+
+    # generate sidechain config files
+    sidenet = SidechainNetwork(
+        num_federators=params.num_federators,
+        start_cfg_index=index,
+        main_door_seed=params.door_seed,
+    )
 
     _generate_cfg_dirs_sidechain(
         data_dir=out_dir,
         full_history=True,
-        mainnet=mainnet,
+        mainnet_url=mainnet_url,
+        mainnet_ws_port=mainnet_ws_port,
         sidenet=sidenet,
         xchain_assets=xchain_assets,
     )
-
-
-def create_config_files(
-    params: ConfigParams, xchain_assets: Optional[Dict[str, XChainAsset]] = None
-) -> None:
-    """
-    Create the config files for a network.
-
-    Args:
-        params: The command-line params provided to this method.
-        xchain_assets: The cross-chain assets that are allowed to cross the network
-            bridge.
-    """
-    index = 0
-    if params.standalone:
-        mainnet: Network = StandaloneNetwork(num_nodes=1, start_cfg_index=index)
-    else:
-        assert params.mainnet_port is not None  # TODO: better error handling
-        mainnet = ExternalNetwork(url=params.mainnet_url, ws_port=params.mainnet_port)
-    sidenet = SidechainNetwork(
-        num_federators=params.num_federators,
-        start_cfg_index=index + 1,
-        main_door_seed=params.door_seed,
-    )
-    _generate_all_configs(
-        out_dir=f"{params.configs_dir}/sidechain_testnet",
-        mainnet=mainnet,
-        sidenet=sidenet,
-        xchain_assets=xchain_assets,
-        standalone=params.standalone,
-    )
-    index = index + 2
-
-    (Path(params.configs_dir) / "logs").mkdir(parents=True, exist_ok=True)
 
 
 def main() -> None:
@@ -242,21 +226,22 @@ def main() -> None:
         sys.exit(1)
 
     xchain_assets = None
-    if params.usd:
-        xchain_assets = {}
-        xchain_assets["xrp_xrp_sidechain_asset"] = XChainAsset(
-            XRP(), XRP(), "1", "1", "200", "200"
-        )
+    xchain_assets = {}
+    xchain_assets["XRP_XRP_sidechain_asset"] = XChainAsset(
+        XRP(), XRP(), "1", "1", "200", "200"
+    )
+    if len(params.xchain_assets) > 0:
         root = "rHb9CJAWyB4rj91VRWn96DkukG4bwdtyTh"
         if params.issuer is not None:
             issuer = params.issuer.classic_address
         else:
             issuer = root
-        main_iou_asset = IssuedCurrency(currency="USD", issuer=issuer)
-        side_iou_asset = IssuedCurrency(currency="USD", issuer=root)
-        xchain_assets["iou_iou_sidechain_asset"] = XChainAsset(
-            main_iou_asset, side_iou_asset, "1", "1", "0.02", "0.02"
-        )
+        for token in params.xchain_assets:
+            main_iou_token = IssuedCurrency(currency=token, issuer=issuer)
+            side_iou_token = IssuedCurrency(currency=token, issuer=root)
+            xchain_assets[f"{token}_{token}_sidechain_asset"] = XChainAsset(
+                main_iou_token, side_iou_token, "1", "1", "0.02", "0.02"
+            )
 
     create_config_files(params, xchain_assets)
 

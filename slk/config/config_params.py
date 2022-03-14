@@ -20,13 +20,6 @@ def _parse_args() -> argparse.Namespace:
     )
 
     parser.add_argument(
-        "--usd",
-        "-u",
-        action="store_true",
-        help=("include a USD/root IOU asset for cross chain transfers"),
-    )
-
-    parser.add_argument(
         "--cfgs_dir",
         "-c",
         help=(
@@ -76,6 +69,18 @@ def _parse_args() -> argparse.Namespace:
         help=(
             "The seed of the IOU issuer to use on the main network. Only required if "
             "not connecting to standalone mode."
+        ),
+    )
+
+    parser.add_argument(
+        "--assets",
+        "-a",
+        nargs="+",
+        help=(
+            "The tokens to allow as cross-chain assets. This sets them up with the "
+            "genesis account as an issuer if mainchain is standalone, and otherwise "
+            "uses the IOU issuer. The issuer on the sidechain is the genesis account/"
+            "door account."
         ),
     )
 
@@ -147,7 +152,7 @@ class ConfigParams:
         if args.door_seed:
             self.door_seed = args.door_seed
 
-        self.usd = args.usd or False
+        self.xchain_assets = args.assets or []
 
         self.issuer = None
         if not self.standalone:

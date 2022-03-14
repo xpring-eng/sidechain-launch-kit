@@ -35,7 +35,9 @@ class Network:
 class StandaloneNetwork(Network):
     """Represents a network that is standalone and running locally."""
 
-    def __init__(self: StandaloneNetwork, num_nodes: int, start_cfg_index: int) -> None:
+    def __init__(
+        self: StandaloneNetwork, start_cfg_index: int, num_nodes: int = 1
+    ) -> None:
         """
         Initializes a StandaloneNetwork.
 
@@ -63,22 +65,6 @@ class StandaloneNetwork(Network):
         return result
 
 
-class ExternalNetwork(Network):
-    """Represents a connection to an external network (e.g. devnet/testnet/mainnet)."""
-
-    def __init__(self: ExternalNetwork, url: str, ws_port: int) -> None:
-        """
-        Initialize an ExternalNetwork for config files.
-
-        Args:
-            url: The URL of the external network.
-            ws_port: The port number of the WS port (to connect to the network).
-        """
-        ports = [Ports(None, None, ws_port, None)]
-        super().__init__(1, ports)
-        self.url = url
-
-
 class SidechainNetwork(StandaloneNetwork):
     """Represents a sidechain network of federator nodes and their keypairs."""
 
@@ -98,10 +84,10 @@ class SidechainNetwork(StandaloneNetwork):
                 needed if the mainchain is an external chain (e.g.
                 mainnet/devnet/testnet).
         """
-        super().__init__(num_federators, start_cfg_index)
+        super().__init__(start_cfg_index, num_federators)
         self.num_federators = num_federators
         self.federator_keypairs = self._generate_federator_keypairs()
-        # TODO: main_account needs to be user-defined for external networks
+
         if main_door_seed is None:
             self.main_account = Wallet.create(CryptoAlgorithm.SECP256K1)
             print(f"Door account seed: {self.main_account.seed}")
