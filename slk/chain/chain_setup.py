@@ -36,7 +36,7 @@ def _is_door_master_disabled(door_acct: str, client: SyncClient) -> bool:
 def setup_mainchain(
     mc_chain: Chain,
     federators: List[str],
-    mc_door_account: str,
+    mc_door_account: Account,
     params: SidechainParams,
 ) -> None:
     """
@@ -157,7 +157,10 @@ def setup_mainchain(
 
 
 def setup_sidechain(
-    sc_chain: Chain, federators: List[str], params: SidechainParams
+    sc_chain: Chain,
+    federators: List[str],
+    sc_door_account: Account,
+    params: SidechainParams,
 ) -> None:
     """
     Set up the sidechain.
@@ -166,7 +169,7 @@ def setup_sidechain(
         sc_chain: The sidechain.
         params: The command-line arguments for setup.
     """
-    sc_chain.add_to_keymanager(params.sc_door_account)
+    sc_chain.add_to_keymanager(sc_door_account)
 
     # sc_chain.send_signed(LogLevel('fatal'))
     # sc_chain.send_signed(LogLevel('trace', partition='SidechainFederator'))
