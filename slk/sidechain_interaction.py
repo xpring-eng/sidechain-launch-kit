@@ -121,7 +121,6 @@ def _convert_log_files_to_json(
 def _chains_with_callback(
     params: SidechainParams,
     callback: Callable[[Chain, Chain], None],
-    setup_user_accounts: bool = True,
 ) -> None:
     # if not params.main_standalone:
     #     _external_node_with_callback(params, callback)
@@ -154,7 +153,7 @@ def _chains_with_callback(
         if params.with_pauses:
             input("Pausing after mainchain start (press enter to continue)")
 
-        setup_mainchain(mc_chain, params.federators, params.mc_door_account, params, params.user_account if setup_user_accounts else None)
+        setup_mainchain(mc_chain, params.federators, params.mc_door_account, params)
         if params.with_pauses:
             input("Pausing after mainchain setup (press enter to continue)")
 
@@ -194,7 +193,7 @@ def _chains_with_callback(
             if params.with_pauses:
                 input("Pausing after testnet start (press enter to continue)")
 
-            setup_sidechain(sc_chain, params.federators, params, params.user_account if setup_user_accounts else None)
+            setup_sidechain(sc_chain, params.federators, params)
             if params.with_pauses:
                 input("Pausing after sidechain setup (press enter to continue)")
             callback(mc_chain, sc_chain)
@@ -260,7 +259,7 @@ def run_interactive_repl(params: SidechainParams) -> None:
                 stop_token.value = 0
                 p.join()
 
-    _chains_with_callback(params, callback, setup_user_accounts=False)
+    _chains_with_callback(params, callback)
 
 
 def main() -> None:

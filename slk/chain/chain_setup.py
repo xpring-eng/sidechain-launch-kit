@@ -1,6 +1,6 @@
 """Helper methods for setting up chains."""
 
-from typing import List, Optional
+from typing import List
 
 from xrpl.account import does_account_exist, get_account_root
 from xrpl.clients.sync_client import SyncClient
@@ -34,7 +34,10 @@ def _is_door_master_disabled(door_acct: str, client: SyncClient) -> bool:
 
 
 def setup_mainchain(
-    mc_chain: Chain, federators: List[str], mc_door_account: str, params: SidechainParams, user_account: Optional[Account] = None
+    mc_chain: Chain,
+    federators: List[str],
+    mc_door_account: str,
+    params: SidechainParams,
 ) -> None:
     """
     Set up the mainchain.
@@ -42,15 +45,11 @@ def setup_mainchain(
     Args:
         mc_chain: The mainchain.
         params: The command-line arguments for setup.
-        setup_user_accounts: Whether to create and fund a user account and add it to
-            the list of known accounts under the name "alice". The default is True.
 
     Raises:
         Exception: If the issuer on an external network doesn't exist.
     """
     mc_chain.add_to_keymanager(mc_door_account)
-    if user_account is not None:
-        mc_chain.add_to_keymanager(user_account)
 
     # mc_chain.request(LogLevel('fatal'))
     # TODO: only do all this setup for external network if it hasn't already been done
@@ -156,20 +155,9 @@ def setup_mainchain(
     )
     mc_chain.maybe_ledger_accept()
 
-    if user_account is not None:
-        # Create and fund a regular user account
-        mc_chain.send_signed(
-            Payment(
-                account=params.genesis_account.account_id,
-                destination=user_account.account_id,
-                amount=str(2_000),
-            )
-        )
-        mc_chain.maybe_ledger_accept()
-
 
 def setup_sidechain(
-    sc_chain: Chain, federators: List[str], params: SidechainParams, user_account: Optional[Account] = None
+    sc_chain: Chain, federators: List[str], params: SidechainParams
 ) -> None:
     """
     Set up the sidechain.
@@ -177,12 +165,8 @@ def setup_sidechain(
     Args:
         sc_chain: The sidechain.
         params: The command-line arguments for setup.
-        setup_user_accounts: Whether to create and fund a user account and add it to
-            the list of known accounts under the name "alice". The default is True.
     """
     sc_chain.add_to_keymanager(params.sc_door_account)
-    if user_account is not None:
-        sc_chain.add_to_keymanager(user_account)
 
     # sc_chain.send_signed(LogLevel('fatal'))
     # sc_chain.send_signed(LogLevel('trace', partition='SidechainFederator'))
