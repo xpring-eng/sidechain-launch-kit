@@ -233,6 +233,34 @@ def setup_sidechain(
     sc_chain.maybe_ledger_accept()
 
 
+def setup_prod_mainchain(
+    mainnet_url: str,
+    mainnet_ws_port: int,
+    federators: List[str],
+    mc_door_account: Account,
+    issuer: Optional[str] = None,
+) -> None:
+    with connect_to_external_chain(
+        # TODO: stop hardcoding this
+        url=mainnet_url,
+        port=mainnet_ws_port,
+    ) as mc_chain:
+        setup_mainchain(mc_chain, federators, mc_door_account, False, issuer)
+
+
+def setup_prod_sidechain(
+    sidechain_url: str,
+    sidechain_ws_port: int,
+    federators: List[str],
+    sc_door_account: Account,
+) -> None:
+    with connect_to_external_chain(
+        url=sidechain_url,
+        port=sidechain_ws_port,
+    ) as sc_chain:
+        setup_sidechain(sc_chain, federators, sc_door_account)
+
+
 def main(
     mainnet_url: str,
     mainnet_ws_port: int,
@@ -243,18 +271,8 @@ def main(
     sc_door_account: Account,
     issuer: Optional[str] = None,
 ) -> None:
-    with connect_to_external_chain(
-        # TODO: stop hardcoding this
-        url=mainnet_url,
-        port=mainnet_ws_port,
-    ) as mc_chain:
-        setup_mainchain(mc_chain, federators, mc_door_account, False, issuer)
-
-    with connect_to_external_chain(
-        url=sidechain_url,
-        port=sidechain_ws_port,
-    ) as sc_chain:
-        setup_sidechain(sc_chain, federators, sc_door_account)
+    setup_prod_mainchain(mainnet_url, mainnet_ws_port, federators, mc_door_account, issuer)
+    setup_prod_sidechain(sidechain_url, sidechain_ws_port, federators, sc_door_account)
 
 
 # TODO: set up CLI args
