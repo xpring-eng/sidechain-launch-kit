@@ -26,6 +26,12 @@ UPDATE_SIGNER_LIST = 2
 
 _LSF_DISABLE_MASTER = 0x00100000  # 1048576
 
+_GENESIS_ACCOUNT = Account(
+    account_id="rHb9CJAWyB4rj91VRWn96DkukG4bwdtyTh",
+    seed="snoPBrXtMeMyMHUVTgbuqAfg1SUTb",
+    nickname="genesis",
+)
+
 
 def _is_door_master_disabled(door_acct: str, client: SyncClient) -> bool:
     account_root = get_account_root(door_acct, client)
@@ -55,7 +61,7 @@ def setup_mainchain(
     # TODO: only do all this setup for external network if it hasn't already been done
 
     if params.main_standalone:
-        issuer = params.genesis_account
+        issuer = _GENESIS_ACCOUNT
     else:
         issuer = Account.from_seed("issuer", params.issuer)
         mc_chain.add_to_keymanager(issuer)
@@ -78,7 +84,7 @@ def setup_mainchain(
     if params.main_standalone:
         mc_chain.send_signed(
             Payment(
-                account=params.genesis_account.account_id,
+                account=_GENESIS_ACCOUNT.account_id,
                 destination=door_acct,
                 amount=xrp_to_drops(1_000),
             )
@@ -181,7 +187,7 @@ def setup_sidechain(
     quorum = (divide + by - 1) // by
     sc_chain.send_signed(
         SignerListSet(
-            account=params.genesis_account.account_id,
+            account=_GENESIS_ACCOUNT.account_id,
             signer_quorum=quorum,
             signer_entries=[
                 SignerEntry(account=federator, signer_weight=1)
@@ -192,7 +198,7 @@ def setup_sidechain(
     sc_chain.maybe_ledger_accept()
     sc_chain.send_signed(
         TicketCreate(
-            account=params.genesis_account.account_id,
+            account=_GENESIS_ACCOUNT.account_id,
             source_tag=MAINCHAIN_DOOR_KEEPER,
             ticket_count=1,
         )
@@ -200,7 +206,7 @@ def setup_sidechain(
     sc_chain.maybe_ledger_accept()
     sc_chain.send_signed(
         TicketCreate(
-            account=params.genesis_account.account_id,
+            account=_GENESIS_ACCOUNT.account_id,
             source_tag=SIDECHAIN_DOOR_KEEPER,
             ticket_count=1,
         )
@@ -208,7 +214,7 @@ def setup_sidechain(
     sc_chain.maybe_ledger_accept()
     sc_chain.send_signed(
         TicketCreate(
-            account=params.genesis_account.account_id,
+            account=_GENESIS_ACCOUNT.account_id,
             source_tag=UPDATE_SIGNER_LIST,
             ticket_count=1,
         )
@@ -216,7 +222,7 @@ def setup_sidechain(
     sc_chain.maybe_ledger_accept()
     sc_chain.send_signed(
         AccountSet(
-            account=params.genesis_account.account_id,
+            account=_GENESIS_ACCOUNT.account_id,
             set_flag=AccountSetFlag.ASF_DISABLE_MASTER,
         )
     )
