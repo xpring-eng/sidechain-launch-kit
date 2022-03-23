@@ -130,6 +130,7 @@ def _chains_with_callback(
     # else:
     #     _multinode_with_callback(params, callback)
 
+    # set up/get mainchain
     if params.main_standalone:
         # TODO: make more elegant once params is more fleshed out
         assert params.mainchain_config is not None
@@ -148,11 +149,13 @@ def _chains_with_callback(
             url=params.mainnet_url,
             port=params.mainnet_port,
         )
+
     with mainchain as mc_chain:
         if params.with_pauses:
             input("Pausing after mainchain start (press enter to continue)")
         setup_mainchain(mc_chain, params, setup_user_accounts)
 
+        # set up/get sidechain
         if params.standalone:
             if params.debug_sidechain:
                 input("Start sidechain server and press enter to continue: ")
@@ -183,6 +186,7 @@ def _chains_with_callback(
                 configs=sidechain_configs,
                 run_server=run_server_list,
             )
+
         with sidechain as sc_chain:
             if params.with_pauses:
                 input("Pausing after testnet start (press enter to continue)")
