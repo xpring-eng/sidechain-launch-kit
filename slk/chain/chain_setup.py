@@ -268,7 +268,7 @@ def setup_prod_sidechain(
     sidechain_url: str,
     sidechain_ws_port: int,
     federators: List[str],
-    sc_door_account: Account,
+    sc_door_account: Account = _GENESIS_ACCOUNT,
 ) -> None:
     """
     Set up a production sidechain.
@@ -277,7 +277,8 @@ def setup_prod_sidechain(
         sidechain_url: The URL/IP address of a node on the sidechain.
         sidechain_ws_port: The WS port of the node.
         federators: A list of the federators' public keys (for multisigning).
-        sc_door_account: The sidechain door account.
+        sc_door_account: The sidechain door account. The default is the genesis
+            account.
     """
     with connect_to_external_chain(
         url=sidechain_url,
