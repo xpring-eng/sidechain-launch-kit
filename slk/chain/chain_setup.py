@@ -1,6 +1,6 @@
 """Helper methods for setting up chains."""
 
-from typing import List
+from typing import List, Optional
 
 from xrpl.account import does_account_exist, get_account_root
 from xrpl.clients.sync_client import SyncClient
@@ -34,7 +34,7 @@ def _is_door_master_disabled(door_acct: str, client: SyncClient) -> bool:
 
 
 def setup_mainchain(
-    mc_chain: Chain, federators: List[str], params: SidechainParams, setup_user_accounts: bool = True
+    mc_chain: Chain, federators: List[str], mc_door_account: str, params: SidechainParams, user_account: Optional[Account] = None
 ) -> None:
     """
     Set up the mainchain.
@@ -48,9 +48,9 @@ def setup_mainchain(
     Raises:
         Exception: If the issuer on an external network doesn't exist.
     """
-    mc_chain.add_to_keymanager(params.mc_door_account)
-    if setup_user_accounts:
-        mc_chain.add_to_keymanager(params.user_account)
+    mc_chain.add_to_keymanager(mc_door_account)
+    if user_account is not None:
+        mc_chain.add_to_keymanager(user_account)
 
     # mc_chain.request(LogLevel('fatal'))
     # TODO: only do all this setup for external network if it hasn't already been done
@@ -73,7 +73,7 @@ def setup_mainchain(
     )
     mc_chain.maybe_ledger_accept()
 
-    door_acct = params.mc_door_account.account_id
+    door_acct = mc_door_account.account_id
 
     # Create and fund the mc door account
     if params.main_standalone:
@@ -156,12 +156,12 @@ def setup_mainchain(
     )
     mc_chain.maybe_ledger_accept()
 
-    if setup_user_accounts:
+    if user_account is not None:
         # Create and fund a regular user account
         mc_chain.send_signed(
             Payment(
                 account=params.genesis_account.account_id,
-                destination=params.user_account.account_id,
+                destination=user_account.account_id,
                 amount=str(2_000),
             )
         )
@@ -169,7 +169,7 @@ def setup_mainchain(
 
 
 def setup_sidechain(
-    sc_chain: Chain, federators: List[str], params: SidechainParams, setup_user_accounts: bool = True
+    sc_chain: Chain, federators: List[str], params: SidechainParams, user_account: Optional[Account] = None
 ) -> None:
     """
     Set up the sidechain.
@@ -181,8 +181,8 @@ def setup_sidechain(
             the list of known accounts under the name "alice". The default is True.
     """
     sc_chain.add_to_keymanager(params.sc_door_account)
-    if setup_user_accounts:
-        sc_chain.add_to_keymanager(params.user_account)
+    if user_account is not None:
+        sc_chain.add_to_keymanager(user_account)
 
     # sc_chain.send_signed(LogLevel('fatal'))
     # sc_chain.send_signed(LogLevel('trace', partition='SidechainFederator'))
