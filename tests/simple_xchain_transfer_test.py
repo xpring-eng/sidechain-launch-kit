@@ -10,9 +10,8 @@ from slk.chain.chain import Chain
 from slk.chain.mainchain import Mainchain
 from slk.chain.xchain_transfer import main_to_side_transfer, side_to_main_transfer
 from slk.sidechain_interaction import (
+    _chains_with_callback,
     _convert_log_files_to_json,
-    _external_node_with_callback,
-    _standalone_multinode_with_callback,
     close_mainchain_ledgers,
 )
 from slk.sidechain_params import SidechainParams
@@ -188,10 +187,7 @@ def run_sidechain_test(params: SidechainParams):
     def callback(mc_chain: Chain, sc_chain: Chain):
         run(mc_chain, sc_chain, params)
 
-    if not params.main_standalone:
-        _external_node_with_callback(params, callback, setup_user_accounts=False)
-    else:
-        _standalone_multinode_with_callback(params, callback, setup_user_accounts=False)
+    _chains_with_callback(params, callback, setup_user_accounts=False)
 
 
 def test_simple_xchain(configs_dirs_dict: Dict[int, str]):
