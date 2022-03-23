@@ -1,5 +1,7 @@
 """Helper methods for setting up chains."""
 
+from typing import List
+
 from xrpl.account import does_account_exist, get_account_root
 from xrpl.clients.sync_client import SyncClient
 from xrpl.models import (
@@ -32,7 +34,7 @@ def _is_door_master_disabled(door_acct: str, client: SyncClient) -> bool:
 
 
 def setup_mainchain(
-    mc_chain: Chain, params: SidechainParams, setup_user_accounts: bool = True
+    mc_chain: Chain, federators: List[str], params: SidechainParams, setup_user_accounts: bool = True
 ) -> None:
     """
     Set up the mainchain.
@@ -108,7 +110,7 @@ def setup_mainchain(
 
     # set the chain's signer list and disable the master key
     # quorum is 80%
-    divide = 4 * len(params.federators)
+    divide = 4 * len(federators)
     by = 5
     quorum = (divide + by - 1) // by
     mc_chain.send_signed(
@@ -117,7 +119,7 @@ def setup_mainchain(
             signer_quorum=quorum,
             signer_entries=[
                 SignerEntry(account=federator, signer_weight=1)
-                for federator in params.federators
+                for federator in federators
             ],
         )
     )
@@ -167,7 +169,7 @@ def setup_mainchain(
 
 
 def setup_sidechain(
-    sc_chain: Chain, params: SidechainParams, setup_user_accounts: bool = True
+    sc_chain: Chain, federators: List[str], params: SidechainParams, setup_user_accounts: bool = True
 ) -> None:
     """
     Set up the sidechain.
@@ -187,7 +189,7 @@ def setup_sidechain(
 
     # set the chain's signer list and disable the master key
     # quorum is 80%
-    divide = 4 * len(params.federators)
+    divide = 4 * len(federators)
     by = 5
     quorum = (divide + by - 1) // by
     sc_chain.send_signed(
@@ -196,7 +198,7 @@ def setup_sidechain(
             signer_quorum=quorum,
             signer_entries=[
                 SignerEntry(account=federator, signer_weight=1)
-                for federator in params.federators
+                for federator in federators
             ],
         )
     )
