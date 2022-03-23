@@ -1,6 +1,6 @@
 """Helper methods for setting up chains."""
 
-from typing import List
+from typing import List, Optional
 
 from xrpl.account import does_account_exist, get_account_root
 from xrpl.clients.sync_client import SyncClient
@@ -43,7 +43,8 @@ def setup_mainchain(
     mc_chain: Chain,
     federators: List[str],
     mc_door_account: Account,
-    params: SidechainParams,
+    main_standalone: bool,
+    issuer: Optional[str] = None,
 ) -> None:
     """
     Set up the mainchain.
@@ -60,10 +61,10 @@ def setup_mainchain(
     # mc_chain.request(LogLevel('fatal'))
     # TODO: only do all this setup for external network if it hasn't already been done
 
-    if params.main_standalone:
+    if main_standalone:
         issuer = _GENESIS_ACCOUNT
     else:
-        issuer = Account.from_seed("issuer", params.issuer)
+        issuer = Account.from_seed("issuer", issuer)
         mc_chain.add_to_keymanager(issuer)
 
         if not does_account_exist(issuer.account_id, mc_chain.node.client):
@@ -81,7 +82,7 @@ def setup_mainchain(
     door_acct = mc_door_account.account_id
 
     # Create and fund the mc door account
-    if params.main_standalone:
+    if main_standalone:
         mc_chain.send_signed(
             Payment(
                 account=_GENESIS_ACCOUNT.account_id,

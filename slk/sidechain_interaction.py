@@ -153,7 +153,7 @@ def _chains_with_callback(
         if params.with_pauses:
             input("Pausing after mainchain start (press enter to continue)")
 
-        setup_mainchain(mc_chain, params.federators, params.mc_door_account, params)
+        setup_mainchain(mc_chain, params.federators, params.mc_door_account, True)
         if params.with_pauses:
             input("Pausing after mainchain setup (press enter to continue)")
 
