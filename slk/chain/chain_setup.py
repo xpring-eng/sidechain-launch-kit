@@ -51,7 +51,11 @@ def setup_mainchain(
 
     Args:
         mc_chain: The mainchain.
-        params: The command-line arguments for setup.
+        federators: A list of the federators' public keys (for multisigning).
+        mc_door_account: The mainchain door account.
+        main_standalone: Whether the mainchain is a standalone network.
+        issuer_seed: The seed of the issuer of a cross-chain IOU. If None, there is no
+            cross-chain IOU. Default is None.
 
     Raises:
         Exception: If the issuer on an external network doesn't exist.
@@ -177,7 +181,8 @@ def setup_sidechain(
 
     Args:
         sc_chain: The sidechain.
-        params: The command-line arguments for setup.
+        federators: A list of the federators' public keys (for multisigning).
+        sc_door_account: The sidechain door account.
     """
     sc_chain.add_to_keymanager(sc_door_account)
 
@@ -240,6 +245,17 @@ def setup_prod_mainchain(
     mc_door_account: Account,
     issuer: Optional[str] = None,
 ) -> None:
+    """
+    Set up a production mainchain.
+
+    Args:
+        mainnet_url: The URL/IP address of a node on the mainchain.
+        mainnet_ws_port: The WS port of the node.
+        federators: A list of the federators' public keys (for multisigning).
+        mc_door_account: The mainchain door account.
+        issuer: The issuer of a cross-chain IOU. If None, there is no cross-chain IOU.
+            Default is None.
+    """
     with connect_to_external_chain(
         # TODO: stop hardcoding this
         url=mainnet_url,
@@ -254,6 +270,15 @@ def setup_prod_sidechain(
     federators: List[str],
     sc_door_account: Account,
 ) -> None:
+    """
+    Set up a production sidechain.
+
+    Args:
+        sidechain_url: The URL/IP address of a node on the sidechain.
+        sidechain_ws_port: The WS port of the node.
+        federators: A list of the federators' public keys (for multisigning).
+        sc_door_account: The sidechain door account.
+    """
     with connect_to_external_chain(
         url=sidechain_url,
         port=sidechain_ws_port,
@@ -261,18 +286,24 @@ def setup_prod_sidechain(
         setup_sidechain(sc_chain, federators, sc_door_account)
 
 
-def main(
-    mainnet_url: str,
-    mainnet_ws_port: int,
-    sidechain_url: str,
-    sidechain_ws_port: int,
-    federators: List[str],
-    mc_door_account: Account,
-    sc_door_account: Account,
-    issuer: Optional[str] = None,
-) -> None:
-    setup_prod_mainchain(mainnet_url, mainnet_ws_port, federators, mc_door_account, issuer)
-    setup_prod_sidechain(sidechain_url, sidechain_ws_port, federators, sc_door_account)
+# def main(
+#     mainnet_url: str,
+#     mainnet_ws_port: int,
+#     sidechain_url: str,
+#     sidechain_ws_port: int,
+#     federators: List[str],
+#     mc_door_account: Account,
+#     sc_door_account: Account,
+#     issuer: Optional[str] = None,
+# ) -> None:
+#     """
+#     Set up a production
+#     """
+#     setup_prod_mainchain(
+#         mainnet_url, mainnet_ws_port, federators, mc_door_account, issuer
+#     )
+#     setup_prod_sidechain(sidechain_url, sidechain_ws_port, federators,
+#         sc_door_account)
 
 
 # TODO: set up CLI args
