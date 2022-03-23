@@ -244,7 +244,3 @@ def main() -> None:
             )
 
     create_config_files(params, xchain_assets)
-
-
-if __name__ == "__main__":
-    main()
