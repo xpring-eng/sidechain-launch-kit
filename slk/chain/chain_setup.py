@@ -17,8 +17,8 @@ from xrpl.models import (
 from xrpl.utils import xrp_to_drops
 
 from slk.chain.chain import Chain
+from slk.chain.context_managers import connect_to_external_chain
 from slk.classes.account import Account
-from slk.sidechain_params import SidechainParams
 
 MAINCHAIN_DOOR_KEEPER = 0
 SIDECHAIN_DOOR_KEEPER = 1
@@ -44,7 +44,7 @@ def setup_mainchain(
     federators: List[str],
     mc_door_account: Account,
     main_standalone: bool,
-    issuer: Optional[str] = None,
+    issuer_seed: Optional[str] = None,
 ) -> None:
     """
     Set up the mainchain.
@@ -62,22 +62,25 @@ def setup_mainchain(
     # TODO: only do all this setup for external network if it hasn't already been done
 
     if main_standalone:
-        issuer = _GENESIS_ACCOUNT
-    else:
-        issuer = Account.from_seed("issuer", issuer)
+        issuer: Optional[Account] = _GENESIS_ACCOUNT
+    elif issuer_seed is not None:
+        issuer = Account.from_seed("issuer", issuer_seed)
         mc_chain.add_to_keymanager(issuer)
 
         if not does_account_exist(issuer.account_id, mc_chain.node.client):
             raise Exception(f"Account {issuer} needs to be funded to exist.")
+    else:
+        issuer = None
 
-    # Allow rippling through the IOU issuer account
-    mc_chain.send_signed(
-        AccountSet(
-            account=issuer.account_id,
-            set_flag=AccountSetFlag.ASF_DEFAULT_RIPPLE,
+    if issuer is not None:
+        # Allow rippling through the IOU issuer account
+        mc_chain.send_signed(
+            AccountSet(
+                account=issuer.account_id,
+                set_flag=AccountSetFlag.ASF_DEFAULT_RIPPLE,
+            )
         )
-    )
-    mc_chain.maybe_ledger_accept()
+        mc_chain.maybe_ledger_accept()
 
     door_acct = mc_door_account.account_id
 
@@ -102,17 +105,18 @@ def setup_mainchain(
         # TODO: check if the enabled keys are actually from these federators
         return
 
-    # Create a trust line so USD/root account ious can be sent cross chain
-    mc_chain.send_signed(
-        TrustSet(
-            account=door_acct,
-            limit_amount=IssuedCurrencyAmount(
-                value=str(1_000_000),
-                currency="USD",
-                issuer=issuer.account_id,
-            ),
+    if issuer is not None:
+        # Create a trust line so USD/root account ious can be sent cross chain
+        mc_chain.send_signed(
+            TrustSet(
+                account=door_acct,
+                limit_amount=IssuedCurrencyAmount(
+                    value=str(1_000_000),
+                    currency="USD",
+                    issuer=issuer.account_id,
+                ),
+            )
         )
-    )
 
     # set the chain's signer list and disable the master key
     # quorum is 80%
@@ -167,7 +171,6 @@ def setup_sidechain(
     sc_chain: Chain,
     federators: List[str],
     sc_door_account: Account,
-    params: SidechainParams,
 ) -> None:
     """
     Set up the sidechain.
@@ -228,3 +231,32 @@ def setup_sidechain(
         )
     )
     sc_chain.maybe_ledger_accept()
+
+
+def main(
+    mainnet_url: str,
+    mainnet_ws_port: int,
+    sidechain_url: str,
+    sidechain_ws_port: int,
+    federators: List[str],
+    mc_door_account: Account,
+    sc_door_account: Account,
+    issuer: Optional[str] = None,
+) -> None:
+    with connect_to_external_chain(
+        # TODO: stop hardcoding this
+        url=mainnet_url,
+        port=mainnet_ws_port,
+    ) as mc_chain:
+        setup_mainchain(mc_chain, federators, mc_door_account, False, issuer)
+
+    with connect_to_external_chain(
+        url=sidechain_url,
+        port=sidechain_ws_port,
+    ) as sc_chain:
+        setup_sidechain(sc_chain, federators, sc_door_account)
+
+
+# TODO: set up CLI args
+# if __name__ == "__main__":
+#     main()

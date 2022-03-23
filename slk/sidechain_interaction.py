@@ -193,7 +193,7 @@ def _chains_with_callback(
             if params.with_pauses:
                 input("Pausing after testnet start (press enter to continue)")
 
-            setup_sidechain(sc_chain, params.federators, params.sc_door_account, params)
+            setup_sidechain(sc_chain, params.federators, params.sc_door_account)
             if params.with_pauses:
                 input("Pausing after sidechain setup (press enter to continue)")
             callback(mc_chain, sc_chain)
