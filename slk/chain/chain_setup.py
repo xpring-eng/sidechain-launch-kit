@@ -242,7 +242,7 @@ def setup_prod_mainchain(
     mainnet_url: str,
     mainnet_ws_port: int,
     federators: List[str],
-    mc_door_account: Account,
+    mc_door_account_seed: str,
     issuer: Optional[str] = None,
 ) -> None:
     """
@@ -252,10 +252,11 @@ def setup_prod_mainchain(
         mainnet_url: The URL/IP address of a node on the mainchain.
         mainnet_ws_port: The WS port of the node.
         federators: A list of the federators' public keys (for multisigning).
-        mc_door_account: The mainchain door account.
+        mc_door_account_seed: The seed of the mainchain door account.
         issuer: The issuer of a cross-chain IOU. If None, there is no cross-chain IOU.
             Default is None.
     """
+    mc_door_account = Account.from_seed(name="door", seed=mc_door_account_seed)
     with connect_to_external_chain(
         # TODO: stop hardcoding this
         url=mainnet_url,
@@ -278,7 +279,7 @@ def setup_prod_sidechain(
         sidechain_ws_port: The WS port of the node.
         federators: A list of the federators' public keys (for multisigning).
         sc_door_account: The sidechain door account. The default is the genesis
-            account.
+            account. This is the default in the sidechain code as well.
     """
     with connect_to_external_chain(
         url=sidechain_url,
