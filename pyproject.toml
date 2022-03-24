@@ -25,7 +25,7 @@ packages = [
 
 [tool.poetry.scripts]
 sidechain-shell = "slk.run_shell:main"
-sidechain-config = "slk.create_config_files:main"
+sidechain-config = "slk.config:create_config_files"
 
 [tool.poetry.dependencies]
 python = ">= 3.8, < 3.10"
