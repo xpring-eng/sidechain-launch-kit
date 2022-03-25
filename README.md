@@ -18,7 +18,7 @@ pip install sidechain-launch-kit
 
 ### Build rippled
 
-Checkout the `sidechain` branch from the rippled repository, and follow the usual process to build rippled.
+Checkout the `sidechain` branch from the [rippled repository](https://github.com/ripple/rippled/tree/sidechain), and follow the usual process to build rippled.
 
 ### Environment variables
 
