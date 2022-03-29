@@ -5,6 +5,8 @@ from xrpl.models import XRP, IssuedCurrency
 from xrpl.wallet import Wallet
 
 import slk.config.create_config_files as create_config_files
+from slk.config.config_params import ConfigParams
+from slk.config.helper_classes import XChainAsset
 from slk.sidechain_params import _parse_args_helper
 from tests.utils import generate_mainchain_account
 
@@ -37,7 +39,7 @@ def pytest_addoption(parser):
 
 def _xchain_assets(ratio: int = 1, issuer_param: Optional[str] = None):
     assets = {}
-    assets["xrp_xrp_sidechain_asset"] = create_config_files.XChainAsset(
+    assets["xrp_xrp_sidechain_asset"] = XChainAsset(
         XRP(), XRP(), "1", str(1 * ratio), "200", str(200 * ratio)
     )
     root_account = "rHb9CJAWyB4rj91VRWn96DkukG4bwdtyTh"
@@ -47,7 +49,7 @@ def _xchain_assets(ratio: int = 1, issuer_param: Optional[str] = None):
         issuer = root_account
     main_iou_asset = IssuedCurrency(currency="USD", issuer=issuer)
     side_iou_asset = IssuedCurrency(currency="USD", issuer=root_account)
-    assets["iou_iou_sidechain_asset"] = create_config_files.XChainAsset(
+    assets["iou_iou_sidechain_asset"] = XChainAsset(
         main_iou_asset, side_iou_asset, "1", str(1 * ratio), "0.02", str(0.02 * ratio)
     )
     return assets
@@ -61,7 +63,7 @@ _config_dirs = None
 def configs_dirs_dict(tmp_path):
     global _config_dirs
     if not _config_dirs:
-        params = create_config_files.ConfigParams()
+        params = ConfigParams()
         _config_dirs = {}
         for ratio in (1, 2):
             params.configs_dir = str(tmp_path / f"test_config_files_{ratio}")
@@ -72,9 +74,7 @@ def configs_dirs_dict(tmp_path):
                 generate_mainchain_account(params.mainnet_url, wallet)
                 params.door_seed = wallet.seed
 
-            create_config_files.create_config_files(
-                params, _xchain_assets(ratio, params.issuer)
-            )
+            create_config_files(params, _xchain_assets(ratio, params.issuer))
             _config_dirs[ratio] = params.configs_dir
 
     return _config_dirs
