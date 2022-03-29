@@ -71,7 +71,6 @@ def _generate_cfg_dir_mainchain(
         "node_size": NODE_SIZE,
         "with_shards": with_shards,
     }
-    print(ports.to_dict())
 
     # add the rippled.cfg file
     _generate_template(
@@ -138,7 +137,6 @@ def _generate_cfg_dirs_sidechain(
             # other
             "validation_seed": validation_seed,
         }
-        print(ports.to_dict())
 
         # add the rippled.cfg file
         _generate_template(
