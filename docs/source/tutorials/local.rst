@@ -1,5 +1,24 @@
 Setting Up a Local Sidechain
 ============================
 
+A local sidechain is a sidechain where all the federators are running on one machine, such as a laptop.
+This setup is useful for when you're playing around with sidechains or testing some sidechain code that you have.
+This is not a production-ready sidechain; go to the other tutorial for how to set up a production-ready sidechain.
 
-stuff
+
+Setting up environment variables
+--------------------------------
+
+blah blah blah
+
+
+Setting up config files
+-----------------------
+
+blah blah blah
+
+
+Starting up a sidechain
+-----------------------
+
+blah blah blah
