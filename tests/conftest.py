@@ -4,8 +4,8 @@ import pytest
 from xrpl.models import XRP, IssuedCurrency
 from xrpl.wallet import Wallet
 
-import slk.config.create_config_files as create_config_files
 from slk.config.config_params import ConfigParams
+from slk.config.create_config_files import create_config_files
 from slk.config.helper_classes import XChainAsset
 from slk.sidechain_params import _parse_args_helper
 from tests.utils import generate_mainchain_account
