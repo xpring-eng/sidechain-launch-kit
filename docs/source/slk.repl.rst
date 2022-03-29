@@ -1,3 +1,5 @@
+:orphan:
+
 slk.repl package
 ================
 

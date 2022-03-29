@@ -1,3 +1,5 @@
+:orphan:
+
 slk.config package
 ==================
 
