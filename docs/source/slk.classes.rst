@@ -1,8 +1,5 @@
-slk.classes package
-===================
-
-Submodules
-----------
+Helper Classes
+==============
 
 slk.classes.account module
 --------------------------

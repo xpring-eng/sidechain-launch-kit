@@ -77,6 +77,29 @@ tests/simple_xchain_transfer_test.py .                              [100%]
 
 ```
 
+## Generate reference docs
+
+You can see the complete reference documentation at [`xrpl-py` docs](https://xrpl-py.readthedocs.io/en/latest/index.html). You can also generate them locally using `poetry` and `sphinx`:
+
+```bash
+# Go to the docs/ folder
+cd docs/
+
+# Build the docs
+poetry run sphinx-apidoc -o source/ ../xrpl
+poetry run make html
+```
+
+To see the output:
+
+```bash
+# Go to docs/_build/html/
+cd docs/_build/html/
+
+# Open the index file to view it in a browser:
+open _build/html/index.html
+```
+
 ## Scripts
 ### shell.py
 

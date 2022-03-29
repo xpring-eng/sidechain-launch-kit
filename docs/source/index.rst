@@ -14,6 +14,14 @@ Then, download the package via ``pip``:
 
 ``pip3 install sidechain-launch-kit``
 
+Go to the tutorials for additional details on how to set up.
+
+.. TODO: This page should be pretty identical to the README
+.. TODO: Document the
+
+.. include:: ../../README.md
+   :parser: myst_parser.sphinx_
+
 Report Issues
 --------------
 
