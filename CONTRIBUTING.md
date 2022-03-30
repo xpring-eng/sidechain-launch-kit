@@ -79,7 +79,7 @@ tests/simple_xchain_transfer_test.py .                              [100%]
 
 ## Generate reference docs
 
-You can see the complete reference documentation at [`xrpl-py` docs](https://xrpl-py.readthedocs.io/en/latest/index.html). You can also generate them locally using `poetry` and `sphinx`:
+You can see the complete reference documentation at [link TBD]. You can also generate them locally using `poetry` and `sphinx`:
 
 ```bash
 # Go to the docs/ folder
