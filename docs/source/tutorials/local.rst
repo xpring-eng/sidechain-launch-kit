@@ -9,16 +9,16 @@ This is not a production-ready sidechain; go to the other tutorial for how to se
 Setting up environment variables
 --------------------------------
 
-blah blah blah
+Follow the ``.env.example`` and README instructions.
 
 
 Setting up config files
 -----------------------
 
-blah blah blah
+Run ``sidechain-config``
 
 
 Starting up a sidechain
 -----------------------
 
-blah blah blah
+Run ``sidechain-shell``

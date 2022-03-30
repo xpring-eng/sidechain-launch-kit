@@ -16,5 +16,4 @@ Install rippled
 
 Checkout the ``sidechain`` branch from the `rippled repository <https://github.com/ripple/rippled/tree/sidechain>`_, and follow the `usual process <https://xrpl.org/install-rippled.html>`_ to build rippled.
 
-
-Point to tutorials for next steps
+Go to tutorials for next steps

@@ -8,7 +8,7 @@ This sidechain is production-ready and set up for external people to access it.
 Set up servers
 --------------
 
-blah blah
+Set up a server for each federator you want to run.
 
 .. TODO: figure out server needs
 .. relevant link: https://xrpl.org/system-requirements.html
@@ -17,16 +17,16 @@ blah blah
 Setting up environment variables
 --------------------------------
 
-blah blah blah
+This hasn't been quite implemented yet - you have to do it by hand a bit.
 
 
 Setting up config files
 -----------------------
 
-blah blah blah
+Run ``sidechain-config``
 
 
 Starting up a sidechain
 -----------------------
 
-blah blah blah
+Run ``sidechain-shell``
