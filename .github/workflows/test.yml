@@ -6,6 +6,8 @@ on:
   pull_request:
     paths-ignore:
       - 'docs/**'
+      - '**.md'
+      - '.vscode/**'
   workflow_dispatch:
 
 jobs:
