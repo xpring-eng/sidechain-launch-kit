@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "sidechain-launch-kit"
-version = "1.0.0-beta.0"
+version = "1.0.0-beta.1"
 description = "Python scripts to tests and explore side chains"
 readme = "README.md"
 repository = "https://github.com/xpring-eng/sidechain-launch-kit"
