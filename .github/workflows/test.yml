@@ -40,7 +40,7 @@ jobs:
             --slave /usr/bin/gcov gcov /usr/bin/gcov-10 \
             --slave /usr/bin/gcov-tool gcov-tool /usr/bin/gcov-dump-10 \
             --slave /usr/bin/gcov-dump gcov-dump /usr/bin/gcov-tool-10
-          update-alternatives --install /usr/bin/python python /usr/bin/python${{ matrix.python-version }} 1
+          update-alternatives --install /usr/bin/python python /usr/local/bin/python${{ matrix.python-version }} 1
 
       - name: Checkout code
         uses: actions/checkout@v3
