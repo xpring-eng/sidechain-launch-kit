@@ -17,7 +17,7 @@ slk.launch.run\_shell module
 slk.launch.sidechain\_interaction module
 ----------------------------------------
 
-.. automodule:: slk.launch.sidechain_interaction
+.. automodule:: slk.launch.sidechain_launch
    :members:
    :undoc-members:
    :show-inheritance:

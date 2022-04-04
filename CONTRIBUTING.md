@@ -117,7 +117,7 @@ This is a script used to take structured log files and convert them to json for 
 
 ## Python modules
 
-### sidechain_interaction.py
+### sidechain_launch.py
 
 A python module that can be used to write python scripts to interact with side chains. This is used to write unit tests and the interactive shell. To write a standalone script, look at how the tests are written in `test/simple_xchain_transfer_test.py`. The idea is to call `sidechain._multinode_with_callback`, which sets up the two chains, and place your code in the callback. For example:
 

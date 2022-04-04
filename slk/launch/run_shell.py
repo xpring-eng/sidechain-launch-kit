@@ -4,7 +4,7 @@
 import sys
 import traceback
 
-from slk.launch.sidechain_interaction import run_interactive_repl
+from slk.launch.sidechain_launch import run_interactive_repl
 from slk.launch.sidechain_params import SidechainParams
 from slk.utils.eprint import disable_eprint, eprint
 

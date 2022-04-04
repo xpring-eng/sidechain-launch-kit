@@ -9,7 +9,7 @@ from xrpl.utils import xrp_to_drops
 from slk.chain.chain import Chain
 from slk.chain.mainchain import Mainchain
 from slk.chain.xchain_transfer import main_to_side_transfer, side_to_main_transfer
-from slk.launch.sidechain_interaction import (
+from slk.launch.sidechain_launch import (
     _chains_with_callback,
     _convert_log_files_to_json,
     close_mainchain_ledgers,
