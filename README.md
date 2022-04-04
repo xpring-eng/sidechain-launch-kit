@@ -12,6 +12,8 @@ This section describes how to install the python dependencies, create the enviro
 
 ### Install the sidechain launch kit
 
+You will need at least Python 3.8 for this.
+
 ```
 pip install sidechain-launch-kit
 ```
@@ -156,3 +158,7 @@ Ignore the warning about the server being stopped.
 ## Conclusion
 
 Those two cross chain payments are a "hello world" for side chains. It makes sure you're environment is set up correctly.
+
+## Report Issues
+
+If you run into any bugs or other problems with the library, please report them as issues in the [xrpl-py repo](https://github.com/XRPLF/xrpl-py/issues).
