@@ -24,7 +24,7 @@ packages = [
 ]
 
 [tool.poetry.scripts]
-sidechain-shell = "slk.run_shell:main"
+sidechain-shell = "slk.launch.run_shell:main"
 sidechain-config = "slk.config:create_config_files"
 
 [tool.poetry.dependencies]

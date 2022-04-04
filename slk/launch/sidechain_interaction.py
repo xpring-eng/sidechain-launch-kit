@@ -28,8 +28,8 @@ from slk.chain.context_managers import (
 )
 from slk.chain.xchain_transfer import main_to_side_transfer, side_to_main_transfer
 from slk.classes.config_file import ConfigFile
+from slk.launch.sidechain_params import SidechainParams
 from slk.repl import start_repl
-from slk.sidechain_params import SidechainParams
 from slk.utils.eprint import disable_eprint, eprint
 from slk.utils.log_analyzer import convert_log
 
