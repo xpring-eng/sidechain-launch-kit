@@ -61,10 +61,10 @@ def _parse_args_helper(parser: argparse.ArgumentParser) -> None:
     )
 
     parser.add_argument(
-        "--interactive",
-        "-i",
+        "--shell",
+        "-s",
         action="store_true",
-        help=("run interactive repl"),
+        help=("Run the XRPL Sidechain Shell (SSX)"),
     )
 
     parser.add_argument(
@@ -127,7 +127,6 @@ class SidechainParams:
         self: SidechainParams,
         *,
         configs_dir: Optional[str] = None,
-        interactive: bool = False,
     ) -> None:
         """
         Process command-line args for spinning up a sidechain.
@@ -135,7 +134,6 @@ class SidechainParams:
         Args:
             configs_dir: Pass the config folder directly in. Usually passed in via
                 command args/env vars.
-            interactive: Whether the REPL should be started.
 
         Raises:
             Exception: if the arguments provided are invalid.
@@ -153,7 +151,7 @@ class SidechainParams:
         # set up other params
         self.standalone = args.standalone
         self.with_pauses = args.with_pauses
-        self.interactive = args.interactive or interactive
+        self.shell = args.shell
         self.quiet = args.quiet
         self.verbose = args.verbose
 

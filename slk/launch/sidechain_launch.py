@@ -15,6 +15,7 @@ line or the environment variable RIPPLED_SIDECHAIN_CFG_DIR
 import os
 import sys
 import time
+import traceback
 from multiprocessing import Process, Value
 from pathlib import Path
 from typing import Any, Callable, ContextManager, List
@@ -199,20 +200,6 @@ def _chains_with_callback(
             callback(mc_chain, sc_chain)
 
 
-def run_chains(params: SidechainParams) -> None:
-    """
-    Run a mainchain and sidechain and run basic tests on it.
-
-    Args:
-        params: The command-line args for running the sidechain.
-    """
-
-    def callback(mc_chain: Chain, sc_chain: Chain) -> None:
-        _simple_test(mc_chain, sc_chain, params)
-
-    _chains_with_callback(params, callback)
-
-
 def close_mainchain_ledgers(
     stop_token: Any, params: SidechainParams, sleep_time: int = 4
 ) -> None:
@@ -237,7 +224,21 @@ def close_mainchain_ledgers(
             time.sleep(sleep_time)
 
 
-def run_interactive_repl(params: SidechainParams) -> None:
+def run_chains(params: SidechainParams) -> None:
+    """
+    Run a mainchain and sidechain and run basic tests on it.
+
+    Args:
+        params: The command-line args for running the sidechain.
+    """
+
+    def callback(mc_chain: Chain, sc_chain: Chain) -> None:
+        _simple_test(mc_chain, sc_chain, params)
+
+    _chains_with_callback(params, callback)
+
+
+def run_chains_with_shell(params: SidechainParams) -> None:
     """
     Run a mainchain and sidechain and start up the REPL to interact with them.
 
@@ -266,16 +267,17 @@ def main() -> None:
     """Initialize the mainchain-sidechain network, with command-line arguments."""
     try:
         params = SidechainParams()
-    except Exception as e:
-        eprint(str(e))
+    except Exception:
+        eprint(traceback.format_exc())
         sys.exit(1)
 
-    if params.quiet:
-        print("Disabling eprint")
+    if params.verbose:
+        print("eprint enabled")
+    else:
         disable_eprint()
 
-    if params.interactive:
-        run_interactive_repl(params)
+    if params.shell:
+        run_chains_with_shell(params)
     else:
         run_chains(params)
 
