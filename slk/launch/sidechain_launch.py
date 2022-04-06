@@ -27,45 +27,11 @@ from slk.chain.context_managers import (
     sidechain_network,
     single_node_chain,
 )
-from slk.chain.xchain_transfer import main_to_side_transfer, side_to_main_transfer
 from slk.classes.config_file import ConfigFile
 from slk.launch.sidechain_params import SidechainParams
 from slk.repl import start_repl
 from slk.utils.eprint import disable_eprint, eprint
 from slk.utils.log_analyzer import convert_log
-
-
-def _simple_test(mc_chain: Chain, sc_chain: Chain, params: SidechainParams) -> None:
-    try:
-        bob = sc_chain.create_account("bob")
-        main_to_side_transfer(
-            mc_chain, sc_chain, params.user_account, bob, "200", params
-        )
-        main_to_side_transfer(
-            mc_chain, sc_chain, params.user_account, bob, "60", params
-        )
-
-        if params.with_pauses:
-            _convert_log_files_to_json(
-                mc_chain.get_configs() + sc_chain.get_configs(),
-                "checkpoint1.json",
-                params.verbose,
-            )
-            input("Pausing to check for main -> side txns (press enter to continue)")
-
-        side_to_main_transfer(mc_chain, sc_chain, bob, params.user_account, "9", params)
-        side_to_main_transfer(
-            mc_chain, sc_chain, bob, params.user_account, "11", params
-        )
-
-        if params.with_pauses:
-            input("Pausing to check for side -> main txns (press enter to continue)")
-    finally:
-        _convert_log_files_to_json(
-            mc_chain.get_configs() + sc_chain.get_configs(),
-            "final.json",
-            params.verbose,
-        )
 
 
 def _configs_for_testnet(config_file_prefix: str) -> List[ConfigFile]:
@@ -233,7 +199,7 @@ def run_chains(params: SidechainParams) -> None:
     """
 
     def callback(mc_chain: Chain, sc_chain: Chain) -> None:
-        _simple_test(mc_chain, sc_chain, params)
+        input("The sidechain has been set up. Press any key to kill it. ")
 
     _chains_with_callback(params, callback)
 
