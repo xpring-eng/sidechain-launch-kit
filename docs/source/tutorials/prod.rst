@@ -29,4 +29,10 @@ Run ``sidechain-config``
 Starting up a sidechain
 -----------------------
 
-Run ``sidechain-shell``
+Spin up the federator servers.
+
+.. TODO: add CLI args to make this easier
+
+Run `slk.chain.chain_setup.setup_prod_mainchain` with the appropriate variables.
+
+Run `slk.chain.chain_setup.setup_prod_sidechain` with the appropriate variables.

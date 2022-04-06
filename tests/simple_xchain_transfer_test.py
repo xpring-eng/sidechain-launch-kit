@@ -187,7 +187,7 @@ def run_sidechain_test(params: SidechainParams):
     def callback(mc_chain: Chain, sc_chain: Chain):
         run(mc_chain, sc_chain, params)
 
-    _chains_with_callback(params, callback, setup_user_accounts=False)
+    _chains_with_callback(params, callback)
 
 
 def test_simple_xchain(configs_dirs_dict: Dict[int, str]):

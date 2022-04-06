@@ -126,9 +126,7 @@ def multinode_test(params: Params):
     def callback(mc_app: App, sc_app: App):
         my_function(mc_app, sc_app, params)
 
-    sidechain._multinode_with_callback(params,
-                                       callback,
-                                       setup_user_accounts=False)
+    sidechain._multinode_with_callback(params, callback)
 ```
 
 The functions `sidechain.main_to_side_transfer` and `sidechain.side_to_main_transfer` can be used as convenience functions to initiate cross chain transfers. Of course, these transactions can also be initiated with a payment to the door account with the memo data set to the destination account on the destination chain (which is what those convenience functions do under the hood).
