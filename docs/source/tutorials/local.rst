@@ -21,4 +21,4 @@ Run ``sidechain-config``
 Starting up a sidechain
 -----------------------
 
-Run ``sidechain-shell``
+Run ``sidechain-launch --shell``

@@ -56,7 +56,7 @@ There is an interactive shell that can be used to explore side chains. It will u
 
 To start the shell, run the following script:
 ```
-sidechain-shell
+sidechain-launch --shell
 ```
 
 The shell will not start until the servers have synced. It may take a minute or two until they do sync. The script should give feedback while it is syncing.

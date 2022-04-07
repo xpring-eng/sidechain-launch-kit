@@ -15,6 +15,7 @@ line or the environment variable RIPPLED_SIDECHAIN_CFG_DIR
 import os
 import sys
 import time
+import traceback
 from multiprocessing import Process, Value
 from pathlib import Path
 from typing import Any, Callable, ContextManager, List
@@ -26,45 +27,11 @@ from slk.chain.context_managers import (
     sidechain_network,
     single_node_chain,
 )
-from slk.chain.xchain_transfer import main_to_side_transfer, side_to_main_transfer
 from slk.classes.config_file import ConfigFile
+from slk.launch.sidechain_params import SidechainParams
 from slk.repl import start_repl
-from slk.sidechain_params import SidechainParams
 from slk.utils.eprint import disable_eprint, eprint
 from slk.utils.log_analyzer import convert_log
-
-
-def _simple_test(mc_chain: Chain, sc_chain: Chain, params: SidechainParams) -> None:
-    try:
-        bob = sc_chain.create_account("bob")
-        main_to_side_transfer(
-            mc_chain, sc_chain, params.user_account, bob, "200", params
-        )
-        main_to_side_transfer(
-            mc_chain, sc_chain, params.user_account, bob, "60", params
-        )
-
-        if params.with_pauses:
-            _convert_log_files_to_json(
-                mc_chain.get_configs() + sc_chain.get_configs(),
-                "checkpoint1.json",
-                params.verbose,
-            )
-            input("Pausing to check for main -> side txns (press enter to continue)")
-
-        side_to_main_transfer(mc_chain, sc_chain, bob, params.user_account, "9", params)
-        side_to_main_transfer(
-            mc_chain, sc_chain, bob, params.user_account, "11", params
-        )
-
-        if params.with_pauses:
-            input("Pausing to check for side -> main txns (press enter to continue)")
-    finally:
-        _convert_log_files_to_json(
-            mc_chain.get_configs() + sc_chain.get_configs(),
-            "final.json",
-            params.verbose,
-        )
 
 
 def _configs_for_testnet(config_file_prefix: str) -> List[ConfigFile]:
@@ -199,20 +166,6 @@ def _chains_with_callback(
             callback(mc_chain, sc_chain)
 
 
-def run_chains(params: SidechainParams) -> None:
-    """
-    Run a mainchain and sidechain and run basic tests on it.
-
-    Args:
-        params: The command-line args for running the sidechain.
-    """
-
-    def callback(mc_chain: Chain, sc_chain: Chain) -> None:
-        _simple_test(mc_chain, sc_chain, params)
-
-    _chains_with_callback(params, callback)
-
-
 def close_mainchain_ledgers(
     stop_token: Any, params: SidechainParams, sleep_time: int = 4
 ) -> None:
@@ -237,7 +190,21 @@ def close_mainchain_ledgers(
             time.sleep(sleep_time)
 
 
-def run_interactive_repl(params: SidechainParams) -> None:
+def run_chains(params: SidechainParams) -> None:
+    """
+    Run a mainchain and sidechain and run basic tests on it.
+
+    Args:
+        params: The command-line args for running the sidechain.
+    """
+
+    def callback(mc_chain: Chain, sc_chain: Chain) -> None:
+        input("The sidechain has been set up. Press any key to kill it. ")
+
+    _chains_with_callback(params, callback)
+
+
+def run_chains_with_shell(params: SidechainParams) -> None:
     """
     Run a mainchain and sidechain and start up the REPL to interact with them.
 
@@ -266,16 +233,17 @@ def main() -> None:
     """Initialize the mainchain-sidechain network, with command-line arguments."""
     try:
         params = SidechainParams()
-    except Exception as e:
-        eprint(str(e))
+    except Exception:
+        eprint(traceback.format_exc())
         sys.exit(1)
 
-    if params.quiet:
-        print("Disabling eprint")
+    if params.verbose:
+        print("eprint enabled")
+    else:
         disable_eprint()
 
-    if params.interactive:
-        run_interactive_repl(params)
+    if params.shell:
+        run_chains_with_shell(params)
     else:
         run_chains(params)
 

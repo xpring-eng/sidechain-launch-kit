@@ -26,10 +26,10 @@ slk.run\_shell module
    :undoc-members:
    :show-inheritance:
 
-slk.sidechain\_interaction module
+slk.sidechain\_launch module
 ---------------------------------
 
-.. automodule:: slk.sidechain_interaction
+.. automodule:: slk.sidechain_launch
    :members:
    :undoc-members:
    :show-inheritance:

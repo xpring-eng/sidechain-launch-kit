@@ -6,7 +6,7 @@ from xrpl.models import Amount, Memo, Payment
 
 from slk.chain.chain import Chain
 from slk.classes.account import Account
-from slk.sidechain_params import SidechainParams
+from slk.launch.sidechain_params import SidechainParams
 
 
 def _xchain_transfer(
