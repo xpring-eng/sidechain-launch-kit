@@ -39,12 +39,12 @@ Please note that 'standalone' mode means that the main chain is running as a sta
 7. The seed of the issuer of the cross-chain token. Either set the environment variable `IOU_ISSUER` (in your system or in the `.env` file) or use the command line switch `--iou_issuer`. This is used in both the script that creates the config files and in the script that runs the sidechain.
 8. The seed of the door account on the mainchain. Either set the environment variable `DOOR_ACCOUNT_SEED` (in your system or in the `.env` file) or use the command line switch `--door_seed`. This is used in the script that creates the config files.
 
-Setting environment variables can be very convenient. For example, a small script can be sourced to set these environment variables when working with side chains.
+Setting environment variables can be very convenient. For example, a small script can be written to set these environment variables when working with sidechains.
 
 
 ### Creating configuration files
 
-Assuming rippled is built, the three environment variables are set, and the python environment is activated, run the following script:
+Assuming rippled is built, and the environment variables are set, run the following script:
 ```
 sidechain-config --assets USD
 ```
