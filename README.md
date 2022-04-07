@@ -25,6 +25,7 @@ Checkout the `sidechain` branch from the [rippled repository](https://github.com
 ### Environment variables
 
 The python scripts need to know the locations of two files and one directory. These can be specified through command line arguments, by adding variables in the `.env` file, or by setting environment variables.
+Please note that 'standalone' mode means that the main chain is running as a standalone XRPL network and is not an instance of the XRPL mainnet, testnet or devnet. Also, the sidechain needs a mainchain to start and cannot exist by itself. 
 
 1. The location of the rippled executable used for main chain servers. Either set the environment variable `RIPPLED_MAINCHAIN_EXE` (in your system or in the `.env` file) or use the command line switch `--exe_mainchain`. Until a new RPC is integrated into the main branch (this will happen very soon), use the code built from the sidechain branch as the main chain exe.
 2. The location of the rippled executable used for side chain servers. Either set the environment variable `RIPPLED_SIDECHAIN_EXE` (in your system or in the `.env` file) or use the command line switch `--exe_sidechain`. This should be the rippled executable built from the sidechain branch.
@@ -45,7 +46,7 @@ Setting environment variables can be very convenient. For example, a small scrip
 
 Assuming rippled is built, the three environment variables are set, and the python environment is activated, run the following script:
 ```
-sidechain-config --assets usd
+sidechain-config --assets USD
 ```
 
 There should now be many configuration files in the directory specified by the `RIPPLED_SIDECHAIN_CFG_DIR` environment variable. The `--assets usd` creates a sample cross chain asset for USD -> USD transfers.
