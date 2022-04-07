@@ -25,7 +25,7 @@ Checkout the `sidechain` branch from the [rippled repository](https://github.com
 ### Environment variables
 
 The python scripts need to know the locations of two files and one directory. These can be specified through command line arguments, by adding variables in the `.env` file, or by setting environment variables.
-Please note that 'standalone' mode means that the main chain is running as a standalone XRPL network and is not an instance of the XRPL mainnet, testnet or devnet. Also, the sidechain needs a mainchain to start and cannot exist by itself. 
+Please note that 'standalone' mode means that the main chain is running as a standalone XRPL network and is not an instance of the XRPL mainnet, testnet or devnet. Also, the sidechain needs a mainchain to start and cannot exist by itself.
 
 1. The location of the rippled executable used for main chain servers. Either set the environment variable `RIPPLED_MAINCHAIN_EXE` (in your system or in the `.env` file) or use the command line switch `--exe_mainchain`. Until a new RPC is integrated into the main branch (this will happen very soon), use the code built from the sidechain branch as the main chain exe.
 2. The location of the rippled executable used for side chain servers. Either set the environment variable `RIPPLED_SIDECHAIN_EXE` (in your system or in the `.env` file) or use the command line switch `--exe_sidechain`. This should be the rippled executable built from the sidechain branch.
@@ -162,4 +162,4 @@ Those two cross chain payments are a "hello world" for side chains. It makes sur
 
 ## Report Issues
 
-If you run into any bugs or other problems with the library, please report them as issues in the [xrpl-py repo](https://github.com/XRPLF/xrpl-py/issues).
+If you run into any bugs or other problems with the library, please report them as issues in the [Sidechain Launch Kit repo](https://github.com/xpring-eng/sidechain-launch-kit/issues).
