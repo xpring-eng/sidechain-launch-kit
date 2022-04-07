@@ -50,6 +50,7 @@ Sphinx = "^4.5.0"
 sphinx-rtd-theme = "^0.5.1"
 myst-parser = "^0.17.0"
 docutils = "0.17"
+pytest-cov = "^3.0.0"
 
 [tool.isort]
 # Make sure that isort's settings line up with black
