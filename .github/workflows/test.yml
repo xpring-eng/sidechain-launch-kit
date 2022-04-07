@@ -93,7 +93,7 @@ jobs:
           BOOST_ROOT: ${{ steps.install-boost.outputs.BOOST_ROOT }}
 
       - name: Run tests
-        run: poetry run pytest tests/ --basetemp=./sidechain-tests --full-trace
+        run: poetry run pytest --cov=slk/ tests/ --basetemp=./sidechain-tests --full-trace
         env:
           RIPPLED_MAINCHAIN_EXE: ./rippled/my_build/rippled
           # version of rippled to run on the sidechain
