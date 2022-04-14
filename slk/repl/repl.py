@@ -362,7 +362,6 @@ class SidechainRepl(cmd.Cmd):
         assert arg_index == len(args)
 
         result = get_balances_data(chains, chain_names, account_ids, assets, in_drops)
-        print(result)
         print(
             tabulate(
                 result,
@@ -370,6 +369,7 @@ class SidechainRepl(cmd.Cmd):
                 tablefmt="presto",
                 floatfmt=",.6f",
                 numalign="right",
+                colalign=("left", "right"),
             )
         )
 
