@@ -157,7 +157,7 @@ def get_federator_info(
                 for t in pending:
                     amt = t["amount"]
                     if is_xrp(amt):
-                        amt = drops_to_xrp(amt)
+                        amt = format(drops_to_xrp(amt), ",.6f")
                     if not verbose:
                         pending_info = {
                             "chain": short_chain_name,
@@ -304,14 +304,18 @@ def get_balances_data(
     result = []
     for chain, chain_name, acc, asset in zip(chains, chain_names, account_ids, assets):
         chain_result = chain.get_balances(acc, asset)
+        print(chain_result)
         for chain_res in chain_result:
             chain.substitute_nicknames(chain_res)
             if not in_drops and chain_res["currency"] == "XRP":
+                print(chain_res["balance"], drops_to_xrp(chain_res["balance"]))
                 chain_res["balance"] = drops_to_xrp(chain_res["balance"])
+                chain_res["balance"] = format(chain_res["balance"], ",.6f")
             else:
                 try:
                     chain_res["balance"] = int(chain_res["balance"])
                 except ValueError:
+                    print(chain_res["balance"], float(chain_res["balance"]))
                     chain_res["balance"] = float(chain_res["balance"])
             chain_short_name = "main" if chain_name == "mainchain" else "side"
             chain_res["account"] = chain_short_name + " " + chain_res["account"]
