@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 
-import binascii
 import cmd
 import json
 import os
@@ -20,6 +19,7 @@ from xrpl.models import (
     IssuedCurrencyAmount,
     Memo,
     Payment,
+    Transaction,
     TrustSet,
 )
 
@@ -42,10 +42,11 @@ def _clear_screen() -> None:
         _ = os.system("clear")
 
 
-def _file_to_hex(filename: Path) -> str:
-    with open(filename, "rb") as f:
-        content = f.read()
-    return binascii.hexlify(content).decode("utf8")
+def _send_signed_catch_error(chain: Chain, tx: Transaction) -> None:
+    try:
+        chain.send_signed(tx)
+    except Exception as e:
+        print(repr(e))
 
 
 class SidechainRepl(cmd.Cmd):
@@ -591,13 +592,13 @@ class SidechainRepl(cmd.Cmd):
         else:
             amt = str(amt_value)
 
-        # TODO: print error if something wrong with payment (e.g. no trustline)
-        chain.send_signed(
+        _send_signed_catch_error(
+            chain,
             Payment(
                 account=src_account.account_id,
                 destination=dst_account.account_id,
                 amount=amt,
-            )
+            ),
         )
         chain.maybe_ledger_accept()
 
@@ -758,13 +759,14 @@ class SidechainRepl(cmd.Cmd):
 
         memos = [Memo(memo_data=dst_account.account_id_str_as_hex())]
         door_account = chain.account_from_alias("door")
-        chain.send_signed(
+        _send_signed_catch_error(
+            chain,
             Payment(
                 account=src_account.account_id,
                 destination=door_account.account_id,
                 amount=amt,
                 memos=memos,
-            )
+            ),
         )
         chain.maybe_ledger_accept()
         if other_chain.standalone:
@@ -1252,7 +1254,6 @@ class SidechainRepl(cmd.Cmd):
         Args:
             line: The command-line arguments.
         """
-        # TODO: fix bug where REPL crashes if account isn't funded yet
         args = line.split()
         if len(args) != 4:
             print(
@@ -1292,8 +1293,9 @@ class SidechainRepl(cmd.Cmd):
             return
 
         asset = chain.asset_from_alias(alias).to_amount(amount)
-        # TODO: resolve error where repl crashes if account doesn't exist
-        chain.send_signed(TrustSet(account=account.account_id, limit_amount=asset))
+        _send_signed_catch_error(
+            chain, TrustSet(account=account.account_id, limit_amount=asset)
+        )
         chain.maybe_ledger_accept()
 
     def complete_set_trust(
