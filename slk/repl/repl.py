@@ -592,7 +592,6 @@ class SidechainRepl(cmd.Cmd):
         else:
             amt = str(amt_value)
 
-        # TODO: print error if something wrong with payment (e.g. no trustline)
         _send_signed_catch_error(
             chain,
             Payment(
@@ -1255,7 +1254,6 @@ class SidechainRepl(cmd.Cmd):
         Args:
             line: The command-line arguments.
         """
-        # TODO: fix bug where REPL crashes if account isn't funded yet
         args = line.split()
         if len(args) != 4:
             print(
@@ -1295,7 +1293,6 @@ class SidechainRepl(cmd.Cmd):
             return
 
         asset = chain.asset_from_alias(alias).to_amount(amount)
-        # TODO: resolve error where repl crashes if account doesn't exist
         _send_signed_catch_error(
             chain, TrustSet(account=account.account_id, limit_amount=asset)
         )
