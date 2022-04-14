@@ -59,6 +59,17 @@ class SidechainRepl(cmd.Cmd):
         """Clear the screen before the REPL starts up."""
         _clear_screen()
 
+    def emptyline(self: SidechainRepl) -> bool:
+        """
+        Method called when an empty line is entered in response to the prompt. If this
+        method is not overridden, it repeats the last nonempty command entered. This
+        method is overridden so that it does nothing instead of repeating commands.
+
+        Returns:
+            False. Returning True would shut down the shell.
+        """
+        return False
+
     def __init__(self: SidechainRepl, mc_chain: Chain, sc_chain: Chain) -> None:
         """
         Initialize the sidechain REPL.
