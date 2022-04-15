@@ -308,6 +308,9 @@ def get_balances_data(
             chain.substitute_nicknames(chain_res)
             if not in_drops and chain_res["currency"] == "XRP":
                 chain_res["balance"] = drops_to_xrp(chain_res["balance"])
+                # TODO: do this in a neater way (by removing this extra formatting)
+                # when https://github.com/astanin/python-tabulate/pull/176 is approved
+                chain_res["balance"] = format(chain_res["balance"], ",.6f")
             else:
                 try:
                     chain_res["balance"] = int(chain_res["balance"])

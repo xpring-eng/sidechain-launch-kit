@@ -349,7 +349,8 @@ class SidechainRepl(cmd.Cmd):
             elif not chains[0].is_asset_alias(asset_alias):
                 print(f"Error: {asset_alias} is not a valid asset alias")
                 return
-            assets = [[chains[0].asset_from_alias(asset_alias)]]
+            else:
+                assets = [[chains[0].asset_from_alias(asset_alias)]]
         else:
             # XRP and all assets in the assets alias list
             assets = [
@@ -368,6 +369,7 @@ class SidechainRepl(cmd.Cmd):
                 tablefmt="presto",
                 floatfmt=",.6f",
                 numalign="right",
+                colalign=("left", "right"),
             )
         )
 
