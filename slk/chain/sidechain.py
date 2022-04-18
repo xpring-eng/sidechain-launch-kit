@@ -89,6 +89,22 @@ class Sidechain(Chain):
         self.servers_start()
 
     @property
+    def node(self: Sidechain) -> Node:
+        """
+        The node to interact with to fetch information from the chain.
+
+        Returns:
+            The node to interact with.
+
+        Raises:
+            Exception: if there are no nodes running.
+        """
+        for node in self.nodes:
+            if node.running:
+                return node
+        raise Exception("No nodes running")
+
+    @property
     def standalone(self: Sidechain) -> bool:
         """
         Return whether the chain is in standalone mode.
@@ -209,18 +225,18 @@ class Sidechain(Chain):
         if server_indexes is None:
             server_indexes = self.running_server_indexes.copy()
 
-        if 0 in server_indexes:
-            print(
-                "WARNING: Server 0 is being stopped. RPC commands cannot be sent until "
-                "this is restarted."
-            )
-
         for i in server_indexes:
             if i not in self.running_server_indexes:
                 continue
             node = self.nodes[i]
             node.stop_server()
             self.running_server_indexes.discard(i)
+
+        if len(self.running_server_indexes) == 0:
+            print(
+                "WARNING: All servers are stopped. RPC commands cannot be sent "
+                "until this is restarted."
+            )
 
     def get_brief_server_info(self: Sidechain) -> Dict[str, List[Dict[str, Any]]]:
         """
