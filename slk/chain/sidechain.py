@@ -167,9 +167,8 @@ class Sidechain(Chain):
 
     def shutdown(self: Sidechain) -> None:
         """Shut down the chain."""
-        for a in self.nodes:
-            if a.running:
-                a.shutdown()
+        for node in self.nodes:
+            node.shutdown()
 
         self.servers_stop()
 
