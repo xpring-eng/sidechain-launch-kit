@@ -99,14 +99,16 @@ class Sidechain(Chain):
         """
         return False
 
-    def get_pids(self: Sidechain) -> List[int]:
+    def get_pids(self: Sidechain) -> List[Optional[int]]:
         """
-        Return a list of process IDs for the nodes in the chain.
+        Return a list of process IDs for all the nodes in the chain (return None if the
+        node is not running).
 
         Returns:
-            A list of process IDs for the nodes in the chain.
+            A list of process IDs for the nodes in the chain (None if the node isn't
+                running).
         """
-        return [pid for c in self.nodes if (pid := c.get_pid()) is not None]
+        return [c.get_pid() for c in self.nodes]
 
     # TODO: type this better
     def get_node(self: Sidechain, i: Optional[int] = None) -> Node:

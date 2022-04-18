@@ -58,7 +58,7 @@ class Mainchain(Chain):
         """
         return True
 
-    def get_pids(self: Mainchain) -> List[int]:
+    def get_pids(self: Mainchain) -> List[Optional[int]]:
         """
         Return a list of process IDs for the nodes in the chain.
 

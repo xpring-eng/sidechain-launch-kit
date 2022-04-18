@@ -40,7 +40,7 @@ class ExternalChain(Chain):
         """
         return False
 
-    def get_pids(self: ExternalChain) -> List[int]:
+    def get_pids(self: ExternalChain) -> List[Optional[int]]:
         """
         Return a list of process IDs for the nodes in the chain.
 

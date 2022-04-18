@@ -58,8 +58,11 @@ class Chain(ABC):
         pass
 
     @abstractmethod
-    def get_pids(self: Chain) -> List[int]:
-        """Return a list of process IDs for the nodes in the chain."""
+    def get_pids(self: Chain) -> List[Optional[int]]:
+        """
+        Return a list of process IDs for all the nodes in the chain (return None if the
+        node is not running).
+        """
         pass
 
     @abstractmethod
