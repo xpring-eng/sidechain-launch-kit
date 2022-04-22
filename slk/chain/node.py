@@ -220,7 +220,7 @@ class Node:
             A dictionary of the server_state, validated_ledger_seq, and
             complete_ledgers for the node.
         """
-        ret = {"server_state": "NA", "ledger_seq": "NA", "complete_ledgers": "NA"}
+        ret = {"server_state": "", "ledger_seq": "", "complete_ledgers": ""}
         if not self.running:
             return ret
         r = self.client.request(ServerInfo()).result

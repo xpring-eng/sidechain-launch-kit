@@ -44,12 +44,23 @@ class Chain(ABC):
             add_root: Specifies if the root account should be added to the key manager.
                 The default is True.
         """
-        self.node = node
+        self._node = node
         self.key_manager = KeyManager()
         self.asset_aliases = AssetAliases()
 
         if add_root:
             self.key_manager.add(ROOT_ACCOUNT)
+
+    @property
+    def node(self: Chain) -> Node:
+        """
+        The node to interact with to fetch information from the chain.
+
+        Returns:
+            The node to interact with.
+        """
+        # TODO: refactor so this uses a client instead of a node
+        return self._node
 
     @property
     @abstractmethod
@@ -58,8 +69,11 @@ class Chain(ABC):
         pass
 
     @abstractmethod
-    def get_pids(self: Chain) -> List[int]:
-        """Return a list of process IDs for the nodes in the chain."""
+    def get_pids(self: Chain) -> List[Optional[int]]:
+        """
+        Return a list of process IDs for all the nodes in the chain (return None if the
+        node is not running).
+        """
         pass
 
     @abstractmethod

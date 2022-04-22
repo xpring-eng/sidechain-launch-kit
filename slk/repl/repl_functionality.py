@@ -67,14 +67,12 @@ def get_server_info(
         chains = []
         for i in range(len(filenames)):
             chains.append(f"{chain_name} {i}")
-        data: Dict[str, Any] = {"node": chains}
-        data.update(
-            {
-                "pid": chain.get_pids(),
-                "config": filenames,
-                "running": chain.get_running_status(),
-            }
-        )
+        data: Dict[str, Any] = {
+            "node": chains,
+            "pid": chain.get_pids(),
+            "config": filenames,
+            "running": chain.get_running_status(),
+        }
         bsi = chain.get_brief_server_info()
         data.update(bsi)
         return data
