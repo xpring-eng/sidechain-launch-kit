@@ -229,6 +229,25 @@ def run_chains_with_shell(params: SidechainParams) -> None:
     _chains_with_callback(params, callback)
 
 
+def run_chains_background(params: SidechainParams) -> None:
+    """
+    Start a mainchain and sidechain and run them in the background.
+
+    Args:
+        params: The command-line args for running the sidechain.
+    """
+
+    def callback(mc_chain: Chain, sc_chain: Chain) -> None:
+        # process will run while stop token is non-zero
+        stop_token = Value("i", 1)
+        p = None
+        if mc_chain.standalone:
+            p = Process(target=close_mainchain_ledgers, args=(stop_token, params))
+            p.start()
+
+    _chains_with_callback(params, callback)
+
+
 def main() -> None:
     """Initialize the mainchain-sidechain network, with command-line arguments."""
     try:
@@ -242,6 +261,8 @@ def main() -> None:
     else:
         disable_eprint()
 
+    if params.background:
+        run_chains_background(params)
     if params.shell:
         run_chains_with_shell(params)
     else:

@@ -61,6 +61,13 @@ def _parse_args_helper(parser: argparse.ArgumentParser) -> None:
     )
 
     parser.add_argument(
+        "--background",
+        "-b",
+        action="store_true",
+        help=("Start the mainchain and sidechain in the background"),
+    )
+
+    parser.add_argument(
         "--shell",
         "-s",
         action="store_true",
@@ -152,6 +159,7 @@ class SidechainParams:
         self.standalone = args.standalone
         self.with_pauses = args.with_pauses
         self.shell = args.shell
+        self.background = args.background
         self.quiet = args.quiet
         self.verbose = args.verbose
 
