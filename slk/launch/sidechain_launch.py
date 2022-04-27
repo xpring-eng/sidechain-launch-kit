@@ -27,6 +27,9 @@ from slk.chain.context_managers import (
     sidechain_network,
     single_node_chain,
 )
+from slk.chain.external_chain import ExternalChain
+from slk.chain.mainchain import Mainchain
+from slk.chain.sidechain import Sidechain
 from slk.classes.config_file import ConfigFile
 from slk.launch.sidechain_params import SidechainParams
 from slk.repl import start_repl
@@ -89,13 +92,6 @@ def _chains_with_callback(
     params: SidechainParams,
     callback: Callable[[Chain, Chain], None],
 ) -> None:
-    # if not params.main_standalone:
-    #     _external_node_with_callback(params, callback)
-    # elif params.standalone:
-    #     _standalone_with_callback(params, callback)
-    # else:
-    #     _multinode_with_callback(params, callback)
-
     # set up/get mainchain
     if params.main_standalone:
         # TODO: make more elegant once params is more fleshed out
@@ -229,6 +225,20 @@ def run_chains_with_shell(params: SidechainParams) -> None:
     _chains_with_callback(params, callback)
 
 
+def _new_close(params: SidechainParams) -> None:
+    if os.fork() != 0:
+        return
+    assert params.mainchain_config is not None  # TODO: type this better
+    mc_chain = Mainchain(
+        params.mainchain_exe,
+        config=params.mainchain_config,
+        run_server=False,
+    )
+    while True:
+        mc_chain.maybe_ledger_accept()
+        time.sleep(4)
+
+
 def run_chains_background(params: SidechainParams) -> None:
     """
     Start a mainchain and sidechain and run them in the background.
@@ -239,13 +249,79 @@ def run_chains_background(params: SidechainParams) -> None:
 
     def callback(mc_chain: Chain, sc_chain: Chain) -> None:
         # process will run while stop token is non-zero
-        stop_token = Value("i", 1)
-        p = None
         if mc_chain.standalone:
-            p = Process(target=close_mainchain_ledgers, args=(stop_token, params))
+            p = Process(target=_new_close, args=(params,))
             p.start()
+            p.join()
+        exit(0)
 
-    _chains_with_callback(params, callback)
+    # set up/get mainchain
+    if params.main_standalone:
+        # TODO: make more elegant once params is more fleshed out
+        assert params.mainchain_config is not None
+        _rm_debug_log(params.mainchain_config, params.verbose)
+        if params.debug_mainchain:
+            input("Start mainchain server and press enter to continue: ")
+        mc_chain: Chain = Mainchain(
+            exe=params.mainchain_exe,
+            config=params.mainchain_config,
+            run_server=not params.debug_mainchain,
+        )
+    else:
+        assert params.mainnet_port is not None  # TODO: type this better
+        mc_chain = ExternalChain(
+            # TODO: stop hardcoding this
+            url=params.mainnet_url,
+            port=params.mainnet_port,
+        )
+
+    if params.with_pauses:
+        input("Pausing after mainchain start (press enter to continue)")
+
+    setup_mainchain(mc_chain, params.federators, params.mc_door_account, True)
+    if params.with_pauses:
+        input("Pausing after mainchain setup (press enter to continue)")
+
+    # set up/get sidechain
+    if params.standalone:
+        if params.debug_sidechain:
+            input("Start sidechain server and press enter to continue: ")
+        else:
+            _rm_debug_log(params.sidechain_config, params.verbose)
+
+        sc_chain: Chain = Mainchain(
+            config=params.sidechain_config,
+            exe=params.sidechain_exe,
+            run_server=not params.debug_sidechain,
+        )
+    else:
+        sidechain_configs = _configs_for_testnet(
+            f"{params.configs_dir}/sidechain_testnet/sidechain_"
+        )
+        for c in sidechain_configs:
+            _rm_debug_log(c, params.verbose)
+
+        run_server_list = [True] * len(sidechain_configs)
+        if params.debug_sidechain:
+            run_server_list[0] = False
+            input(
+                f"Start testnet server {sidechain_configs[0].get_file_name()} and "
+                "press enter to continue: "
+            )
+        sc_chain = Sidechain(
+            exe=params.sidechain_exe,
+            configs=sidechain_configs,
+            run_server=run_server_list,
+        )
+        sc_chain.wait_for_validated_ledger()
+
+    if params.with_pauses:
+        input("Pausing after testnet start (press enter to continue)")
+
+    setup_sidechain(sc_chain, params.federators, params.sc_door_account)
+    if params.with_pauses:
+        input("Pausing after sidechain setup (press enter to continue)")
+    callback(mc_chain, sc_chain)
 
 
 def main() -> None:
