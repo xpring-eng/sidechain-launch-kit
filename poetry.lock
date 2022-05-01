@@ -868,7 +868,7 @@ python-versions = ">=3.7"
 
 [[package]]
 name = "xrpl-py"
-version = "1.4.0"
+version = "1.5.0"
 description = "A complete Python library for interacting with the XRP ledger"
 category = "main"
 optional = false
@@ -1391,8 +1391,8 @@ websockets = [
     {file = "websockets-10.2.tar.gz", hash = "sha256:8351c3c86b08156337b0e4ece0e3c5ec3e01fcd14e8950996832a23c99416098"},
 ]
 xrpl-py = [
-    {file = "xrpl-py-1.4.0.tar.gz", hash = "sha256:a3e76432b065f213ccea41af92da73cadba599b2d172e83f90d2f68096282764"},
-    {file = "xrpl_py-1.4.0-py3-none-any.whl", hash = "sha256:f103f4e08cb80eb812ee411f37f8d42f509568efce74db7ea564d19e7ae69eb9"},
+    {file = "xrpl-py-1.5.0.tar.gz", hash = "sha256:2ba56dd4c506d6069b53080e1710462459dbaed2697b0a81fc9e78a3ffcc6188"},
+    {file = "xrpl_py-1.5.0-py3-none-any.whl", hash = "sha256:b3f8e5f1fa8277a296aa2e04860045f7fcf42917fed7d39d5548a87849c1f5b6"},
 ]
 zipp = [
     {file = "zipp-3.7.0-py3-none-any.whl", hash = "sha256:b47250dd24f92b7dd6a0a8fc5244da14608f3ca90a5efcd37a3b1642fac9a375"},
